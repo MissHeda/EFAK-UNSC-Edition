@@ -212,16 +212,16 @@ def narcbox():
     latches, yellow stencil."""
     W, D = 0.30, 0.17
     r = 0.022
-    prism(rrect(W, D, r, 6), 0.044, "poly_green", bevel=0.005, segs=3)
-    prism(rrect(W + 0.006, D + 0.006, r + 0.003, 6), 0.006, "poly_green", (0, 0, 0.041), bevel=0.0015, segs=1)
-    prism(rrect(W, D, r, 6), 0.044, "poly_green", (0, 0, 0.046), bevel=0.01, segs=4)
+    prism(rrect(W, D, r, 4), 0.044, "poly_green", bevel=0.005, segs=2)
+    prism(rrect(W + 0.006, D + 0.006, r + 0.003, 4), 0.006, "poly_green", (0, 0, 0.041), bevel=0.0015, segs=1)
+    prism(rrect(W, D, r, 4), 0.044, "poly_green", (0, 0, 0.046), bevel=0.01, segs=3)
     top = 0.09
     # corner bumpers, top and bottom
     for sx in (-1, 1):
         for sy in (-1, 1):
             c = (sx * (W / 2 - r), sy * (D / 2 - r))
-            cyl(0.026, 0.05, (c[0], c[1], 0.068), "poly_green", n=28, bevel=0.012, segs=4)
-            cyl(0.026, 0.044, (c[0], c[1], 0.022), "poly_green", n=28, bevel=0.01, segs=3)
+            cyl(0.026, 0.05, (c[0], c[1], 0.068), "poly_green", n=16, bevel=0.012, segs=3)
+            cyl(0.026, 0.044, (c[0], c[1], 0.022), "poly_green", n=16, bevel=0.01, segs=2)
     # stencil field
     prism(rrect(0.232, 0.116, 0.01, 3), 0.002, "poly_green", (0, 0, top - 0.0005), bevel=0.0008, segs=1)
     decal("narc_yellow", (0, 0, top + 0.0015), UP, B, 0.222, depth=0.003)

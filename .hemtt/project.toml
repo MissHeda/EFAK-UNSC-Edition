@@ -19,7 +19,7 @@ preset = "Hemtt"
 # Loads EFAK from the workshop next to this build. To test against a local EFAK checkout instead:
 #
 #   hemtt launch local-efak -- "-mod=<Enhanced-First-Aid-Kits repo>/.hemttout/build"
-[hemtt.launch]
+[hemtt.launch.default]
 workshop = [
     "450814997",  # CBA_A3
     "463939057",  # ACE3
