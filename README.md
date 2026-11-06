@@ -1,0 +1,36 @@
+# EFAK: UNSC Edition
+
+A look-only add-on for [Enhanced First Aid Kits](https://steamcommunity.com/sharedfiles/filedetails/?id=3809430149):
+every kit gets a new model in the style of the UNSC, new inventory pictures, and the kit window turns into
+a cyan HUD readout on dark glass.
+
+| Kit | Becomes |
+|---|---|
+| IFAK | M7 IFAK - angular polymer case with red pull tab and MOLLE back |
+| AFAK | M9 AFAK - the flat octagonal field medkit with the medical mark and red reflectors |
+| MFAK | MFAK - UNSC supply crate with padded lid and corner posts |
+| MFAK+ | MFAK+ - tall UNSC locker tin with fold handles |
+| Narc Box | Narc case - moulded launcher-ammo style hard case with yellow stencil |
+
+Needs EFAK (1.4.0 or later for the window colours; older versions still get the models). Changes nothing
+but the look: names, contents, weights and settings stay EFAK's, so EFAK updates keep working.
+
+## Building
+
+The models are procedural and come out of Blender (5.x) in one go - geometry, baked texture, normal and
+specular maps, LODs, shadow and geometry LODs, and the inventory picture:
+
+```
+python tools/models/make_decals.py
+blender -b -P tools/models/build_kit.py -- ifak      # afak, mfak, mfakplus, narcbox
+python tools/make_ui.py                              # window glass, kit backgrounds, logo
+hemtt build
+```
+
+`tools/models/kits.py` holds the shapes, `tools/models/unsc_lib.py` the parts, looks and the p3d writer.
+
+## Legal
+
+Halo © Microsoft Corporation. EFAK: UNSC Edition was created under Microsoft's
+["Game Content Usage Rules"](https://www.xbox.com/en-US/developers/rules) using assets from Halo, and it is
+not endorsed by or affiliated with Microsoft. All models and textures here are made from scratch.

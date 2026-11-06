@@ -1,0 +1,33 @@
+name = "EFAK: UNSC Edition"
+prefix = "efku"
+author = "Miss Heda"
+mainprefix = "z"
+
+[files]
+include = [
+    "mod.cpp",
+    "logo.paa",
+    "README.md",
+]
+
+[version]
+git_hash = 0
+
+[hemtt.config]
+preset = "Hemtt"
+
+# Loads EFAK from the workshop next to this build. To test against a local EFAK checkout instead:
+#
+#   hemtt launch local-efak -- "-mod=<Enhanced-First-Aid-Kits repo>/.hemttout/build"
+[hemtt.launch]
+workshop = [
+    "450814997",  # CBA_A3
+    "463939057",  # ACE3
+    "3809430149", # Enhanced First Aid Kits
+]
+
+[hemtt.launch.local-efak]
+workshop = [
+    "450814997",  # CBA_A3
+    "463939057",  # ACE3
+]

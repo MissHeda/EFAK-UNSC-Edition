@@ -1,0 +1,14 @@
+name = "EFAK: UNSC Edition";
+author = "Miss Heda";
+logo = "logo.paa";
+logoOver = "logo.paa";
+logoSmall = "logo.paa";
+picture = "logo.paa";
+tooltip = "EFAK: UNSC Edition";
+tooltipOwned = "EFAK: UNSC Edition";
+overview = "UNSC-style models, pictures and kit window for Enhanced First Aid Kits. Halo (c) Microsoft Corporation - made under Microsoft's Game Content Usage Rules, not endorsed by or affiliated with Microsoft.";
+actionName = "Support Discord";
+action = "https://discord.gg/Jud6gyzFYx";
+hideName = 0;
+hidePicture = 0;
+dlcColor[] = {0.36, 0.82, 0.96, 1};
