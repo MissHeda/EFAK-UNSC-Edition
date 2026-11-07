@@ -1360,6 +1360,10 @@ def write_shadow_p3d(path, shadow):
     e = 0.0005
     tri = [((c[0], c[1], c[2]), n, (0.0, 0.0)), ((c[0] + e, c[1], c[2]), n, (0.0, 0.0)),
            ((c[0], c[1] + e, c[2]), n, (0.0, 0.0))]
+    # pulled 2.5 mm inside the kit's surface, so the caster does not shade the kit it sits in
+    size = (max(xs) - min(xs), max(ys) - min(ys), max(zs) - min(zs))
+    k = [(d - 0.005) / d if d > 0.01 else 1.0 for d in size]
+    shadow = [[(tuple(c[i] + (p[0][i] - c[i]) * k[i] for i in range(3)),) + tuple(p[1:]) for p in t] for t in shadow]
     lods = []
     data, npt, nf = lod_bytes(1.0, [tri], "#(argb,8,8,3)color(0,0,0,0)", "")
     lods.append(data)

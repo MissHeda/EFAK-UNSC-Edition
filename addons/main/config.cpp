@@ -28,7 +28,7 @@ class CfgVehicles {
         scopeCurator = 0;
         displayName = "UNSC kit";
         destrType = "DestructNo";
-        efku_offset[] = {0.0044, 0, 0};
+        efku_offset[] = {0, 0.003, 0};
         efku_sound = "case";
         efku_turn = 0;
         class AnimationSources {

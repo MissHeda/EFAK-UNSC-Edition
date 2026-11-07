@@ -164,14 +164,12 @@ def ifak():
         # raised label field on the lid
         box((0.128, 0.003, 0.066), (0, -D / 2 - 0.009, 0.07), "olive_dark", cut=0.006, axis="y", bevel=0.001,
             segs=1)
-        # finger notch to open the lid, at its free edge (bottom middle)
-        box((0.03, 0.003, 0.008), (0, lf - 0.0015, 0.02), "olive_dark", cut=0.003, axis="y", bevel=0.0012, segs=1)
-    # The IFAK lies on its back in the game (EXPORT_ROT): the lid is hinged along the top, so it swings
-    # up away from whoever opens it, and the label reads from that side - its top towards the hinge.
-    lid_axis((-0.07, lf + 0.001, 0.124), (0.07, lf + 0.001, 0.124))
+        # finger notch to open the lid, top middle - the side of the red pull tab
+        box((0.03, 0.003, 0.008), (0, lf - 0.0015, 0.112), "olive_dark", cut=0.003, axis="y", bevel=0.0012, segs=1)
+    lid_axis((-0.07, lf + 0.001, 0.008), (0.07, lf + 0.001, 0.008))
     decal("ifak_label", (0, -D / 2 - 0.0105, 0.07), F, UP, 0.104, depth=0.003)
-    # hinge along the top of the lid
-    hinge((-0.055, lf + 0.001, 0.124), (0.055, lf + 0.001, 0.124), r=0.0032, knuckles=5)
+    # hinge along the foot of the lid, so it opens on the side of the red pull tab
+    hinge((-0.055, lf + 0.001, 0.008), (0.055, lf + 0.001, 0.008), r=0.0032, knuckles=5)
     # pull tab on top, and its loop
     box((0.05, 0.018, 0.012), (0, -0.012, H + 0.004), "red", cut=0.004, axis="y", bevel=0.002, segs=2)
     box((0.03, 0.006, 0.02), (0, -0.024, H + 0.012), "red", cut=0.006, cuts=(0, 0, 1, 1), axis="y",
@@ -863,8 +861,9 @@ BUILDERS = {
 
 
 # Kits that lie differently in the game than they are built (degrees about x, y, z): the IFAK lies
-# on its back, the label up, the way a belt case is put down.
-EXPORT_ROT = {"ifak": (-90, 0, 0)}
+# on its back, the label up, the way a belt case is put down - turned round so the holder shows it
+# with the label reading towards the front.
+EXPORT_ROT = {"ifak": (-90, 0, 180)}
 
 ADDON = {k: "kits" for k in ("ifak", "afak", "mfak", "mfakplus", "narcbox")}
 ADDON.update({k: "eup" for k in ("utility_pouch", "ammo_pouch", "ammo_bag", "engineer_bag", "cbrn_bag")})
