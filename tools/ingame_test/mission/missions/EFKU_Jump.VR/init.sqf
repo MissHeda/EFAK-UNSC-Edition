@@ -16,7 +16,7 @@ if (!hasInterface) exitWith {};
         _h setPosATL _p;
         _h addItemCargoGlobal [_kit, 1];
         sleep 2;
-        private _views = [["front", [0, -0.9, 0.06]], ["side", [0.9, 0, 0.06]]];
+        private _views = [["front", [0, -0.9, 0.06]], ["side", [0.9, 0, 0.06]], ["far", [0.8, -2.8, 1.1]]];
         {
             _x params ["_v", "_o"];
             _cam camSetPos (_p vectorAdd _o);
@@ -42,6 +42,6 @@ if (!hasInterface) exitWith {};
             sleep 1;
         } forEach _views;
         ["", true] call efku_lids_fnc_closeLids;
-    } forEach [["efak_IFAK", "ifak"], ["efak_MFAK", "mfak"], ["efak_AFAK", "afak"]];
+    } forEach [["efak_IFAK", "ifak"], ["efak_MFAKPlus", "mfakplus"], ["efak_AFAK", "afak"]];
     diag_log "EFKUTEST DONE";
 };

@@ -60,6 +60,10 @@ print("shadow parts:", len({t[0][4] for t in shadow_tris}), "triangles:", len(sh
 open_edges = U.shadow_open_edges(shadow_tris)
 if open_edges:
     raise SystemExit("shadow LOD of %s has %d open edges" % (kit, open_edges))
+if "--shadow-only" in argv:
+    addon = kits.ADDON[kit]
+    U.write_shadow_p3d(os.path.join(U.REPO, "addons", addon, "data", kit + "_shadow.p3d"), shadow_tris)
+    sys.exit(0)
 U.SHADOW[0] = False
 U.PARTS.clear()
 U.PROJECTORS.clear()
@@ -112,6 +116,13 @@ U.write_p3d(os.path.join(data, kit + ".p3d"), ob, game_dir + "\\%s_co.paa" % kit
             shadow=shadow_tris)
 U.write_shadow_p3d(os.path.join(data, kit + "_shadow.p3d"), shadow_tris)
 
+# pictures show the kit the way it lies in the game
+if kit in kits.EXPORT_ROT:
+    ob.matrix_world = U._euler(kits.EXPORT_ROT[kit]).to_matrix().to_4x4()
 shots = U.render_views(ob, paths, kit, views, size=1024, samples=128)
-U.to_paa(shots["icon"], os.path.join(ui, kit + "_ca.paa"))
+try:
+    U.to_paa(shots["icon"], os.path.join(ui, kit + "_ca.paa"))
+except RuntimeError as e:
+    # a running game holds the icon open; the PNG stays in out/<kit> for a later conversion
+    print("ICON NOT WRITTEN", kit, e)
 print("done", kit)

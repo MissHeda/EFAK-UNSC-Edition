@@ -1007,8 +1007,77 @@ def unwrap(ob, margin=0.004):
     bpy.ops.mesh.select_all(action="SELECT")
     bpy.ops.uv.smart_project(angle_limit=math.radians(55), island_margin=margin, area_weight=0.0,
                              correct_aspect=True, scale_to_bounds=False)
+    bpy.ops.object.mode_set(mode="OBJECT")
+    _grow_decal_islands(ob, DECAL_TEXEL)
+    bpy.ops.object.mode_set(mode="EDIT")
+    bpy.ops.mesh.select_all(action="SELECT")
     bpy.ops.uv.pack_islands(margin=margin, rotate=True, shape_method="CONCAVE")
     bpy.ops.object.mode_set(mode="OBJECT")
+
+
+# How much finer the texture is on the faces that carry a decal than on the rest (linear): logos and
+# lettering stay sharp up close, plain paint and wear do not need it.
+DECAL_TEXEL = 2.0
+
+
+def _grow_decal_islands(ob, factor):
+    """Scales the UV islands holding faces under a decal by `factor` about their own centre, before
+    packing - so the pack gives them that much more of the texture."""
+    me = ob.data
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bm.faces.ensure_lookup_table()
+    uv = bm.loops.layers.uv.active
+    # islands: faces joined across edges whose UVs agree on both sides
+    parent = list(range(len(bm.faces)))
+
+    def find(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+
+    def key(l):
+        return (round(l[uv].uv.x, 6), round(l[uv].uv.y, 6))
+
+    for e in bm.edges:
+        if len(e.link_faces) != 2:
+            continue
+        f0, f1 = e.link_faces
+        uv0 = {l.vert.index: key(l) for l in f0.loops if l.vert in e.verts}
+        uv1 = {l.vert.index: key(l) for l in f1.loops if l.vert in e.verts}
+        if uv0 == uv1:
+            parent[find(f0.index)] = find(f1.index)
+    marked = set()
+    for f in bm.faces:
+        c = f.calc_center_median()
+        for p in PROJECTORS:
+            n = p["normal"]
+            if f.normal.dot(n) < 0.5:
+                continue
+            d = c - p["center"]
+            if abs(d.dot(n)) > p["depth"] + 0.01:
+                continue
+            right = p["up"].cross(n)
+            if abs(d.dot(right)) <= p["w"] / 2 + 0.01 and abs(d.dot(p["up"])) <= p["h"] / 2 + 0.01:
+                marked.add(find(f.index))
+                break
+    groups = {}
+    for f in bm.faces:
+        r = find(f.index)
+        if r in marked:
+            groups.setdefault(r, []).append(f)
+    for faces in groups.values():
+        pts = [l[uv].uv for f in faces for l in f.loops]
+        cx = (min(p.x for p in pts) + max(p.x for p in pts)) / 2
+        cy = (min(p.y for p in pts) + max(p.y for p in pts)) / 2
+        for f in faces:
+            for l in f.loops:
+                l[uv].uv.x = cx + (l[uv].uv.x - cx) * factor
+                l[uv].uv.y = cy + (l[uv].uv.y - cy) * factor
+    bm.to_mesh(me)
+    bm.free()
+    print("decal islands grown:", len(groups), "x%.1f" % factor)
 
 
 def bake(ob, kit, size=2048, samples=64):
@@ -1360,9 +1429,10 @@ def write_shadow_p3d(path, shadow):
     e = 0.0005
     tri = [((c[0], c[1], c[2]), n, (0.0, 0.0)), ((c[0] + e, c[1], c[2]), n, (0.0, 0.0)),
            ((c[0], c[1] + e, c[2]), n, (0.0, 0.0))]
-    # pulled 2.5 mm inside the kit's surface, so the caster does not shade the kit it sits in
+    # pulled 8 mm inside the kit's surface (4 mm on thin sides), so the caster does not shade the kit
+    # it sits in - the ground shadow hardly changes
     size = (max(xs) - min(xs), max(ys) - min(ys), max(zs) - min(zs))
-    k = [(d - 0.005) / d if d > 0.01 else 1.0 for d in size]
+    k = [(d - min(0.016, d * 0.25)) / d if d > 0.01 else 1.0 for d in size]
     shadow = [[(tuple(c[i] + (p[0][i] - c[i]) * k[i] for i in range(3)),) + tuple(p[1:]) for p in t] for t in shadow]
     lods = []
     data, npt, nf = lod_bytes(1.0, [tri], "#(argb,8,8,3)color(0,0,0,0)", "")

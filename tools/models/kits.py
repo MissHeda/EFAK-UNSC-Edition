@@ -164,17 +164,26 @@ def ifak():
         # raised label field on the lid
         box((0.128, 0.003, 0.066), (0, -D / 2 - 0.009, 0.07), "olive_dark", cut=0.006, axis="y", bevel=0.001,
             segs=1)
-        # finger notch to open the lid, top middle - the side of the red pull tab
-        box((0.03, 0.003, 0.008), (0, lf - 0.0015, 0.112), "olive_dark", cut=0.003, axis="y", bevel=0.0012, segs=1)
     lid_axis((-0.07, lf + 0.001, 0.008), (0.07, lf + 0.001, 0.008))
-    decal("ifak_label", (0, -D / 2 - 0.0105, 0.07), F, UP, 0.104, depth=0.003)
+    # the label reads from the latch side (the case lies on its back, latch towards the user)
+    decal("ifak_label", (0, -D / 2 - 0.0105, 0.07), F, DOWN, 0.1, depth=0.003)
     # hinge along the foot of the lid, so it opens on the side of the red pull tab
     hinge((-0.055, lf + 0.001, 0.008), (0.055, lf + 0.001, 0.008), r=0.0032, knuckles=5)
-    # pull tab on top, and its loop
-    box((0.05, 0.018, 0.012), (0, -0.012, H + 0.004), "red", cut=0.004, axis="y", bevel=0.002, segs=2)
-    box((0.03, 0.006, 0.02), (0, -0.024, H + 0.012), "red", cut=0.006, cuts=(0, 0, 1, 1), axis="y",
-        bevel=0.0015, segs=2)
-    bolt((0, -0.012, H + 0.01), UP, 0.003)
+    # the latch: a keeper screwed to the top, a clasp on a pin reaching over the lid's free edge, and
+    # the red pull tab hanging from the clasp - pull it and the clasp lets go of the lid
+    with cluster():
+        box((0.044, 0.018, 0.005), (0, -0.008, H + 0.0025), "black_metal", cut=0.004, bevel=0.0012, segs=1)
+        for sx in (-1, 1):
+            box((0.005, 0.008, 0.008), (sx * 0.0175, -0.0135, H + 0.006), "black_metal", bevel=0.001, segs=1)
+            screw((sx * 0.012, -0.004, H + 0.005), UP, r=0.0022)
+        cyl(0.0024, 0.04, (0, -0.0135, H + 0.0075), "steel", axis="x", n=12, bevel=0.0006)
+        box((0.03, 0.026, 0.003), (0, -0.0255, H + 0.0085), "black_metal", bevel=0.0009, segs=1)
+        box((0.03, 0.003, 0.024), (0, -D / 2 - 0.0105, H - 0.004), "black_metal", bevel=0.0009, segs=1)
+        box((0.03, 0.006, 0.003), (0, -D / 2 - 0.0085, H - 0.0145), "black_metal", bevel=0.0008, segs=1)
+        box((0.022, 0.004, 0.02), (0, -D / 2 - 0.0135, H - 0.02), "red", cut=0.005, cuts=(0, 0, 1, 1), axis="y",
+            bevel=0.0012, segs=2)
+        for k in range(3):
+            box((0.016, 0.0012, 0.0016), (0, -D / 2 - 0.0158, H - 0.016 - k * 0.004), "red", bevel=0.0004, segs=1)
     # grip ribs on both sides
     for sx in (-1, 1):
         for k in range(2):
