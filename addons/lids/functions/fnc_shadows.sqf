@@ -21,16 +21,22 @@
 params [["_scan", false]];
 
 if (_scan) then {
-    private _seen = [];
+    private _seen = createHashMap;
 
     {
         private _holder = _x;
 
         if (_holder getVariable [QGVAR(copy), false]) then {continue};
-        if ((itemCargo _holder) findIf {([_x] call FUNC(propOf)) isNotEqualTo ""} == -1) then {continue};
+        if (((getItemCargo _holder) select 0) findIf {([_x] call FUNC(propOf)) isNotEqualTo ""} == -1) then {continue};
 
-        private _key = hashValue _holder;
-        _seen pushBack _key;
+        // A number of its own per holder: hashValue goes by netId, which local holders share.
+        private _key = _holder getVariable QGVAR(key);
+        if (isNil "_key") then {
+            GVAR(nextKey) = GVAR(nextKey) + 1;
+            _key = GVAR(nextKey);
+            _holder setVariable [QGVAR(key), _key];
+        };
+        _seen set [_key, true];
 
         private _pieces = [_holder] call FUNC(holderPieces);
         private _known = GVAR(casters) getOrDefault [_key, []];

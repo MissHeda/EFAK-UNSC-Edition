@@ -4,14 +4,16 @@ ADDON = false;
 
 #include "XEH_PREP.hpp"
 
-// The holders shown open right now: [holder, [[prop, kit class]], copy, pieces, opened by, only kit].
+// The holders shown open right now: [holder, [[prop, kit class]], copy, pieces, opened by, only kit,
+// indices of the opened pieces].
 GVAR(open) = [];
 // Slots per holder model, see fnc_holderSlots.
 GVAR(slots) = createHashMap;
 // Prop class per item class, see fnc_propOf.
 GVAR(propOf) = createHashMap;
-// Shadow casters per holder (hashValue): [holder, pieces, [[caster, piece index, prop config]], last place].
+// Shadow casters per holder (its efku_lids_key): [holder, pieces, [[caster, piece index, prop config]], last place].
 GVAR(casters) = createHashMap;
+GVAR(nextKey) = 0;
 GVAR(tick) = 0;
 // What EFAK's kit window shows on the ground: [holder, kit class] or [].
 GVAR(kitWindow) = [];

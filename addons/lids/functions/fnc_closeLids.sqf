@@ -43,6 +43,8 @@ GVAR(open) = GVAR(open) - _closing;
     if (_swing isEqualTo []) then {
         [_holder, [], _copy] call FUNC(restoreHolder);
     } else {
+        // Marks this close as the latest, see fnc_restoreHolder.
+        _holder setVariable [QGVAR(closing), _swing];
         [FUNC(restoreHolder), [_holder, _swing, _copy], 1.05] call CBA_fnc_waitAndExecute;
     };
 } forEach _closing;

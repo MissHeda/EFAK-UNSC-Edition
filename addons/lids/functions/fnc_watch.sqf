@@ -42,8 +42,9 @@ if (_want isNotEqualTo [] && {(GVAR(open) findIf {(_x select 0) isEqualTo (_want
     _x params ["_holder", "_props", "_copy", "_pieces", "_by", "_only"];
 
     if (isNull _holder || {([_holder] call FUNC(holderPieces)) isNotEqualTo _pieces}) then {
-        {deleteVehicle (_x select 0)} forEach _props;
+        // Found before the props go: deleted props of two gone holders would look alike.
         GVAR(open) deleteAt (GVAR(open) findIf {(_x select 0) isEqualTo _holder && {(_x select 1) isEqualTo _props}});
+        {deleteVehicle (_x select 0)} forEach _props;
         [_holder, [], _copy] call FUNC(restoreHolder);
         [_holder, _only, _by, true] call FUNC(openHolder);
     };
