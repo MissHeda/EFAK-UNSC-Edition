@@ -25,6 +25,7 @@ def _fail(kind, value, tb):
 
 sys.excepthook = _fail
 import kits  # noqa: E402
+from mathutils import Matrix, Vector  # noqa: E402
 
 argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 kit = argv[0]
@@ -39,6 +40,15 @@ U.reset()
 U.SHADOW[0] = True
 kits.BUILDERS[kit]()
 shadow_ob = U.assemble(kit + "_shadow")
+# A kit that lies on its back in the game is turned only on export, then set down again: centred on
+# the origin, its lowest point on it - where a holder puts the model.
+if kit in kits.EXPORT_ROT:
+    rot = U._euler(kits.EXPORT_ROT[kit]).to_matrix().to_4x4()
+    pts = [rot @ (shadow_ob.matrix_world @ v.co) for v in shadow_ob.data.vertices]
+    lo = Vector((min(p.x for p in pts), min(p.y for p in pts), min(p.z for p in pts)))
+    hi = Vector((max(p.x for p in pts), max(p.y for p in pts), max(p.z for p in pts)))
+    U.EXPORT[0] = Matrix.Translation((-(lo.x + hi.x) / 2, -(lo.y + hi.y) / 2, -lo.z)) @ rot
+    print("export turn", kits.EXPORT_ROT[kit], "shift", tuple(round(c, 4) for c in U.EXPORT[0].translation))
 shadow_tris = U.mesh_tris(U.lod_mesh(shadow_ob, 1.0), use_comp=True)
 print("shadow parts:", len({t[0][4] for t in shadow_tris}), "triangles:", len(shadow_tris))
 open_edges = U.shadow_open_edges(shadow_tris)

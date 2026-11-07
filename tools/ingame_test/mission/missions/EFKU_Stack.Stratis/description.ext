@@ -1,0 +1,4 @@
+briefing = 0;
+debriefing = 0;
+respawn = "BASE";
+enableDebugConsole = 2;

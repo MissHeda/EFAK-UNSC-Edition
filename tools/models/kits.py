@@ -834,5 +834,9 @@ BUILDERS = {
 }
 
 
+# Kits that lie differently in the game than they are built (degrees about x, y, z): the IFAK lies
+# on its back, the label up, the way a belt case is put down.
+EXPORT_ROT = {"ifak": (-90, 0, 0)}
+
 ADDON = {k: "kits" for k in ("ifak", "afak", "mfak", "mfakplus", "narcbox")}
 ADDON.update({k: "eup" for k in ("utility_pouch", "ammo_pouch", "ammo_bag", "engineer_bag", "cbrn_bag")})

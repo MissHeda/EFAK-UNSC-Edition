@@ -1165,11 +1165,21 @@ def hull_tris(me, inflate=0.0):
     return tris
 
 
+# How a kit lies in the game, if not the way it is built: a 4x4 Matrix applied to everything written
+# to the p3d (LODs, shadow, geometry, memory points) but not to the bake or the icons. See
+# build_kit.py and kits.EXPORT_ROT.
+EXPORT = [None]
+
+
 def _to_game(v):
+    if EXPORT[0] is not None:
+        v = EXPORT[0] @ Vector(v)
     return (v[0], -v[1], v[2])
 
 
 def _to_game_n(n):
+    if EXPORT[0] is not None:
+        n = (EXPORT[0].to_3x3() @ Vector(n)).normalized()
     return (n[0], -n[1], n[2])
 
 

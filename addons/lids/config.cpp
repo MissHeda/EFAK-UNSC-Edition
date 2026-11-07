@@ -27,6 +27,21 @@ class CfgSounds {
     LID_SOUND(pouch_close);
 };
 
+// Take opened kits' places on the holder's copy, so the rest of the pile keeps its slots (see
+// fnc_openHolder): one class per kit entry, STAND_INS of them. Never in anyone's hands.
+#define STAND_IN(N) class DOUBLES(GVAR(standIn),N): GVAR(standIn) {}
+class CfgWeapons {
+    class FirstAidKit;
+    class GVAR(standIn): FirstAidKit {
+        scope = 1;
+        scopeCurator = 0;
+        scopeArsenal = 0;
+        model = "\A3\Weapons_F\empty.p3d";
+    };
+    STAND_IN(0); STAND_IN(1); STAND_IN(2); STAND_IN(3); STAND_IN(4); STAND_IN(5);
+    STAND_IN(6); STAND_IN(7); STAND_IN(8); STAND_IN(9); STAND_IN(10); STAND_IN(11);
+};
+
 class Extended_PreInit_EventHandlers {
     class ADDON {
         init = QUOTE(call COMPILE_FILE(XEH_preInit));

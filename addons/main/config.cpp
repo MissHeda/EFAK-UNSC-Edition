@@ -17,7 +17,7 @@ class CfgPatches {
 
 // What efku_lids puts in place of a kit lying on the ground while someone has the inventory open: the
 // kit's own model, whose lid can swing open (model.cfg). Each kit class names its prop in efku_lidProp.
-//   efku_offset[]  where the kit sits in its ground holder, in the holder's model space (metres)
+//   efku_offset[]  a small correction to where the holder puts the kit, in its slot's frame (metres: right, forward, up)
 //   efku_sound     the lid's sound set in efku_lids: case, med or pouch
 //   efku_turn      how far the kit is turned in the holder, degrees about its up axis (0: its front
 //                  faces the holder's direction, as measured in game)
@@ -28,7 +28,7 @@ class CfgVehicles {
         scopeCurator = 0;
         displayName = "UNSC kit";
         destrType = "DestructNo";
-        efku_offset[] = {0.1075, -0.0145, 0};
+        efku_offset[] = {0.0044, 0, 0};
         efku_sound = "case";
         efku_turn = 0;
         class AnimationSources {

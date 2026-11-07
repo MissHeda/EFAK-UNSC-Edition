@@ -4,14 +4,19 @@ ADDON = false;
 
 #include "XEH_PREP.hpp"
 
-// The kits shown open right now: [holder, prop, item class].
+// The holders shown open right now: [holder, [[prop, kit class]], copy, pieces, opened by, only kit].
 GVAR(open) = [];
+// Slots per holder model, see fnc_holderSlots.
+GVAR(slots) = createHashMap;
+// What EFAK's kit window shows on the ground: [holder, kit class] or [].
+GVAR(kitWindow) = [];
 
 [
     QGVAR(enabled),
     "CHECKBOX",
-    ["Open kit lids", "When you open the inventory on a kit lying on its own on the ground,
-its lid swings open while you look inside.
+    ["Open kit lids", "When you open the inventory on kits lying
+on the ground, or a kit's window, their lids
+swing open while you look inside.
 
 Only you see it."],
     "EFAK: UNSC Edition",

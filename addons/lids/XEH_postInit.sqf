@@ -17,6 +17,9 @@ if (!hasInterface) exitWith {};
     params ["_unit"];
 
     if (_unit isEqualTo (call CBA_fnc_currentUnit)) then {
-        call FUNC(closeLids);
+        ["inventory"] call FUNC(closeLids);
     };
 }] call CBA_fnc_addClassEventHandler;
+
+// The kit window, and holders that change while open.
+[{call FUNC(watch)}, 0.2] call CBA_fnc_addPerFrameHandler;
