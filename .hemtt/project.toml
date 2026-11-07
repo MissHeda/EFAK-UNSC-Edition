@@ -24,10 +24,12 @@ workshop = [
     "450814997",  # CBA_A3
     "463939057",  # ACE3
     "3809430149", # Enhanced First Aid Kits
+    "3812667721", # Enhanced Utility Pouches
 ]
 
 [hemtt.launch.local-efak]
 workshop = [
     "450814997",  # CBA_A3
     "463939057",  # ACE3
+    "3812667721", # Enhanced Utility Pouches
 ]
