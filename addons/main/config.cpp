@@ -18,7 +18,8 @@ class CfgPatches {
 // What efku_lids puts in place of a kit lying on the ground while someone has the inventory open: the
 // kit's own model, whose lid can swing open (model.cfg). Each kit class names its prop in efku_lidProp.
 //   efku_offset[]  where the kit sits in its ground holder, in the holder's model space (metres)
-//   efku_turn      how far the kit is turned in the holder, degrees about its up axis
+//   efku_turn      how far the kit is turned in the holder, degrees about its up axis (0: its front
+//                  faces against the holder's direction, as measured in game)
 class CfgVehicles {
     class NonStrategic;
     class efku_LidProp: NonStrategic {

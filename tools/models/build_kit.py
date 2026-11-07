@@ -51,6 +51,9 @@ U.LID_AXIS.clear()
 
 U.reset()
 size = kits.BUILDERS[kit]()
+overlaps = U.check_overlaps()
+for line in overlaps:
+    print("OVERLAP", kit, line)
 ob = U.assemble(kit)
 print("parts joined:", len(ob.data.polygons), "faces")
 problems = U.check_decals(ob)
@@ -58,9 +61,12 @@ for line in problems:
     print("DECAL", kit, line)
 if "--check" in argv:
     print("DECALCHECK", kit, "ok" if not problems else "%d problems" % len(problems))
+    print("OVERLAPCHECK", kit, "ok" if not overlaps else "%d problems" % len(overlaps))
     sys.exit(0)
 if problems and not fast:
     raise SystemExit("decals of %s run over edges or lack room, see DECAL lines above" % kit)
+if overlaps and not fast:
+    raise SystemExit("small parts of %s run into each other, see OVERLAP lines above" % kit)
 U.unwrap(ob, margin=0.003)
 
 if fast:

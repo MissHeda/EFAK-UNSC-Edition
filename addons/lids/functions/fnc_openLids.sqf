@@ -43,9 +43,23 @@ params ["", "_container", ["_second", objNull]];
     if (count _offset != 3) then {_offset = [0, 0, 0]};
     private _turn = getNumber (_propConfig >> "efku_turn");
 
+    // Where the kit lies: on whatever surface is under the holder (ground, a table, a crate), not at
+    // the holder's own centre, which floats above it.
+    private _ground = getPosASLVisual _holder;
+    private _hits = lineIntersectsSurfaces [_ground vectorAdd [0, 0, 0.5], _ground vectorAdd [0, 0, -2], _holder, objNull, true, 1, "GEOM", "NONE"];
+    if (_hits isNotEqualTo []) then {
+        _ground = (_hits select 0) select 0;
+    };
+
+    // In a holder a kit shows its front against the holder's own direction (measured in game). The
+    // kit models are built with their top along the model's y axis and their front along z (the
+    // way a holder shows items upright), so the prop points y up and z where the front faces.
+    private _front = _holder vectorModelToWorldVisual [-(sin _turn), -(cos _turn), 0];
+    _front = vectorNormalized [_front select 0, _front select 1, 0];
+
     private _prop = _propClass createVehicleLocal [0, 0, 0];
-    _prop setVectorDirAndUp [_holder vectorModelToWorldVisual [sin _turn, cos _turn, 0], vectorUpVisual _holder];
-    _prop setPosWorld (_holder modelToWorldVisualWorld _offset);
+    _prop setVectorDirAndUp [[0, 0, 1], _front];
+    _prop setPosWorld (_ground vectorAdd (_holder vectorModelToWorldVisual _offset));
 
     _holder hideObject true;
     _prop animateSource ["lid", 1];

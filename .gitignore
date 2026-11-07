@@ -11,3 +11,4 @@ hemtt.exe
 ## Python
 __pycache__/
 tools/models/out/
+tools/ingame_test/out/

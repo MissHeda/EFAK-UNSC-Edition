@@ -5,8 +5,8 @@ pouches of Enhanced Utility Pouches into addons/eup (ADDON below).
 """
 import math
 
-from unsc_lib import (box, bolt, cyl, decal, frame, hinge, lbox, lcyl, lid, lid_axis, plate, prism, rect, rivets,
-                      rrect, screw, toggle_latch, vents)
+from unsc_lib import (box, bolt, cluster, clustered, cyl, decal, frame, hinge, lbox, lcyl, lid, lid_axis, plate,
+                      prism, rect, rivets, rrect, screw, toggle_latch, vents)
 
 F = (0, -1, 0)   # front normal
 B = (0, 1, 0)
@@ -35,6 +35,7 @@ def feet(xs, ys, z=0.0, size=0.022, look="rubber"):
                  bevel=0.0008)
 
 
+@clustered
 def molle_back(W, D, H, y0, look="dark_poly"):
     """MOLLE back plate with two straps and snaps, on the back face at y0."""
     box((W * 0.78, 0.01, H * 0.9), (0, y0 + 0.005, H * 0.49), look, cut=0.012, axis="y", bevel=0.002, segs=2)
@@ -48,6 +49,7 @@ def molle_back(W, D, H, y0, look="dark_poly"):
         screw((-W * 0.33, y0 + 0.01, sz), B)
 
 
+@clustered
 def carry_handle(cx, cy, z, length, look="rubber"):
     """Folding top handle: two pivot mounts, a steel bar and a rubber grip, lying flat."""
     for sx in (-1, 1):
@@ -58,6 +60,7 @@ def carry_handle(cx, cy, z, length, look="rubber"):
     cyl(0.0085, length * 0.72, (cx, cy, z + 0.008), look, axis="x", n=16, bevel=0.002, segs=2)
 
 
+@clustered
 def side_handle(x, sx, z, look="black_metal"):
     """Fixed side handle: two mounts with bolts and a bar."""
     for sy in (-1, 1):
@@ -206,9 +209,10 @@ def afak():
             a = math.degrees(math.atan2(nx, -ny))
             prism(rect(0.04, 0.016, 0.004), 0.003, "red_reflector", (cx, cy, base_h / 2), (90, 0, a),
                   bevel=0.0008, segs=1)
-    # status lens
-    cyl(0.006, 0.003, (0.105, -0.085, top + 0.0005), "black_metal", n=20)
-    cyl(0.0038, 0.003, (0.105, -0.085, top + 0.0015), "green_lens", n=20)
+    # status lens of the sterile field generator, front right, clear of the reflector
+    with cluster():
+        cyl(0.006, 0.003, (0.072, -0.108, top + 0.0005), "black_metal", n=20)
+        cyl(0.0038, 0.003, (0.072, -0.108, top + 0.0015), "green_lens", n=20)
     lid().__exit__()
     # rubber grips front and back, ribbed, bolted at the ends
     for sy in (-1, 1):
@@ -220,9 +224,10 @@ def afak():
             bolt((sx * 0.092, y + sy * 0.0155, 0.04), (0, sy, 0), 0.003)
     # latches on both grips
     for sy in (-1, 1):
-        box((0.034, 0.01, 0.032), (0, sy * (D / 2 + 0.0215), 0.04), "steel", cut=0.005, axis="y", bevel=0.0015,
-            segs=2)
-        box((0.018, 0.004, 0.006), (0, sy * (D / 2 + 0.0275), 0.048), "black_metal", bevel=0.0008, segs=1)
+        with cluster():
+            box((0.034, 0.01, 0.032), (0, sy * (D / 2 + 0.0215), 0.04), "steel", cut=0.005, axis="y",
+                bevel=0.0015, segs=2)
+            box((0.018, 0.004, 0.006), (0, sy * (D / 2 + 0.0275), 0.048), "black_metal", bevel=0.0008, segs=1)
     # labels
     decal("afak_label", (0, -0.095, top), UP, B, 0.12, depth=0.003)
     decal("serial_white", (0, 0.098, top), UP, (0, -1, 0), 0.08, depth=0.003)
@@ -297,31 +302,36 @@ def narcbox():
     decal("narc_yellow", (0, 0, top + 0.0015), UP, B, 0.2, depth=0.003)
     # latches over the seam on the front
     fy = -D / 2
-    for sx in (-0.085, 0.085):
-        box((0.05, 0.014, 0.05), (sx, fy - 0.004, 0.046), "latch_grey", cut=0.006, axis="y", bevel=0.003, segs=2)
-        for dz in (-0.009, 0.0, 0.009):
-            box((0.034, 0.004, 0.0035), (sx, fy - 0.012, 0.046 + dz), "latch_grey", bevel=0.0008, segs=1)
-        with lid():
-            box((0.056, 0.01, 0.012), (sx, fy - 0.002, 0.075), "latch_grey", bevel=0.003, segs=2)
-            cyl(0.003, 0.058, (sx, fy - 0.008, 0.075), "steel", axis="x", n=10)
+    # (latches, hinges and feet stay clear of the corner bumpers, which reach in to x = 0.102)
+    for sx in (-0.078, 0.078):
+        with cluster():
+            box((0.05, 0.014, 0.05), (sx, fy - 0.004, 0.046), "latch_grey", cut=0.006, axis="y", bevel=0.003,
+                segs=2)
+            for dz in (-0.009, 0.0, 0.009):
+                box((0.034, 0.004, 0.0035), (sx, fy - 0.012, 0.046 + dz), "latch_grey", bevel=0.0008, segs=1)
+            with lid():
+                box((0.046, 0.01, 0.012), (sx, fy - 0.002, 0.075), "latch_grey", bevel=0.003, segs=2)
+                cyl(0.003, 0.048, (sx, fy - 0.008, 0.075), "steel", axis="x", n=10)
     # padlock hasp in the middle
-    Fh = frame((0, fy - 0.0025, 0.046), F, UP)
-    lbox(Fh, (0.026, 0.03, 0.003), (0, 0, 0), "steel", cut=0.003, bevel=0.0006)
-    for sx in (-1, 1):
-        lbox(Fh, (0.004, 0.012, 0.012), (sx * 0.007, -0.004, 0.003), "steel", bevel=0.0008)
-    lcyl(Fh, 0.0022, 0.02, (0, -0.004, 0.013), "steel", n=10, axis="x")
-    screw((-0.009, fy - 0.0055, 0.056), F, 0.002, "steel")
-    screw((0.009, fy - 0.0055, 0.056), F, 0.002, "steel")
+    with cluster():
+        Fh = frame((0, fy - 0.0025, 0.046), F, UP)
+        lbox(Fh, (0.026, 0.03, 0.003), (0, 0, 0), "steel", cut=0.003, bevel=0.0006)
+        for sx in (-1, 1):
+            lbox(Fh, (0.004, 0.012, 0.012), (sx * 0.007, -0.004, 0.003), "steel", bevel=0.0008)
+        lcyl(Fh, 0.0022, 0.02, (0, -0.004, 0.013), "steel", n=10, axis="x")
+        screw((-0.009, fy - 0.0055, 0.056), F, 0.002, "steel")
+        screw((0.009, fy - 0.0055, 0.056), F, 0.002, "steel")
     # hinges on the back
-    for sx in (-0.08, 0.08):
-        hinge((sx - 0.03, D / 2 + 0.002, 0.046), (sx + 0.03, D / 2 + 0.002, 0.046), r=0.006, knuckles=3,
+    for sx in (-0.072, 0.072):
+        hinge((sx - 0.026, D / 2 + 0.002, 0.046), (sx + 0.026, D / 2 + 0.002, 0.046), r=0.006, knuckles=3,
               look="poly_green")
     # pressure relief valve on the left
-    Fv = frame((-W / 2, 0, 0.022), L_, UP)
-    lcyl(Fv, 0.011, 0.003, look="dark_poly", n=24, bevel=0.0008)
-    lcyl(Fv, 0.007, 0.006, (0, 0, 0.002), "dark_poly", n=20, bevel=0.0015, segs=2)
+    with cluster():
+        Fv = frame((-W / 2, 0, 0.022), L_, UP)
+        lcyl(Fv, 0.011, 0.003, look="dark_poly", n=24, bevel=0.0008)
+        lcyl(Fv, 0.007, 0.006, (0, 0, 0.002), "dark_poly", n=20, bevel=0.0015, segs=2)
     decal("hazard", (W / 2, 0, 0.022), R, UP, 0.07, depth=0.004)
-    feet((-0.1, 0.1), (-0.05, 0.05), size=0.018)
+    feet((-0.075, 0.075), (-0.042, 0.042), size=0.018)
     return 2048
 
 
@@ -344,6 +354,8 @@ def utility_pouch():
             axis="y", bevel=0.002, segs=2)
     decal("util_label", (0, flap_y - 0.003, H - 0.026), F, UP, 0.062, depth=0.003)
     for sx in (-1, 1):
+        cl = cluster()
+        cl.__enter__()
         x = sx * 0.047
         # strap: over the lid, down the flap, ending in the male half of the buckle below the flap
         Fb = frame((x, -D / 2 - 0.002, H - 0.066), F, UP)
@@ -357,6 +369,7 @@ def utility_pouch():
         # female half on a short strap sewn to the body
         lbox(Fb, (0.026, 0.016, 0.006), (0, -0.01, 0.0), "dark_poly", cut=0.004, cuts=(1, 1, 0, 0), bevel=0.0012)
         box((0.02, 0.003, 0.03), (x, -D / 2 - 0.0005, H - 0.098), "webbing", bevel=0.0008, segs=1)
+        cl.__exit__()
     # side compression straps
     for sx in (-1, 1):
         box((0.004, D * 0.8, 0.014), (sx * (W / 2 + 0.002), 0, 0.05), "webbing", bevel=0.001, segs=1)
@@ -377,7 +390,7 @@ def ammo_pouch():
         # rib down the outer side of each cell
         box((0.004, D * 0.7, 0.06), (sx * (W / 2 + 0.0005), 0, 0.05), "olive_dark", bevel=0.001, segs=1)
         # lid and its tongue down the front
-        with lid():
+        with lid(), cluster():
             box((0.05, D + 0.006, 0.012), (x, 0, H - 0.006), "olive_dark", cut=0.004, bevel=0.003, segs=2)
             box((0.032, 0.005, 0.034), (x, -D / 2 - 0.003, H - 0.024), "olive_dark", cut=0.008,
                 cuts=(1, 1, 0, 0), axis="y", bevel=0.0015, segs=2)
@@ -448,6 +461,8 @@ def cbrn_bag():
     fy = c["front"]
     # seal gauge
     gz = c["mid"] + 0.01
+    gauge = cluster()
+    gauge.__enter__()
     Fg = frame((0.1, fy, gz), F, UP)
     lcyl(Fg, 0.03, 0.006, look="black_metal", n=36, bevel=0.0015, segs=2)
     lcyl(Fg, 0.024, 0.0075, look="dial", n=36, bevel=0.0004)
@@ -455,22 +470,335 @@ def cbrn_bag():
     for k in range(4):
         a = math.radians(45 + 90 * k)
         screw((0.1 + 0.027 * math.cos(a), fy - 0.006, gz + 0.027 * math.sin(a)), F, 0.0016, "steel")
+    gauge.__exit__()
     decal("cbrn_label", (-0.045, fy, gz), F, UP, 0.16, depth=0.004)
     decal("wordmark_white", (c["lid_x"] - 0.034, c["lid_front"], c["lid_z"]), F, UP, 0.05, depth=0.003)
     # purge valve with a red knob on the right end cap, above the grip
-    Fv = frame((W / 2 + 0.001, 0.0, c["zl"] - 0.022), R, UP)
-    lcyl(Fv, 0.013, 0.005, look="steel", n=6, bevel=0.0008)
-    lcyl(Fv, 0.006, 0.01, (0, 0, 0.004), "steel", n=16)
-    lcyl(Fv, 0.01, 0.008, (0, 0, 0.012), "red", n=12, bevel=0.002, segs=2)
+    with cluster():
+        Fv = frame((W / 2 + 0.001, 0.0, c["zl"] - 0.022), R, UP)
+        lcyl(Fv, 0.013, 0.005, look="steel", n=6, bevel=0.0008)
+        lcyl(Fv, 0.006, 0.01, (0, 0, 0.004), "steel", n=16)
+        lcyl(Fv, 0.01, 0.008, (0, 0, 0.012), "red", n=12, bevel=0.002, segs=2)
     decal("cbrn_label", (0.0, c["back"], c["mid"]), B, UP, 0.12, depth=0.004)
     decal("sticker_orange", (-0.13, 0.06, c["top"]), UP, B, 0.06, depth=0.006)
     decal("side_up_white", (-W / 2, 0, c["zb"] + 0.034), L_, UP, 0.06, depth=0.006)
     return 4096
 
 
-BUILDERS = {"ifak": ifak, "afak": afak, "mfak": mfak, "mfakplus": mfakplus, "narcbox": narcbox,
-            "utility_pouch": utility_pouch, "ammo_pouch": ammo_pouch, "ammo_bag": ammo_bag,
-            "engineer_bag": engineer_bag, "cbrn_bag": cbrn_bag}
+# ===================================================================================================
+# What is packed inside - seen when a lid opens (efku_lids). Every piece sits under the closed lid, so
+# the lid hides it; it casts no shadow and leaves the far LODs.
+# ===================================================================================================
+from unsc_lib import contents  # noqa: E402
+
+
+def foam(size, center, profile=None):
+    """A foam insert: the dark bed the contents sit in."""
+    sx, sy, sz = size
+    if profile is not None:
+        prism(profile, sz, "foam", (center[0], center[1], center[2] - sz / 2), bevel=0.0015, segs=2)
+    else:
+        box(size, center, "foam", bevel=0.0015, segs=2)
+    return center[2] + sz / 2
+
+
+@clustered
+def biofoam(c, axis="x", length=0.07, r=0.012):
+    """Biofoam canister lying in the foam: white body, red band, grey cap, red nozzle."""
+    x, y, z = c
+    d = (1, 0, 0) if axis == "x" else (0, 1, 0)
+    cyl(r, length, (x, y, z), "biofoam", axis=axis, n=18, bevel=0.002, segs=2)
+    off = length * 0.22
+    cyl(r + 0.0006, 0.008, (x - d[0] * off, y - d[1] * off, z), "red", axis=axis, n=18, bevel=0.0006)
+    end = length / 2 + 0.006
+    cyl(r * 0.7, 0.012, (x + d[0] * end, y + d[1] * end, z), "dark_poly", axis=axis, n=14, bevel=0.0015)
+    tip = length / 2 + 0.014
+    cyl(r * 0.25, 0.008, (x + d[0] * tip, y + d[1] * tip, z), "red", axis=axis, n=10, bevel=0.0005)
+
+
+@clustered
+def injector(c, axis="y", length=0.1, r=0.0055, cap="red"):
+    """Auto-injector: olive body, a window band, a coloured safety cap."""
+    x, y, z = c
+    d = (1, 0, 0) if axis == "x" else (0, 1, 0)
+    cyl(r, length, (x, y, z), "injector", axis=axis, n=14, bevel=0.0012)
+    cyl(r + 0.0004, length * 0.12, (x + d[0] * length * 0.15, y + d[1] * length * 0.15, z), "glass", axis=axis,
+        n=14, bevel=0.0004)
+    e = length / 2 + 0.009
+    cyl(r + 0.0006, 0.018, (x + d[0] * e, y + d[1] * e, z), cap, axis=axis, n=14, bevel=0.0015, segs=2)
+
+
+@clustered
+def dressing(c, w=0.06, d=0.04, h=0.012, look="pack_olive", flat=True):
+    """A sealed dressing pack with a tear strip."""
+    x, y, z = c
+    if flat:
+        box((w, d, h), (x, y, z + h / 2), look, bevel=0.003, segs=2)
+        box((w * 0.9, 0.004, 0.0012), (x, y + d * 0.32, z + h + 0.0004), "red", bevel=0.0003, segs=1)
+    else:   # standing against a wall that faces -y (the IFAK's front)
+        box((w, h, d), (x, y - h / 2, z), look, bevel=0.0015, segs=1)
+        box((w * 0.9, 0.0012, 0.004), (x, y - h - 0.0004, z + d * 0.32), "red", bevel=0.0003, segs=1)
+
+
+@clustered
+def tourniquet(c, flat=True):
+    """Folded tourniquet: black strap bundle with its windlass and buckle."""
+    x, y, z = c
+    if flat:
+        box((0.07, 0.026, 0.012), (x, y, z + 0.006), "rubber", bevel=0.005, segs=2)
+        box((0.008, 0.032, 0.015), (x - 0.018, y, z + 0.0075), "red", bevel=0.002, segs=1)
+        box((0.012, 0.022, 0.014), (x + 0.026, y, z + 0.007), "steel", bevel=0.002, segs=1)
+    else:
+        box((0.026, 0.006, 0.06), (x, y - 0.003, z), "rubber", bevel=0.0025, segs=2)
+        box((0.03, 0.0065, 0.008), (x, y - 0.00325, z - 0.015), "red", bevel=0.001, segs=1)
+
+
+@clustered
+def suture_kit(c):
+    x, y, z = c
+    box((0.05, 0.036, 0.01), (x, y, z + 0.005), "pack_white", bevel=0.003, segs=2)
+    box((0.012, 0.03, 0.0012), (x - 0.016, y, z + 0.0104), "red", bevel=0.0003, segs=1)
+
+
+@clustered
+def vial(c, r=0.0065, h=0.03):
+    x, y, z = c
+    cyl(r, h, (x, y, z + h / 2), "glass_amber", n=14, bevel=0.0012)
+    cyl(r + 0.0004, 0.006, (x, y, z + h + 0.003), "steel", n=14, bevel=0.0012)
+
+
+@clustered
+def pill_box(c):
+    x, y, z = c
+    box((0.04, 0.026, 0.012), (x, y, z + 0.006), "pack_white", bevel=0.002, segs=1)
+    box((0.04, 0.008, 0.0012), (x, y - 0.006, z + 0.0124), "red", bevel=0.0003, segs=1)
+
+
+@clustered
+def mag_top(c, h=0.012):
+    """The top of an MA5 magazine standing in its slot: body, feed lips, the top round."""
+    x, y, z = c
+    box((0.03, 0.02, h), (x, y, z + h / 2), "dark_poly", cut=0.003, bevel=0.0012, segs=1)
+    box((0.026, 0.006, 0.003), (x, y, z + h + 0.0015), "black_metal", bevel=0.0006, segs=1)
+    cyl(0.0034, 0.016, (x, y - 0.001, z + h + 0.0034), "brass", axis="y", n=12, bevel=0.0008)
+    cyl(0.0022, 0.006, (x, y - 0.012, z + h + 0.0034), "steel", axis="y", n=10, bevel=0.0015, segs=2)
+
+
+@clustered
+def wrench(c, length=0.12):
+    x, y, z = c
+    box((length, 0.014, 0.006), (x, y, z + 0.003), "steel", bevel=0.0015, segs=1)
+    box((0.026, 0.03, 0.007), (x - length / 2, y, z + 0.0035), "steel", cut=0.006, bevel=0.0015, segs=1)
+    box((0.024, 0.026, 0.007), (x + length / 2, y, z + 0.0035), "steel", bevel=0.0015, segs=1)
+
+
+@clustered
+def screwdriver(c, look="orange"):
+    x, y, z = c
+    cyl(0.008, 0.05, (x - 0.03, y, z + 0.008), look, axis="x", n=8, bevel=0.002, segs=1)
+    cyl(0.0022, 0.06, (x + 0.025, y, z + 0.008), "steel", axis="x", n=8, bevel=0.0004)
+
+
+@clustered
+def multimeter(c):
+    x, y, z = c
+    box((0.06, 0.09, 0.02), (x, y, z + 0.01), "hazard_yellow", bevel=0.004, segs=2)
+    box((0.044, 0.026, 0.002), (x, y + 0.025, z + 0.0205), "glass", bevel=0.0005, segs=1)
+    cyl(0.012, 0.004, (x, y - 0.012, z + 0.021), "dark_poly", n=16, bevel=0.0008)
+    for k in (-1, 1):
+        cyl(0.003, 0.004, (x + k * 0.018, y - 0.035, z + 0.021), "red" if k > 0 else "dark_poly", n=10,
+            bevel=0.0006)
+
+
+@clustered
+def demo_block(c):
+    """A demolition charge: olive block, yellow tape, a detonator well."""
+    x, y, z = c
+    box((0.09, 0.05, 0.024), (x, y, z + 0.012), "olive", bevel=0.003, segs=2)
+    box((0.012, 0.052, 0.025), (x + 0.025, y, z + 0.0125), "hazard_yellow", bevel=0.001, segs=1)
+    cyl(0.006, 0.004, (x - 0.025, y, z + 0.025), "black_metal", n=12, bevel=0.0008)
+
+
+@clustered
+def cable_coil(c, r=0.03):
+    x, y, z = c
+    cyl(r, 0.012, (x, y, z + 0.006), "rubber", n=20, bevel=0.004, segs=2)
+    cyl(r * 0.45, 0.0125, (x, y, z + 0.0063), "foam", n=14, bevel=0.0008)
+
+
+@clustered
+def gas_mask(c):
+    """Gas mask lying face up: rubber body, visor, a filter on its cheek."""
+    x, y, z = c
+    prism(rrect(0.1, 0.075, 0.03, 4), 0.026, "rubber", (x, y, z), bevel=0.008, segs=2)
+    prism(rrect(0.07, 0.04, 0.016, 3), 0.004, "glass", (x, y + 0.008, z + 0.025), bevel=0.0015, segs=1)
+    cyl(0.018, 0.022, (x + 0.062, y - 0.01, z + 0.018), "olive_dark", axis="x", n=18, bevel=0.003, segs=2)
+
+
+@clustered
+def filter_can(c):
+    x, y, z = c
+    cyl(0.019, 0.024, (x, y, z + 0.012), "olive_dark", n=18, bevel=0.003, segs=2)
+    cyl(0.008, 0.0045, (x, y, z + 0.0265), "black_metal", n=12, bevel=0.0008)
+
+
+@clustered
+def field_generator(c):
+    """The AFAK's sterile field generator: a white puck with a red ring and a status lens."""
+    x, y, z = c
+    cyl(0.034, 0.016, (x, y, z + 0.008), "shell_white", n=28, bevel=0.003, segs=2)
+    cyl(0.0345, 0.004, (x, y, z + 0.008), "red", n=28, bevel=0.0008)
+    cyl(0.009, 0.003, (x, y, z + 0.0165), "black_metal", n=16, bevel=0.0006)
+    cyl(0.006, 0.003, (x, y, z + 0.0175), "green_lens", n=16, bevel=0.0006)
+
+
+@clustered
+def flashlight(c, length=0.09):
+    x, y, z = c
+    cyl(0.0065, length, (x, y, z), "black_metal", axis="x", n=14, bevel=0.0012)
+    cyl(0.0085, 0.02, (x + length / 2 - 0.01, y, z), "black_metal", axis="x", n=14, bevel=0.0015)
+    cyl(0.0072, 0.002, (x + length / 2 + 0.0005, y, z), "glass", axis="x", n=14, bevel=0.0004)
+
+
+def _case_fill_z(H, lid_h):
+    """Top of the foam in a UNSC case: on the seal under the lid."""
+    return H - lid_h + 0.0035
+
+
+def fill_medical_case(W, D, H, lid_h, cap, more=False):
+    inner = W - 2 * cap
+    with contents():
+        zf = foam((inner - 0.012, D - 0.012, 0.004), (0, 0, _case_fill_z(H, lid_h) + 0.002))
+        for k, y in enumerate((-0.08, -0.048, -0.016)):
+            biofoam((-0.09, y, zf + 0.007))
+        for k in range(6):
+            injector((0.03 + k * 0.018, -0.005, zf + 0.0035), cap="red" if k % 2 == 0 else "orange")
+        for x in (-0.11, -0.04):
+            dressing((x, 0.06, zf), 0.06, 0.04, 0.012)
+        tourniquet((0.1, 0.085, zf))
+        suture_kit((-0.01, -0.09, zf))
+        for x in (0.07, 0.13):
+            dressing((x, -0.092, zf), 0.05, 0.03, 0.01, look="pack_white")
+        pill_box((0.03, 0.088, zf))
+        if more:
+            dressing((0.155, 0.04, zf), 0.03, 0.05, 0.01, look="pack_white")
+
+
+def fill_ifak():
+    D = 0.06
+    with contents():
+        # flat on the front wall the lid closes over; nothing deeper than the lid itself
+        box((0.13, 0.002, 0.095), (0, -D / 2 - 0.001, 0.066), "foam", bevel=0.0008, segs=1)
+        wall = -D / 2 - 0.002
+        for x in (-0.045, -0.005):
+            dressing((x, wall, 0.075), 0.034, 0.05, 0.004, flat=False)
+        injector((0.012, wall - 0.0028, 0.032), axis="x", length=0.06, r=0.0026, cap="red")
+        tourniquet((0.045, wall, 0.078), flat=False)
+
+
+def fill_afak():
+    W, D, C = 0.36, 0.27, 0.06
+    with contents():
+        prism(rect(W - 0.05, D - 0.05, C - 0.02), 0.003, "foam", (0, 0, 0.04), bevel=0.0012, segs=1)
+        zf = 0.043
+        field_generator((0, 0, zf))
+        for x in (-0.13, -0.095, 0.095, 0.13):
+            biofoam((x, 0.0, zf + 0.006), axis="y", length=0.06, r=0.011)
+        for x in (-0.04, 0.04):
+            dressing((x, -0.07, zf), 0.05, 0.03, 0.01)
+        for y in (0.062, 0.084):
+            injector((0.0, y, zf + 0.0035), axis="x", length=0.1, cap="red")
+
+
+def fill_narcbox():
+    W, D = 0.30, 0.17
+    with contents():
+        prism(rrect(W - 0.03, D - 0.03, 0.02, 4), 0.003, "foam", (0, 0, 0.044), bevel=0.0012, segs=1)
+        zf = 0.047
+        for k in range(6):
+            injector((-0.09 + k * 0.018, -0.004, zf + 0.0035), length=0.1, cap="red" if k < 3 else "orange")
+        for x, y in ((0.04, -0.035), (0.07, -0.035), (0.04, -0.005), (0.07, -0.005)):
+            vial((x, y, zf))
+        for x in (0.035, 0.08):
+            pill_box((x, 0.045, zf))
+
+
+def fill_utility_pouch():
+    W, D, H = 0.15, 0.06, 0.118
+    with contents():
+        box((W - 0.02, D - 0.016, 0.002), (0, 0, H - 0.008), "foam", bevel=0.0006, segs=1)
+        z = H - 0.007
+        flashlight((-0.03, -0.006, z + 0.0005))
+        box((0.05, 0.018, 0.007), (0.042, -0.008, z + 0.0035), "steel", cut=0.004, bevel=0.0015, segs=1)
+        cyl(0.0055, 0.04, (0.042, 0.013, z + 0.0035), "olive_dark", axis="x", n=12, bevel=0.002, segs=1)
+
+
+def fill_ammo_pouch():
+    D, H = 0.056, 0.14
+    with contents():
+        for sx in (-1, 1):
+            x = sx * 0.025
+            box((0.04, D - 0.012, 0.0015), (x, 0, H - 0.0118), "foam", bevel=0.0004, segs=1)
+            mag_top((x, 0.002, H - 0.011), h=0.0016)
+
+
+def fill_ammo_bag():
+    W, D, H, lid_h, cap = 0.36, 0.18, 0.2, 0.042, 0.03
+    with contents():
+        zf = foam((W - 2 * cap - 0.012, D - 0.012, 0.004), (0, 0, _case_fill_z(H, lid_h) + 0.002))
+        for k in range(5):
+            for y in (-0.035, 0.035):
+                mag_top((-0.12 + k * 0.06, y, zf), h=0.02)
+
+
+def fill_engineer_bag():
+    W, D, H, lid_h, cap = 0.42, 0.21, 0.21, 0.046, 0.034
+    with contents():
+        zf = foam((W - 2 * cap - 0.012, D - 0.012, 0.004), (0, 0, _case_fill_z(H, lid_h) + 0.002))
+        wrench((-0.09, -0.065, zf))
+        screwdriver((-0.085, -0.035, zf), "orange")
+        screwdriver((-0.085, -0.01, zf), "red")
+        multimeter((0.12, -0.035, zf))
+        for x in (-0.1, 0.0):
+            demo_block((x, 0.05, zf))
+        cable_coil((0.12, 0.05, zf))
+
+
+def fill_cbrn_bag():
+    W, D, H, lid_h, cap = 0.4, 0.23, 0.24, 0.05, 0.034
+    with contents():
+        zf = foam((W - 2 * cap - 0.012, D - 0.012, 0.004), (0, 0, _case_fill_z(H, lid_h) + 0.002))
+        gas_mask((-0.085, 0.005, zf))
+        for x in (0.035, 0.08, 0.125):
+            filter_can((x, -0.06, zf))
+        for y in (0.03, 0.055, 0.08):
+            injector((0.08, y, zf + 0.0035), axis="x", length=0.1, cap="red")
+        for x in (-0.11, -0.055):
+            dressing((x, -0.08, zf), 0.045, 0.032, 0.01, look="pack_white")
+
+
+def _filled(builder, fill):
+    def build():
+        size = builder()
+        fill()
+        return size
+    build.__name__ = builder.__name__
+    return build
+
+
+BUILDERS = {
+    "ifak": _filled(ifak, fill_ifak),
+    "afak": _filled(afak, fill_afak),
+    "mfak": _filled(mfak, lambda: fill_medical_case(0.46, 0.25, 0.25, 0.048, 0.034)),
+    "mfakplus": _filled(mfakplus, lambda: fill_medical_case(0.44, 0.24, 0.36, 0.05, 0.034, more=True)),
+    "narcbox": _filled(narcbox, fill_narcbox),
+    "utility_pouch": _filled(utility_pouch, fill_utility_pouch),
+    "ammo_pouch": _filled(ammo_pouch, fill_ammo_pouch),
+    "ammo_bag": _filled(ammo_bag, fill_ammo_bag),
+    "engineer_bag": _filled(engineer_bag, fill_engineer_bag),
+    "cbrn_bag": _filled(cbrn_bag, fill_cbrn_bag),
+}
+
 
 ADDON = {k: "kits" for k in ("ifak", "afak", "mfak", "mfakplus", "narcbox")}
 ADDON.update({k: "eup" for k in ("utility_pouch", "ammo_pouch", "ammo_bag", "engineer_bag", "cbrn_bag")})

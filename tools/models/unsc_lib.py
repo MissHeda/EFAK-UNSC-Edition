@@ -82,6 +82,19 @@ LOOKS = {
     "unsc_olive": look(srgb(84, 90, 66), STEEL, wear=0.5, grime=0.55, spec=0.12, gloss=0.3, primer=PRIMER),
     "unsc_khaki": look(srgb(128, 118, 90), STEEL, wear=0.5, grime=0.55, spec=0.12, gloss=0.3, primer=PRIMER),
     "unsc_grey": look(srgb(104, 106, 104), STEEL, wear=0.5, grime=0.55, spec=0.14, gloss=0.32, primer=PRIMER),
+    # what is packed inside the cases
+    "foam": look(srgb(44, 46, 48), srgb(60, 62, 64), wear=0.1, grime=0.5, spec=0.03, gloss=0.08, pattern="stipple",
+                 grain=0.6, streaks=0.0, bevel=0.002),
+    "biofoam": look(srgb(214, 214, 206), srgb(160, 160, 152), wear=0.25, grime=0.35, spec=0.3, gloss=0.55,
+                    pattern="smooth", bevel=0.0015),
+    "injector": look(srgb(96, 102, 74), srgb(140, 140, 120), wear=0.2, grime=0.3, spec=0.25, gloss=0.45,
+                     pattern="smooth", bevel=0.001),
+    "pack_olive": look(srgb(112, 106, 80), srgb(140, 132, 104), wear=0.15, grime=0.4, spec=0.12, gloss=0.35,
+                       pattern="paint", grain=0.3, bevel=0.003),
+    "pack_white": look(srgb(222, 220, 212), srgb(180, 178, 170), wear=0.15, grime=0.35, spec=0.15, gloss=0.4,
+                       pattern="paint", grain=0.25, bevel=0.003),
+    "glass_amber": look(srgb(150, 86, 30), srgb(180, 120, 60), wear=0.05, grime=0.2, spec=0.85, gloss=0.92,
+                        pattern="smooth", grain=0.0, bevel=0.001),
     # EUP colours
     "hazard_yellow": look(srgb(206, 168, 44), STEEL, wear=0.55, grime=0.55, spec=0.16, gloss=0.38, primer=PRIMER),
     "hazmat_white": look(srgb(196, 196, 186), srgb(150, 150, 142), wear=0.35, grime=0.7, spec=0.2, gloss=0.42,
@@ -144,7 +157,35 @@ def reset():
 
 PARTS = []          # every object made, joined at the end
 PROJECTORS = []     # decals: dicts made by decal()
-GROUP = [""]        # the group new parts go into, see lid()
+GROUP = [""]        # the group new parts go into, see lid() and contents()
+CLUSTER = [None]    # parts made inside one helper share a cluster and may overlap, see check_overlaps()
+_CLUSTER_NEXT = [0]
+
+
+class cluster:
+    """with cluster(): ... - the parts made inside belong together (a bolt and its washer, a lens and
+    its bezel) and may overlap each other."""
+
+    def __enter__(self):
+        if CLUSTER[-1] is None:
+            _CLUSTER_NEXT[0] += 1
+            CLUSTER.append(_CLUSTER_NEXT[0])
+        else:
+            CLUSTER.append(CLUSTER[-1])
+
+    def __exit__(self, *a):
+        CLUSTER.pop()
+
+
+def clustered(fn):
+    """Decorator: everything a helper makes is one cluster."""
+    import functools
+
+    @functools.wraps(fn)
+    def wrap(*a, **k):
+        with cluster():
+            return fn(*a, **k)
+    return wrap
 SHADOW = [False]    # True while building the shadow LOD: sharp parts, no small ones, no decals
 LID_AXIS = []       # two points of the lid's hinge, see lid_axis()
 
@@ -155,6 +196,17 @@ class lid:
 
     def __enter__(self):
         GROUP.append("lid")
+
+    def __exit__(self, *a):
+        GROUP.pop()
+
+
+class contents:
+    """with contents(): ... - what is packed inside: hidden in the closed lid, seen when it opens. Casts
+    no shadow (it is inside) and drops out of the far LODs with the other small parts."""
+
+    def __enter__(self):
+        GROUP.append("contents")
 
     def __exit__(self, *a):
         GROUP.pop()
@@ -185,6 +237,11 @@ def _finish(bm, name, mat, matrix):
     bpy.context.scene.collection.objects.link(ob)
     ob.matrix_world = matrix
     ob["look"] = mat
+    if CLUSTER[-1] is None:
+        _CLUSTER_NEXT[0] += 1
+        ob["cluster"] = _CLUSTER_NEXT[0]
+    else:
+        ob["cluster"] = CLUSTER[-1]
     PARTS.append(ob)
     return ob
 
@@ -209,6 +266,8 @@ def prism(profile, depth, look="olive", loc=(0, 0, 0), rot=(0, 0, 0), bevel=0.00
           taper=0.0, matrix=None):
     """A 2D outline (local x, y; counter-clockwise) extruded along local z from 0 to depth, edges
     bevelled. taper shrinks the top outline by that much (a draft/chamfered top)."""
+    if SHADOW[0] and GROUP[-1] == "contents":
+        return None
     if SHADOW[0]:
         # The shadow LOD wants few, closed, sharp volumes: leave out what is too small to cast a
         # shadow that matters, thin out round outlines, drop the bevels.
@@ -330,6 +389,7 @@ def lcyl(F, r, h, at=(0, 0, 0), look="steel", n=16, bevel=0.0006, segs=1, axis="
     return prism(circle(r, n), h, look, bevel=bevel, segs=segs, matrix=m)
 
 
+@clustered
 def bolt(center, normal, r=0.0035, look="steel", up=(0, 0, 1)):
     """Hex-head bolt on a washer."""
     F = frame(center, normal, up)
@@ -338,6 +398,7 @@ def bolt(center, normal, r=0.0035, look="steel", up=(0, 0, 1)):
           matrix=F @ Matrix.Translation((0, 0, r * 0.26)))
 
 
+@clustered
 def screw(center, normal, r=0.0028, look="black_metal", up=(0, 0, 1)):
     """Flush pan-head screw with a slot."""
     F = frame(center, normal, up)
@@ -356,6 +417,7 @@ def rivets(p0, p1, normal, n, r=0.0022, look="steel"):
         rivet(tuple(a + (b - a) * t for a, b in zip(p0, p1)), normal, r, look)
 
 
+@clustered
 def toggle_latch(center, normal, up=(0, 0, 1), w=0.032, h=0.05, look="black_metal"):
     """Over-centre toggle latch: base plate on the body, lever, wire hook, keeper on the lid.
     center is where the seam is; the latch hangs below it and grips above it."""
@@ -374,6 +436,7 @@ def toggle_latch(center, normal, up=(0, 0, 1), w=0.032, h=0.05, look="black_meta
         lbox(F, (w * 0.8, h * 0.16, 0.0055), (0, h * 0.36, 0), look, cut=0.002, bevel=0.0008)
 
 
+@clustered
 def vents(center, normal, up, n, w, gap, fin=0.004, depth=0.003, look="dark_poly"):
     """A row of n louvre fins, w long, stacked along up with `gap` between, in a frame."""
     F = frame(center, normal, up)
@@ -384,6 +447,7 @@ def vents(center, normal, up, n, w, gap, fin=0.004, depth=0.003, look="dark_poly
         lbox(F, (w, fin, depth), (0, y, 0.0012), look, bevel=0.0007, taper=0.0008)
 
 
+@clustered
 def hinge(p0, p1, r=0.005, knuckles=5, look="black_metal"):
     """Piano-style hinge: knuckles along p0-p1 with small gaps, and a pin showing at the ends."""
     a, b = Vector(p0), Vector(p1)
@@ -401,6 +465,7 @@ def hinge(p0, p1, r=0.005, knuckles=5, look="black_metal"):
         prism(circle(r * 0.45, 10), 0.003, "steel", bevel=0.0003, segs=1, matrix=m)
 
 
+@clustered
 def plate(center, normal, up, w, h, look="steel", image=None, rivet_look="steel"):
     """Riveted data plate, optionally carrying a decal."""
     F = frame(center, normal, up)
@@ -425,6 +490,33 @@ def decal(image, center, normal, up, width, height=None, depth=0.01, looks=None,
         height = width * img.size[1] / img.size[0]
     PROJECTORS.append(dict(img=img, center=Vector(center), normal=Vector(normal).normalized(),
                            up=Vector(up).normalized(), w=width, h=height, depth=depth, looks=looks, check=check))
+
+
+# --- Overlap check -----------------------------------------------------------------------------------
+def check_overlaps(small=0.06, slack=0.0005):
+    """Small parts (largest size under `small`) of different clusters whose boxes run into each other by
+    more than `slack` in every direction - a lens sunk into a reflector, a screw through a plate. Run
+    before assemble(). Boxes are axis-aligned, so a turned part may be reported though it only comes
+    close; look at those."""
+    boxes = []
+    for ob in PARTS:
+        pts = [ob.matrix_world @ Vector(c) for c in ob.bound_box]
+        lo = [min(p[i] for p in pts) for i in range(3)]
+        hi = [max(p[i] for p in pts) for i in range(3)]
+        size = max(hi[i] - lo[i] for i in range(3))
+        boxes.append((ob, lo, hi, size))
+    problems = []
+    for i, (a, alo, ahi, asz) in enumerate(boxes):
+        if asz >= small:
+            continue
+        for b, blo, bhi, bsz in boxes[i + 1:]:
+            if bsz >= small or a["cluster"] == b["cluster"]:
+                continue
+            if all(min(ahi[k], bhi[k]) - max(alo[k], blo[k]) > slack for k in range(3)):
+                problems.append("%s (%s) runs into %s (%s) at %s" % (
+                    a.name, a["look"], b.name, b["look"],
+                    tuple(round((max(alo[k], blo[k]) + min(ahi[k], bhi[k])) / 2, 3) for k in range(3))))
+    return problems
 
 
 # --- Decal check -------------------------------------------------------------------------------------
@@ -820,6 +912,27 @@ def bake(ob, kit, size=2048, samples=64):
     scene.render.bake.margin = 24
     scene.render.bake.use_clear = True
     os.makedirs(os.path.join(OUT, kit), exist_ok=True)
+    # A closed lid lies on the body, so its inside and the body's top would bake as fully shaded and
+    # grimy - and both show when the lid opens. Lift the lid well clear for the bake, with the decals
+    # printed on it, and put it back afterwards. The UVs do not change, so the texture still fits.
+    lift = Vector((0.0, 0.0, 0.0))
+    lid_attr = ob.data.attributes.get("lid")
+    if LID_AXIS and lid_attr is not None:
+        from mathutils.bvhtree import BVHTree
+        tree = BVHTree.FromObject(ob, bpy.context.evaluated_depsgraph_get())
+        lid_v = [d.value > 0.5 for d in lid_attr.data]
+        lift = Vector((0.0, 0.0, 0.6))
+        moved = []
+        for p in PROJECTORS:
+            loc, nrm, idx, dist = tree.ray_cast(p["center"] + p["normal"] * 0.02, -p["normal"], 0.05)
+            if idx is not None and lid_v[ob.data.polygons[idx].vertices[0]]:
+                p["center"] = p["center"] + lift
+                moved.append(p)
+        for v, on in zip(ob.data.vertices, lid_v):
+            if on:
+                v.co += lift
+        ob.data.update()
+        print("lid lifted for the bake, with", len(moved), "decals")
     empties = [(k, dict(p, empty=_projector_empty(p, k))) for k, p in enumerate(PROJECTORS)]
 
     img = bpy.data.images.new("bake_" + kit, size, size, alpha=False)
@@ -859,6 +972,13 @@ def bake(ob, kit, size=2048, samples=64):
         target.save()
         paths[kind] = path
         print("baked", kind, path)
+    if lift.length:
+        for v, on in zip(ob.data.vertices, lid_v):
+            if on:
+                v.co -= lift
+        ob.data.update()
+        for p in moved:
+            p["center"] = p["center"] - lift
     return paths
 
 
@@ -1207,7 +1327,8 @@ def render_views(ob, paths, kit, views=("icon",), size=1024, samples=128):
     world.node_tree.nodes["Background"].inputs["Color"].default_value = (0.5, 0.55, 0.6, 1)
     world.node_tree.nodes["Background"].inputs["Strength"].default_value = 0.2
 
-    bb = [ob.matrix_world @ Vector(c) for c in ob.bound_box]
+    # from the vertices, not ob.bound_box, which can still hold the lid lifted for the bake
+    bb = [ob.matrix_world @ v.co for v in ob.data.vertices]
     lo = Vector((min(v.x for v in bb), min(v.y for v in bb), min(v.z for v in bb)))
     hi = Vector((max(v.x for v in bb), max(v.y for v in bb), max(v.z for v in bb)))
     centre = (lo + hi) / 2
