@@ -45,7 +45,7 @@ if (!hasInterface) exitWith {};
             diag_log format ["EFKUTEST SHOT m_%1_%2_item", _name, _view];
             sleep 1.5;
         } forEach _views;
-        [player, _h] call efku_lids_fnc_openLids;
+        [_h, "", "kit"] call efku_lids_fnc_openHolder;
         diag_log format ["EFKUTEST POS holder %1 prop %2", getPosWorld _h, getPosWorld ((efku_lids_open select ((count efku_lids_open) - 1)) select 1)];
         private _prop = (efku_lids_open select ((count efku_lids_open) - 1)) select 1;
         _prop animateSource ["lid", 0, true];

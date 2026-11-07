@@ -1,7 +1,7 @@
 #include "script_component.hpp"
 
-// Opens the lid of a kit lying on the ground while someone has the inventory open on it. Purely local
-// and visual: only the player looking sees it, nothing about the kit changes.
+// Opens the lid of a kit lying on the ground while its kit window (EFAK) is open, and only that kit's.
+// Purely local and visual: only the player looking sees it, nothing about the kit changes.
 class CfgPatches {
     class ADDON {
         name = COMPONENT_NAME;

@@ -6,7 +6,7 @@ pouches of Enhanced Utility Pouches into addons/eup (ADDON below).
 import math
 
 from unsc_lib import (box, bolt, cluster, clustered, cyl, decal, frame, hinge, inset, lbox, lcyl, lid, lid_axis,
-                      plate, prism, rect, rivets, rrect, screw, toggle_latch, vents)
+                      plate, prism, rect, rivets, rrect, screw, bail_latch, vents)
 
 F = (0, -1, 0)   # front normal
 B = (0, 1, 0)
@@ -118,10 +118,11 @@ def unsc_case(W, D, H, body, lid_h=0.048, base_h=0.026, cap=0.034, latches=2, ha
             lbox(frame((0, sy * (D / 2 - 0.018), top - 0.0005), UP, B), (W * 0.62, 0.008, 0.003), (0, 0, 0),
                  "frame_black", cut=0.003, bevel=0.0012)
     lid_axis((-W / 2, D / 2 + 0.008, zl + 0.004), (W / 2, D / 2 + 0.008, zl + 0.004))
-    # latches over the seam, hinge at the back
+    # draw latches over the seam (bracket on the body, keeper on the lid's skirt), hinge at the back
     xs = [0.0] if latches == 1 else [sx * inner * 0.3 for sx in (-1, 1)]
     for x in xs:
-        toggle_latch((x, -D / 2 - 0.0055, zl + 0.004), F, w=0.034, h=0.054, look="frame_black")
+        bail_latch((x, -D / 2, lb), F, UP, w=0.034, below=0.018, body_off=0.0, lid_off=0.008,
+                   look="frame_black")
     hinge((-inner * 0.4, D / 2 + 0.008, zl + 0.004), (inner * 0.4, D / 2 + 0.008, zl + 0.004), r=0.005,
           knuckles=7, look="frame_black")
     feet((-W / 2 + 0.05, W / 2 - 0.05), (-D / 2 + 0.04, D / 2 - 0.04), size=0.03)
@@ -169,21 +170,11 @@ def ifak():
     decal("ifak_label", (0, -D / 2 - 0.0105, 0.07), F, DOWN, 0.1, depth=0.003)
     # hinge along the foot of the lid, so it opens on the side of the red pull tab
     hinge((-0.055, lf + 0.001, 0.008), (0.055, lf + 0.001, 0.008), r=0.0032, knuckles=5)
-    # the latch: a keeper screwed to the top, a clasp on a pin reaching over the lid's free edge, and
-    # the red pull tab hanging from the clasp - pull it and the clasp lets go of the lid
-    with cluster():
-        box((0.044, 0.018, 0.005), (0, -0.008, H + 0.0025), "black_metal", cut=0.004, bevel=0.0012, segs=1)
-        for sx in (-1, 1):
-            box((0.005, 0.008, 0.008), (sx * 0.0175, -0.0135, H + 0.006), "black_metal", bevel=0.001, segs=1)
-            screw((sx * 0.012, -0.004, H + 0.005), UP, r=0.0022)
-        cyl(0.0024, 0.04, (0, -0.0135, H + 0.0075), "steel", axis="x", n=12, bevel=0.0006)
-        box((0.03, 0.026, 0.003), (0, -0.0255, H + 0.0085), "black_metal", bevel=0.0009, segs=1)
-        box((0.03, 0.003, 0.024), (0, -D / 2 - 0.0105, H - 0.004), "black_metal", bevel=0.0009, segs=1)
-        box((0.03, 0.006, 0.003), (0, -D / 2 - 0.0085, H - 0.0145), "black_metal", bevel=0.0008, segs=1)
-        box((0.022, 0.004, 0.02), (0, -D / 2 - 0.0135, H - 0.02), "red", cut=0.005, cuts=(0, 0, 1, 1), axis="y",
-            bevel=0.0012, segs=2)
-        for k in range(3):
-            box((0.016, 0.0012, 0.0016), (0, -D / 2 - 0.0158, H - 0.016 - k * 0.004), "red", bevel=0.0004, segs=1)
+    # the latch on the top end: a bracket on the body, a lever with the red pull tab and a wire bail
+    # reaching over the edge onto a keeper on the lid's face. Opening, the lever swings out and hangs
+    # down the end of the case (it lies on its back), clear of the compartment, then the lid goes.
+    bail_latch((0, -D / 2, H), UP, F, w=0.03, below=0.016, body_off=0.0,
+               keeper=(0.0075, 0.0135, -0.013, 0.007), look="black_metal", tab="red")
     # grip ribs on both sides
     for sx in (-1, 1):
         for k in range(2):
@@ -213,7 +204,8 @@ def afak():
     prism(outline, base_h - 0.01, "shell_dark", (0, 0, 0.01), bevel=0.003, segs=2, hollow=0.008)
     prism(rect(W - 0.004, D - 0.004, C - 0.001), 0.006, "rubber", (0, 0, base_h - 0.002), bevel=0.001, segs=1,
           hollow=0.006)
-    lid_axis((-W / 2 + C, D / 2, lid_z), (W / 2 - C, D / 2, lid_z))
+    # the lid turns about the hinge's pin
+    lid_axis((-0.09, D / 2 + 0.004, lid_z), (0.09, D / 2 + 0.004, lid_z))
     with lid():
         prism(outline, lid_h - 0.014, "shell_grey", (0, 0, lid_z), bevel=0.003, segs=2, hollow=0.008)
         prism(outline, 0.016, "shell_grey", (0, 0, top - 0.016), bevel=0.003, segs=2, taper=0.012)
@@ -240,9 +232,6 @@ def afak():
         with cluster():
             cyl(0.006, 0.003, (0.072, -0.108, top + 0.0005), "black_metal", n=20)
             cyl(0.0038, 0.003, (0.072, -0.108, top + 0.0015), "green_lens", n=20)
-        # the latch keeper on the front of the lid
-        box((0.03, 0.008, 0.012), (0, -D / 2 - 0.004, lid_z + 0.012), "steel", cut=0.003, axis="y", bevel=0.0012,
-            segs=1)
     decal("med_h", (0, 0, top + 0.007), UP, B, 0.1, depth=0.003)
     # reflectors on the cut corners of the base - they stay with the base
     for sx in (-1, 1):
@@ -260,12 +249,10 @@ def afak():
             box((0.186, 0.004, 0.003), (0, y + sy * 0.0135, 0.01 + k * 0.0066), "rubber", bevel=0.0008, segs=1)
         for sx in (-1, 1):
             bolt((sx * 0.092, y + sy * 0.0155, 0.02), (0, sy, 0), 0.003)
-    # the latch on the front grip, its bail reaching up to the keeper on the lid
-    with cluster():
-        box((0.034, 0.01, 0.022), (0, -D / 2 - 0.0215, 0.023), "steel", cut=0.005, axis="y", bevel=0.0015, segs=2)
-        box((0.018, 0.004, 0.006), (0, -D / 2 - 0.0275, 0.027), "black_metal", bevel=0.0008, segs=1)
-        for sx in (-1, 1):
-            box((0.003, 0.003, 0.02), (sx * 0.01, -D / 2 - 0.012, 0.042), "steel", bevel=0.0004, segs=1)
+    # the latch: bracket on the front grip, the bail reaching back over the seam onto a keeper on the
+    # lid; opening, it swings out and hangs down in front of the grip
+    bail_latch((0, -D / 2, lid_z), F, UP, w=0.034, below=0.012, body_off=0.0195, lid_off=0.0,
+               keeper=(0.004, 0.011, 0.0, 0.016), look="steel")
     # the hinge along the back
     hinge((-0.09, D / 2 + 0.004, lid_z), (0.09, D / 2 + 0.004, lid_z), r=0.0045, knuckles=7, look="shell_dark")
     # labels
@@ -345,26 +332,23 @@ def narcbox():
     with lid():
         prism(rrect(0.232, 0.116, 0.01, 3), 0.002, "poly_green", (0, 0, top - 0.0005), bevel=0.0008, segs=1)
     decal("narc_yellow", (0, 0, top + 0.0015), UP, B, 0.2, depth=0.003)
-    # latches over the seam on the front
+    # draw latches over the seam on the front
     fy = -D / 2
     for sx in (-0.078, 0.078):
-        with cluster():
-            box((0.05, 0.014, 0.05), (sx, fy - 0.004, 0.046), "latch_grey", cut=0.006, axis="y", bevel=0.003,
-                segs=2)
-            for dz in (-0.009, 0.0, 0.009):
-                box((0.034, 0.004, 0.0035), (sx, fy - 0.012, 0.046 + dz), "latch_grey", bevel=0.0008, segs=1)
-            with lid():
-                box((0.046, 0.01, 0.012), (sx, fy - 0.002, 0.075), "latch_grey", bevel=0.003, segs=2)
-                cyl(0.003, 0.048, (sx, fy - 0.008, 0.075), "steel", axis="x", n=10)
-    # padlock hasp in the middle
+        bail_latch((sx, fy, 0.046), F, UP, w=0.04, below=0.016, body_off=0.0, lid_off=0.0, look="latch_grey")
+    # padlock hasp in the middle: the hasp hangs from the lid over the staple on the body
     with cluster():
-        Fh = frame((0, fy - 0.0025, 0.046), F, UP)
-        lbox(Fh, (0.026, 0.03, 0.003), (0, 0, 0), "steel", cut=0.003, bevel=0.0006)
+        Fh = frame((0, fy, 0.046), F, UP)
+        with lid():
+            # a spacer screwed to the lid, the plate on it clear of the base's rim
+            lbox(Fh, (0.026, 0.012, 0.0035), (0, 0.012, 0), "steel", bevel=0.0006)
+            lbox(Fh, (0.026, 0.03, 0.003), (0, 0.004, 0.0035), "steel", cut=0.003, bevel=0.0006)
+            screw((-0.009, fy - 0.0065, 0.058), F, 0.002, "steel")
+            screw((0.009, fy - 0.0065, 0.058), F, 0.002, "steel")
+        Fs = frame((0, fy, 0.046), F, UP)
         for sx in (-1, 1):
-            lbox(Fh, (0.004, 0.012, 0.012), (sx * 0.007, -0.004, 0.003), "steel", bevel=0.0008)
-        lcyl(Fh, 0.0022, 0.02, (0, -0.004, 0.013), "steel", n=10, axis="x")
-        screw((-0.009, fy - 0.0055, 0.056), F, 0.002, "steel")
-        screw((0.009, fy - 0.0055, 0.056), F, 0.002, "steel")
+            lbox(Fs, (0.004, 0.01, 0.019), (sx * 0.007, -0.006, 0), "steel", bevel=0.0008)
+        lcyl(Fs, 0.0022, 0.02, (0, -0.006, 0.0165), "steel", n=10, axis="x")
     # hinges on the back
     for sx in (-0.072, 0.072):
         hinge((sx - 0.026, D / 2 + 0.002, 0.046), (sx + 0.026, D / 2 + 0.002, 0.046), r=0.006, knuckles=3,

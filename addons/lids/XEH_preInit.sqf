@@ -19,9 +19,10 @@ GVAR(kitWindow) = [];
 [
     QGVAR(enabled),
     "CHECKBOX",
-    ["Open kit lids", "When you open the inventory on kits lying
-on the ground, or a kit's window, their lids
-swing open while you look inside.
+    ["Open kit lids", "A kit lying on the ground stays shut.
+When you open its kit window, its lid
+swings open while you look inside, and
+shuts again when you close the window.
 
 Only you see it."],
     "EFAK: UNSC Edition",

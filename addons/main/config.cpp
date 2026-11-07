@@ -15,8 +15,8 @@ class CfgPatches {
     };
 };
 
-// What efku_lids puts in place of a kit lying on the ground while someone has the inventory open: the
-// kit's own model, whose lid can swing open (model.cfg). Each kit class names its prop in efku_lidProp.
+// What efku_lids puts in place of a kit lying on the ground while its kit window is open: the
+// kit's own model, whose latches and lid can swing open (model.cfg). Each kit class names its prop in efku_lidProp.
 //   efku_offset[]  a small correction to where the holder puts the kit, in its slot's frame (metres: right, forward, up)
 //   efku_sound     the lid's sound set in efku_lids: case, med or pouch
 //   efku_turn      how far the kit is turned in the holder, degrees about its up axis (0: its front
@@ -34,7 +34,7 @@ class CfgVehicles {
         class AnimationSources {
             class lid {
                 source = "user";
-                animPeriod = 0.6;
+                animPeriod = 1;
                 initPhase = 0;
             };
         };

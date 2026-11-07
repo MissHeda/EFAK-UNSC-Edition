@@ -9,7 +9,7 @@
  * Arguments:
  * 0: Holder <OBJECT>
  * 1: Only this kit class, "" for every kit in the holder <STRING> (default: "")
- * 2: Who opened it, "inventory" or "kit" <STRING> (default: "inventory")
+ * 2: Who opened it ("kit": the kit window) <STRING> (default: "kit")
  * 3: Open at once, without the swing and sound <BOOL> (default: false)
  *
  * Return Value:
@@ -21,7 +21,7 @@
  * Public: No
  */
 
-params ["_holder", ["_only", ""], ["_source", "inventory"], ["_instant", false]];
+params ["_holder", ["_only", ""], ["_source", "kit"], ["_instant", false]];
 
 if (isNull _holder) exitWith {false};
 if !(_holder isKindOf "WeaponHolder" || {_holder isKindOf "WeaponHolderSimulated"}) exitWith {false};

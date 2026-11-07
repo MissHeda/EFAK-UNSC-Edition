@@ -198,6 +198,24 @@ def clustered(fn):
     return wrap
 SHADOW = [False]    # True while building the shadow LOD: sharp parts, no small ones, no decals
 LID_AXIS = []       # two points of the lid's hinge, see lid_axis()
+LATCHES = []        # two points of each latch's pivot, see latch()
+
+
+def group_id(name):
+    """The number a part's 'lid' attribute carries: 0 body (and contents), 1 lid, 1 + k the k-th latch."""
+    if name == "lid":
+        return 1
+    if name.startswith("latch"):
+        return 1 + int(name[5:])
+    return 0
+
+
+def group_names():
+    """{group number: named selection} of the moving parts made so far."""
+    names = {1: "lid"} if LID_AXIS else {}
+    for k in range(1, len(LATCHES) + 1):
+        names[1 + k] = "latch%d" % k
+    return names
 
 
 class lid:
@@ -206,6 +224,22 @@ class lid:
 
     def __enter__(self):
         GROUP.append("lid")
+
+    def __exit__(self, *a):
+        GROUP.pop()
+
+
+class latch:
+    """with latch(p0, p1): ... - the swinging part of a latch (its lever and bail), which the game turns
+    about the pivot p0-p1 (Blender space) before the lid opens, so it hangs down out of the lid's way.
+    The k-th latch made becomes the selection 'latch<k>' with the memory points 'latch<k>_axis'."""
+
+    def __init__(self, p0, p1):
+        LATCHES.append((tuple(p0), tuple(p1)))
+        self.name = "latch%d" % len(LATCHES)
+
+    def __enter__(self):
+        GROUP.append(self.name)
 
     def __exit__(self, *a):
         GROUP.pop()
@@ -237,9 +271,10 @@ def _finish(bm, name, mat, matrix):
     attr = me.attributes.new("part_rand", "FLOAT", "POINT")
     r = random.random()
     attr.data.foreach_set("value", [r] * len(me.vertices))
-    # 1 on the parts of the lid, so the p3d writer can put them in the 'lid' selection
+    # which moving part a point belongs to (see group_id), so the p3d writer can put the lid and each
+    # latch in its own selection
     lid_attr = me.attributes.new("lid", "FLOAT", "POINT")
-    lid_attr.data.foreach_set("value", [1.0 if GROUP[-1] == "lid" else 0.0] * len(me.vertices))
+    lid_attr.data.foreach_set("value", [float(group_id(GROUP[-1]))] * len(me.vertices))
     # which part a point belongs to, so the shadow LOD keeps every part a closed volume of its own
     comp = me.attributes.new("comp", "INT", "POINT")
     comp.data.foreach_set("value", [len(PARTS)] * len(me.vertices))
@@ -473,22 +508,65 @@ def rivets(p0, p1, normal, n, r=0.0022, look="steel"):
 
 
 @clustered
-def toggle_latch(center, normal, up=(0, 0, 1), w=0.032, h=0.05, look="black_metal"):
-    """Over-centre toggle latch: base plate on the body, lever, wire hook, keeper on the lid.
-    center is where the seam is; the latch hangs below it and grips above it."""
+def rod(p0, p1, r, look="steel", n=8):
+    """A straight round rod from p0 to p1 (a wire, a bail)."""
+    a, b = Vector(p0), Vector(p1)
+    d = b - a
+    q = d.normalized().to_track_quat("Z", "Y")
+    m = Matrix.Translation(a) @ q.to_matrix().to_4x4()
+    return prism(circle(r, n), d.length, look, bevel=0, segs=1, matrix=m)
+
+
+def bail_latch(center, normal, up=(0, 0, 1), w=0.03, below=0.016, body_off=0.0, lid_off=0.0, keeper=None,
+               look="black_metal", tab=None):
+    """A draw latch over a lid's seam, built the way it works. center is on the seam, in the plane the
+    latch is measured from (local z = 0, out along normal); up points from the body to the lid.
+
+    On the body, `below` under the seam: a bracket with two lugs and the pin. On the pin: the lever,
+    and from its top a wire bail whose cross bar hooks over the keeper on the lid (keeper: its box
+    (y0, y1, z0, z1) in the latch's frame, default a block on the lid's face at lid_off). Body face
+    at body_off, lid face at lid_off. tab: look of a pull tab on the lever's top.
+
+    The lever and bail are a latch() of their own: the game swings them out about the pin and lets
+    them hang down before the lid opens (model.cfg), so nothing stands over the opening and the lid
+    is free to go up. Returns the pin's two ends."""
     F = frame(center, normal, up)
-    lbox(F, (w, h * 0.42, 0.003), (0, -h * 0.36, 0), look, cut=0.003, bevel=0.0008)
-    for sx in (-1, 1):
-        lbox(F, (0.003, h * 0.22, 0.008), (sx * w * 0.36, -h * 0.3, 0), look, bevel=0.0006)
-    lcyl(F, 0.0022, w * 0.78, (0, -h * 0.3, 0.007), "steel", n=10, axis="x")
-    lbox(F, (w * 0.72, h * 0.62, 0.004), (0, -h * 0.12, 0.007), look, cut=0.004, cuts=(1, 1, 0, 0),
-         bevel=0.0012, segs=2)
-    lbox(F, (w * 0.5, h * 0.12, 0.002), (0, -h * 0.36, 0.011), look, bevel=0.0005)
-    for sx in (-1, 1):
-        lbox(F, (0.0018, h * 0.42, 0.0018), (sx * w * 0.26, h * 0.12, 0.0075), "steel", bevel=0)
-    lbox(F, (w * 0.56, 0.0022, 0.0022), (0, h * 0.33, 0.0065), "steel", bevel=0)
-    with lid():  # the keeper is screwed to the lid and goes up with it
-        lbox(F, (w * 0.8, h * 0.16, 0.0055), (0, h * 0.36, 0), look, cut=0.002, bevel=0.0008)
+    out = max(body_off, lid_off) + 0.008
+    yp = -below
+    top = -0.003
+    ky0, ky1, kz0, kz1 = keeper or (0.004, 0.011, lid_off, lid_off + 0.009)
+    yc, zc = ky1 + 0.0014, kz1 - 0.0022
+    kw = w * 0.5
+    xw = kw / 2 + 0.003
+
+    def at(x, y, z):
+        return F @ Vector((x, y, z))
+
+    with cluster():
+        # bracket: a plate screwed to the body, two lugs holding the pin
+        lbox(F, (w, 0.014, 0.003), (0, yp - 0.0035, body_off), look, cut=0.002, bevel=0.0008)
+        for sx in (-1, 1):
+            lbox(F, (0.0045, 0.009, out - body_off + 0.0035), (sx * (w / 2 - 0.00225), yp, body_off), look,
+                 bevel=0.0008)
+            screw(at(sx * w * 0.24, yp - 0.0075, body_off + 0.003), normal, r=0.0016, up=up)
+        lcyl(F, 0.0015, w + 0.002, (0, yp, out), "steel", n=10, axis="x")
+        p0, p1 = at(-w / 2, yp, out), at(w / 2, yp, out)
+        with latch(p0, p1):
+            # the lever on the pin, up to just under the seam
+            lcyl(F, 0.003, w - 0.0105, (0, yp, out), look, n=12, axis="x", bevel=0.0005)
+            lbox(F, (w - 0.0105, top - yp, 0.003), (0, (yp + top) / 2, out - 0.0015), look, cut=0.002,
+                 bevel=0.0008)
+            if tab:
+                lbox(F, (w * 0.62, 0.005, 0.0065), (0, top - 0.0025, out + 0.0012), tab, cut=0.0015,
+                     bevel=0.0008)
+            # the bail: two wires from the lever's top to the cross bar over the keeper
+            for sx in (-1, 1):
+                rod(at(sx * xw, top - 0.002, out), at(sx * xw, yc, zc), 0.0011)
+            lcyl(F, 0.0014, 2 * xw + 0.0022, (0, yc, zc), "steel", n=10, axis="x")
+        with lid():
+            # the keeper on the lid, the bail's cross bar pulled down on its top
+            lbox(F, (kw, ky1 - ky0, kz1 - kz0), (0, (ky0 + ky1) / 2, kz0), look, cut=0.0015, bevel=0.0008)
+    return p0, p1
 
 
 @clustered
@@ -504,7 +582,8 @@ def vents(center, normal, up, n, w, gap, fin=0.004, depth=0.003, look="dark_poly
 
 @clustered
 def hinge(p0, p1, r=0.005, knuckles=5, look="black_metal"):
-    """Piano-style hinge: knuckles along p0-p1 with small gaps, and a pin showing at the ends."""
+    """Piano-style hinge: knuckles along p0-p1 with small gaps, and a pin showing at the ends. Every
+    other knuckle belongs to the lid and turns with it - so lid_axis() must be this very line, the pin."""
     a, b = Vector(p0), Vector(p1)
     axis = (b - a)
     ln = axis.length
@@ -514,7 +593,11 @@ def hinge(p0, p1, r=0.005, knuckles=5, look="black_metal"):
     for k in range(knuckles):
         c = a + d * (seg * (k + 0.5))
         m = Matrix.Translation(c) @ q.to_matrix().to_4x4() @ Matrix.Translation((0, 0, -seg * 0.46))
-        prism(circle(r, 14), seg * 0.92, look, bevel=r * 0.15, segs=1, matrix=m)
+        if k % 2:
+            with lid():
+                prism(circle(r, 14), seg * 0.92, look, bevel=r * 0.15, segs=1, matrix=m)
+        else:
+            prism(circle(r, 14), seg * 0.92, look, bevel=r * 0.15, segs=1, matrix=m)
     for e, s_ in ((a, -1), (b, 1)):
         m = Matrix.Translation(e + d * s_ * 0.001) @ q.to_matrix().to_4x4() @ Matrix.Translation((0, 0, -0.0015))
         prism(circle(r * 0.45, 10), 0.003, "steel", bevel=0.0003, segs=1, matrix=m)
@@ -580,7 +663,8 @@ def check_overlaps(small=0.06, slack=0.0005):
 def check_lid_attached(touch=0.0015):
     """Every part of the lid must hang on the lid: connected, box to box, to its largest part. A lid
     part that is not would swing up with it and hang in the air (the AFAK's base reflectors did)."""
-    lid_parts = [ob for ob in PARTS if ob.data.attributes.get("lid") and ob.data.attributes["lid"].data[0].value > 0.5]
+    lid_parts = [ob for ob in PARTS if ob.data.attributes.get("lid")
+                 and abs(ob.data.attributes["lid"].data[0].value - 1.0) < 0.1]
     if not lid_parts:
         return []
 
@@ -1095,7 +1179,7 @@ def bake(ob, kit, size=2048, samples=64):
     if LID_AXIS and lid_attr is not None:
         from mathutils.bvhtree import BVHTree
         tree = BVHTree.FromObject(ob, bpy.context.evaluated_depsgraph_get())
-        lid_v = [d.value > 0.5 for d in lid_attr.data]
+        lid_v = [abs(d.value - 1.0) < 0.1 for d in lid_attr.data]
         lift = Vector((0.0, 0.0, 0.6))
         moved = []
         for p in PROJECTORS:
@@ -1253,19 +1337,19 @@ def _to_game_n(n):
 
 
 def mesh_tris(me, use_comp=False):
-    """Game triangles [(pos, normal, uv, lid, part)] * 3 from a triangulated mesh, CCW seen from
+    """Game triangles [(pos, normal, uv, group (see group_id), part)] * 3 from a triangulated mesh, CCW seen from
     outside. use_comp keeps the points of different parts apart when they are welded."""
     me.calc_loop_triangles()
     uv = me.uv_layers.active.data if me.uv_layers.active is not None else None
     cn = me.corner_normals
     lid_attr = me.attributes.get("lid")
-    lid_v = [d.value > 0.5 for d in lid_attr.data] if lid_attr is not None else None
+    lid_v = [int(round(d.value)) for d in lid_attr.data] if lid_attr is not None else None
     comp_attr = me.attributes.get("comp") if use_comp else None
     comp_v = [d.value for d in comp_attr.data] if comp_attr is not None else None
     tris = []
     for t in me.loop_triangles:
         v0 = me.loops[t.loops[0]].vertex_index
-        flag = lid_v[v0] if lid_v is not None else False
+        flag = lid_v[v0] if lid_v is not None else 0
         part = comp_v[v0] if comp_v is not None else 0
         tri = []
         for li in reversed(t.loops):   # the mirror flips the winding
@@ -1282,7 +1366,7 @@ def _weld(tris, eps=1e-6, sel=None):
     pts, pidx, nrm, nidx, faces = [], {}, [], {}, []
     for t in tris:
         f = []
-        flag = len(t[0]) > 3 and t[0][3]
+        flag = t[0][3] if len(t[0]) > 3 else 0
         part = t[0][4] if len(t[0]) > 4 else 0
         if sel is not None:
             sel["faces"].append(flag)
@@ -1311,11 +1395,11 @@ def _tagg(name, data):
     return b"\x01" + _asciiz(name) + struct.pack("<I", len(data)) + data
 
 
-def lod_bytes(resolution, tris, tex, mat, sharp=False, mass=None, props=(), selection=None, points=None):
+def lod_bytes(resolution, tris, tex, mat, sharp=False, mass=None, props=(), selections=None, points=None):
     """One MLOD (P3DM) LOD. Same layout as EFAK's make_narc.py, checked against BI samples there:
-    stored normals and the face winding point inwards, UV origin top left. selection: name of a named
-    selection made of the triangles flagged as lid. points: a points-only LOD (memory), as
-    [(name, [positions])]."""
+    stored normals and the face winding point inwards, UV origin top left. selections: {group: name}
+    of named selections, each made of the triangles of that group (see group_id). points: a
+    points-only LOD (memory), as [(name, [positions])]."""
     sel = {"points": [], "faces": []}
     if points is not None:
         pts, nrm, faces = [], [], []
@@ -1347,9 +1431,10 @@ def lod_bytes(resolution, tris, tex, mat, sharp=False, mass=None, props=(), sele
                 a, b = f[i][0], f[(i + 1) % 3][0]
                 edges.add((min(a, b), max(a, b)))
         out += _tagg("#SharpEdges#", b"".join(struct.pack("<II", a, b) for a, b in sorted(edges)))
-    if selection and any(sel["points"]):
-        data = bytes(1 if s else 0 for s in sel["points"]) + bytes(1 if s else 0 for s in sel["faces"])
-        out += _tagg(selection, data)
+    for gid, name in sorted((selections or {}).items()):
+        if gid in sel["points"]:
+            data = bytes(1 if s == gid else 0 for s in sel["points"]) + bytes(1 if s == gid else 0 for s in sel["faces"])
+            out += _tagg(name, data)
     if points is not None:
         k = 0
         for name, ps in points:
@@ -1394,20 +1479,21 @@ def write_p3d(path, ob, tex, mat, shadow=None):
     last = None
     for i, (drop, dissolve) in enumerate(LODS):
         me = lod_mesh(ob, drop=drop, dissolve=dissolve)
-        data, npt, nf = lod_bytes(float(2 ** i), mesh_tris(me), tex, mat, selection="lid" if LID_AXIS else None)
+        data, npt, nf = lod_bytes(float(2 ** i), mesh_tris(me), tex, mat, selections=group_names())
         print("LOD", 2 ** i, "points", npt, "faces", nf)
         lods.append(data)
         last = me
     data, npt, nf = lod_bytes(10000.0, shadow if shadow else hull_tris(last), "", "", sharp=True,
-                              selection="lid" if LID_AXIS and shadow else None)
+                              selections=group_names() if shadow else None)
     print("shadow faces", nf)
     lods.append(data)
     data, npt, nf = lod_bytes(1e13, hull_tris(last, 0.001), "", "", mass=1.0, props=(("autocenter", "0"),))
     print("geometry faces", nf)
     lods.append(data)
-    if LID_AXIS:
-        axis = [_to_game(LID_AXIS[0]), _to_game(LID_AXIS[1])]
-        data, npt, nf = lod_bytes(1e15, [], "", "", points=[("lid_axis", axis)])
+    axes = [("lid_axis", LID_AXIS)] if LID_AXIS else []
+    axes += [("latch%d_axis" % (k + 1), list(ax)) for k, ax in enumerate(LATCHES)]
+    if axes:
+        data, npt, nf = lod_bytes(1e15, [], "", "", points=[(n, [_to_game(a[0]), _to_game(a[1])]) for n, a in axes])
         print("memory points", npt)
         lods.append(data)
     with open(path, "wb") as f:

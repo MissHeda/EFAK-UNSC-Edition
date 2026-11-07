@@ -2,24 +2,6 @@
 
 if (!hasInterface) exitWith {};
 
-["CAManBase", "InventoryOpened", {
-    params ["_unit"];
-
-    if (GVAR(enabled) && {_unit isEqualTo (call CBA_fnc_currentUnit)}) then {
-        _this call FUNC(openLids);
-    };
-
-    // true here would stop the inventory from opening
-    false
-}] call CBA_fnc_addClassEventHandler;
-
-["CAManBase", "InventoryClosed", {
-    params ["_unit"];
-
-    if (_unit isEqualTo (call CBA_fnc_currentUnit)) then {
-        ["inventory"] call FUNC(closeLids);
-    };
-}] call CBA_fnc_addClassEventHandler;
-
-// The kit window, and holders that change while open.
+// Kits on the ground lie shut. Only EFAK's kit window opens one - the very kit it shows - and shuts it
+// again when the window closes (fnc_watch); opening the inventory on a pile leaves every lid closed.
 [{call FUNC(watch)}, 0.2] call CBA_fnc_addPerFrameHandler;

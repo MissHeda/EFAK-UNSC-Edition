@@ -68,6 +68,7 @@ U.SHADOW[0] = False
 U.PARTS.clear()
 U.PROJECTORS.clear()
 U.LID_AXIS.clear()
+U.LATCHES.clear()
 
 U.reset()
 size = kits.BUILDERS[kit]()

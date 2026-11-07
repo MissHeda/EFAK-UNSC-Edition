@@ -34,7 +34,7 @@ if (!hasInterface) exitWith {};
     diag_log "EFKUTEST SHOT closed_front";
     sleep 3;
 
-    {[player, _x] call efku_lids_fnc_openLids} forEach _holders;
+    {[_x, "", "kit"] call efku_lids_fnc_openHolder} forEach _holders;
     sleep 1.5;
     {
         _x params ["_h", "_p"];

@@ -5,14 +5,14 @@
  * go and the holder shows again. Kits taken out meanwhile lose their props at once.
  *
  * Arguments:
- * 0: Only those opened by, "inventory" or "kit", "" for all <STRING> (default: "")
+ * 0: Only those opened by ("kit": the kit window), "" for all <STRING> (default: "")
  * 1: At once, without the swing and sound <BOOL> (default: false)
  *
  * Return Value:
  * None
  *
  * Example:
- * ["inventory"] call efku_lids_fnc_closeLids;
+ * ["kit"] call efku_lids_fnc_closeLids;
  *
  * Public: No
  */
@@ -43,6 +43,6 @@ GVAR(open) = GVAR(open) - _closing;
     if (_swing isEqualTo []) then {
         [_holder, [], _copy] call FUNC(restoreHolder);
     } else {
-        [FUNC(restoreHolder), [_holder, _swing, _copy], 0.65] call CBA_fnc_waitAndExecute;
+        [FUNC(restoreHolder), [_holder, _swing, _copy], 1.05] call CBA_fnc_waitAndExecute;
     };
 } forEach _closing;
