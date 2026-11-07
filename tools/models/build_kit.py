@@ -37,6 +37,14 @@ U.reset()
 size = kits.BUILDERS[kit]()
 ob = U.assemble(kit)
 print("parts joined:", len(ob.data.polygons), "faces")
+problems = U.check_decals(ob)
+for line in problems:
+    print("DECAL", kit, line)
+if "--check" in argv:
+    print("DECALCHECK", kit, "ok" if not problems else "%d problems" % len(problems))
+    sys.exit(0)
+if problems and not fast:
+    raise SystemExit("decals of %s run over edges or lack room, see DECAL lines above" % kit)
 U.unwrap(ob, margin=0.003)
 
 if fast:

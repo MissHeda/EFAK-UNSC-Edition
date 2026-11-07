@@ -18,6 +18,9 @@ a cyan HUD readout on dark glass. Works with EFAK, EUP or both - whichever is lo
 | Engineer Bag | grey UNSC tool case with hazard stripes |
 | CBRN Bag | white UNSC case with yellow band, seal gauge and purge valve |
 
+Open the inventory on a kit lying on its own on the ground and its lid swings open while you look
+inside (only you see it; switch it off in the addon options, "Open kit lids").
+
 Needs EFAK or EUP (EFAK 1.4.0 or later for the window colours; older versions still get the models). Changes nothing
 but the look: names, contents, weights and settings stay EFAK's, so EFAK updates keep working.
 
@@ -33,7 +36,10 @@ python tools/make_ui.py                              # window glass, kit backgro
 hemtt build
 ```
 
-`tools/models/kits.py` holds the shapes, `tools/models/unsc_lib.py` the parts, looks and the p3d writer.
+`tools/models/kits.py` holds the shapes, `tools/models/unsc_lib.py` the parts, looks and the p3d writer. Every
+build checks that each decal sits on one flat face with 4 mm clear all round and stops if one does not
+(`blender -b -P tools/models/build_kit.py -- <kit> --check` runs only the check). Parts made inside
+`with lid():` form the lid; `model.cfg` in each data folder turns it about `lid_axis`.
 
 ## Legal
 

@@ -144,6 +144,24 @@ def reset():
 
 PARTS = []          # every object made, joined at the end
 PROJECTORS = []     # decals: dicts made by decal()
+GROUP = [""]        # the group new parts go into, see lid()
+LID_AXIS = []       # two points of the lid's hinge, see lid_axis()
+
+
+class lid:
+    """with lid(): ... - every part made inside belongs to the lid, which the game can swing open
+    about the axis given by lid_axis()."""
+
+    def __enter__(self):
+        GROUP.append("lid")
+
+    def __exit__(self, *a):
+        GROUP.pop()
+
+
+def lid_axis(p0, p1):
+    """The lid's hinge line, from p0 to p1 (Blender space). The game turns the lid about it."""
+    LID_AXIS[:] = [tuple(p0), tuple(p1)]
 
 
 def _finish(bm, name, mat, matrix):
@@ -156,6 +174,9 @@ def _finish(bm, name, mat, matrix):
     attr = me.attributes.new("part_rand", "FLOAT", "POINT")
     r = random.random()
     attr.data.foreach_set("value", [r] * len(me.vertices))
+    # 1 on the parts of the lid, so the p3d writer can put them in the 'lid' selection
+    lid_attr = me.attributes.new("lid", "FLOAT", "POINT")
+    lid_attr.data.foreach_set("value", [1.0 if GROUP[-1] == "lid" else 0.0] * len(me.vertices))
     ob = bpy.data.objects.new(name, me)
     bpy.context.scene.collection.objects.link(ob)
     ob.matrix_world = matrix
@@ -334,7 +355,8 @@ def toggle_latch(center, normal, up=(0, 0, 1), w=0.032, h=0.05, look="black_meta
     for sx in (-1, 1):
         lbox(F, (0.0018, h * 0.42, 0.0018), (sx * w * 0.26, h * 0.12, 0.0075), "steel", bevel=0)
     lbox(F, (w * 0.56, 0.0022, 0.0022), (0, h * 0.33, 0.0065), "steel", bevel=0)
-    lbox(F, (w * 0.8, h * 0.16, 0.0055), (0, h * 0.36, 0), look, cut=0.002, bevel=0.0008)
+    with lid():  # the keeper is screwed to the lid and goes up with it
+        lbox(F, (w * 0.8, h * 0.16, 0.0055), (0, h * 0.36, 0), look, cut=0.002, bevel=0.0008)
 
 
 def vents(center, normal, up, n, w, gap, fin=0.004, depth=0.003, look="dark_poly"):
@@ -374,10 +396,10 @@ def plate(center, normal, up, w, h, look="steel", image=None, rivet_look="steel"
                  bevel=0.0005)
     if image:
         nz = Vector(normal).normalized()
-        decal(image, tuple(Vector(center) + nz * 0.0012), tuple(nz), up, w * 0.86, depth=0.0015)
+        decal(image, tuple(Vector(center) + nz * 0.0012), tuple(nz), up, w * 0.7, depth=0.0015)
 
 
-def decal(image, center, normal, up, width, height=None, depth=0.01, looks=None):
+def decal(image, center, normal, up, width, height=None, depth=0.01, looks=None, check=True):
     """Project a decal PNG (out/decals/<image>.png) onto the surfaces facing `normal` within `depth`
     of `center`. width/height in metres; height follows the image's aspect if left out."""
     path = os.path.join(DECALS, image + ".png")
@@ -385,7 +407,45 @@ def decal(image, center, normal, up, width, height=None, depth=0.01, looks=None)
     if height is None:
         height = width * img.size[1] / img.size[0]
     PROJECTORS.append(dict(img=img, center=Vector(center), normal=Vector(normal).normalized(),
-                           up=Vector(up).normalized(), w=width, h=height, depth=depth, looks=looks))
+                           up=Vector(up).normalized(), w=width, h=height, depth=depth, looks=looks, check=check))
+
+
+# --- Decal check -------------------------------------------------------------------------------------
+def check_decals(ob, margin=0.004, grid=9):
+    """Every decal has to sit on one flat stretch of surface, with `margin` metres of it free all round:
+    no edge, no rounding, no other part in front, no step. Casts rays over the decal's rectangle grown by
+    the margin and reports each decal that breaks this. Returns the list of problems."""
+    from mathutils.bvhtree import BVHTree
+    dg = bpy.context.evaluated_depsgraph_get()
+    tree = BVHTree.FromObject(ob, dg)
+    problems = []
+    for k, p in enumerate(PROJECTORS):
+        if not p.get("check", True):
+            continue
+        z = p["normal"]
+        y = (p["up"] - z * p["up"].dot(z)).normalized()
+        x = y.cross(z)
+        hw, hh = p["w"] / 2 + margin, p["h"] / 2 + margin
+        bad = []
+        for i in range(grid):
+            for j in range(grid):
+                u = -hw + 2 * hw * i / (grid - 1)
+                v = -hh + 2 * hh * j / (grid - 1)
+                origin = p["center"] + x * u + y * v + z * 0.08
+                loc, nrm, idx, dist = tree.ray_cast(origin, -z, 0.2)
+                where = "%+.0f%%,%+.0f%%" % (100 * u / hw, 100 * v / hh)
+                if loc is None:
+                    bad.append(("nothing", where))
+                elif nrm.dot(z) < 0.985:
+                    bad.append(("edge", where))
+                elif abs(dist - 0.08) > 0.0012:
+                    bad.append(("step %.1fmm" % ((0.08 - dist) * 1000), where))
+        if bad:
+            kinds = sorted({b[0].split(" ")[0] for b in bad})
+            problems.append("%s at %s: %d/%d points off (%s), e.g. %s" % (
+                os.path.basename(p["img"].filepath).replace(".png", ""), tuple(round(c, 3) for c in p["center"]),
+                len(bad), grid * grid, ",".join(kinds), "; ".join("%s %s" % b for b in bad[:4])))
+    return problems
 
 
 # --- Materials for baking -------------------------------------------------------------------------
@@ -848,27 +908,38 @@ def mesh_tris(me):
     me.calc_loop_triangles()
     uv = me.uv_layers.active.data
     cn = me.corner_normals
+    lid_attr = me.attributes.get("lid")
+    lid_v = [d.value > 0.5 for d in lid_attr.data] if lid_attr is not None else None
     tris = []
     for t in me.loop_triangles:
         tri = []
         for li in reversed(t.loops):   # the mirror flips the winding
-            co = me.vertices[me.loops[li].vertex_index].co
+            vi = me.loops[li].vertex_index
+            co = me.vertices[vi].co
             n = cn[li].vector
             u, v = uv[li].uv
             tri.append((_to_game(co), _to_game_n(n), (u, 1.0 - v)))
+        if lid_v is not None:
+            tri = [(p, n, uv_, lid_v[me.loops[t.loops[0]].vertex_index]) for p, n, uv_ in tri]
         tris.append(tri)
     return tris
 
 
-def _weld(tris, eps=1e-6):
+def _weld(tris, eps=1e-6, sel=None):
     pts, pidx, nrm, nidx, faces = [], {}, [], {}, []
     for t in tris:
         f = []
-        for p, n, uv in t:
-            kp = tuple(round(c / eps) for c in p)
+        flag = len(t[0]) > 3 and t[0][3]
+        if sel is not None:
+            sel["faces"].append(flag)
+        for c in t:
+            p, n, uv = c[0], c[1], c[2]
+            kp = tuple(round(v / eps) for v in p) + (flag,)
             if kp not in pidx:
                 pidx[kp] = len(pts)
                 pts.append(p)
+                if sel is not None:
+                    sel["points"].append(flag)
             kn = tuple(round(c * 1e5) for c in n)
             if kn not in nidx:
                 nidx[kn] = len(nrm)
@@ -886,10 +957,18 @@ def _tagg(name, data):
     return b"\x01" + _asciiz(name) + struct.pack("<I", len(data)) + data
 
 
-def lod_bytes(resolution, tris, tex, mat, sharp=False, mass=None, props=()):
+def lod_bytes(resolution, tris, tex, mat, sharp=False, mass=None, props=(), selection=None, points=None):
     """One MLOD (P3DM) LOD. Same layout as EFAK's make_narc.py, checked against BI samples there:
-    stored normals and the face winding point inwards, UV origin top left."""
-    pts, nrm, faces = _weld(tris)
+    stored normals and the face winding point inwards, UV origin top left. selection: name of a named
+    selection made of the triangles flagged as lid. points: a points-only LOD (memory), as
+    [(name, [positions])]."""
+    sel = {"points": [], "faces": []}
+    if points is not None:
+        pts, nrm, faces = [], [], []
+        for _, ps in points:
+            pts += list(ps)
+    else:
+        pts, nrm, faces = _weld(tris, sel=sel)
     out = bytearray(b"P3DM")
     out += struct.pack("<IIIIII", 28, 256, len(pts), len(nrm), len(faces), 0)
     for p in pts:
@@ -914,11 +993,22 @@ def lod_bytes(resolution, tris, tex, mat, sharp=False, mass=None, props=()):
                 a, b = f[i][0], f[(i + 1) % 3][0]
                 edges.add((min(a, b), max(a, b)))
         out += _tagg("#SharpEdges#", b"".join(struct.pack("<II", a, b) for a, b in sorted(edges)))
+    if selection and any(sel["points"]):
+        data = bytes(1 if s else 0 for s in sel["points"]) + bytes(1 if s else 0 for s in sel["faces"])
+        out += _tagg(selection, data)
+    if points is not None:
+        k = 0
+        for name, ps in points:
+            flags = [0] * len(pts)
+            for i in range(k, k + len(ps)):
+                flags[i] = 1
+            k += len(ps)
+            out += _tagg(name, bytes(flags))
     if mass is not None:
         out += _tagg("#Mass#", b"".join(struct.pack("<f", mass / len(pts)) for _ in pts))
     for k, v in props:
         out += _tagg("#Property#", k.encode().ljust(64, b"\0") + v.encode().ljust(64, b"\0"))
-    if mass is None:
+    if mass is None and points is None:
         out += _tagg("#UVSet#", bytes(uvset))
     out += _tagg("#EndOfFile#", b"")
     out += struct.pack("<f", resolution)
@@ -930,7 +1020,7 @@ def write_p3d(path, ob, tex, mat, ratios=(1.0, 0.45, 0.16)):
     last = None
     for i, r in enumerate(ratios):
         me = lod_mesh(ob, r)
-        data, npt, nf = lod_bytes(float(2 ** i), mesh_tris(me), tex, mat)
+        data, npt, nf = lod_bytes(float(2 ** i), mesh_tris(me), tex, mat, selection="lid" if LID_AXIS else None)
         print("LOD", 2 ** i, "points", npt, "faces", nf)
         lods.append(data)
         last = me
@@ -940,6 +1030,11 @@ def write_p3d(path, ob, tex, mat, ratios=(1.0, 0.45, 0.16)):
     data, npt, nf = lod_bytes(1e13, hull_tris(last, 0.001), "", "", mass=1.0, props=(("autocenter", "0"),))
     print("geometry faces", nf)
     lods.append(data)
+    if LID_AXIS:
+        axis = [_to_game(LID_AXIS[0]), _to_game(LID_AXIS[1])]
+        data, npt, nf = lod_bytes(1e15, [], "", "", points=[("lid_axis", axis)])
+        print("memory points", npt)
+        lods.append(data)
     with open(path, "wb") as f:
         f.write(b"MLOD" + struct.pack("<II", 257, len(lods)))
         for l in lods:

@@ -21,6 +21,7 @@ class CfgPatches {
         model = QPATHTOF(data\FILE.p3d); \
         picture = QPATHTOF(ui\DOUBLES(FILE,ca).paa); \
         editorPreview = QPATHTOF(ui\DOUBLES(FILE,ca).paa); \
+        efku_lidProp = QUOTE(DOUBLES(efku_LidProp,FILE)); \
     }
 
 class CfgWeapons {
@@ -52,4 +53,19 @@ class EFAK_KitGroups {
     class FirstAid {
         icon = QPATHTOF(ui\ifak_ca.paa);
     };
+};
+
+// The animated stand-ins for kits on the ground, see efku_LidProp in the main addon.
+#define LID_PROP(FILE) \
+    class DOUBLES(efku_LidProp,FILE): efku_LidProp { \
+        model = QPATHTOF(data\FILE.p3d); \
+    }
+
+class CfgVehicles {
+    class efku_LidProp;
+    LID_PROP(ifak);
+    LID_PROP(afak);
+    LID_PROP(mfak);
+    LID_PROP(mfakplus);
+    LID_PROP(narcbox);
 };
