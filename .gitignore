@@ -12,3 +12,9 @@ hemtt.exe
 __pycache__/
 tools/models/out/
 tools/ingame_test/out/
+
+## Signing keys
+*.biprivatekey
+*.hemttprivatekey
+.biprivatekey
+.hemttprivatekey

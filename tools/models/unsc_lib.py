@@ -278,6 +278,9 @@ def _finish(bm, name, mat, matrix):
     # which part a point belongs to, so the shadow LOD keeps every part a closed volume of its own
     comp = me.attributes.new("comp", "INT", "POINT")
     comp.data.foreach_set("value", [len(PARTS)] * len(me.vertices))
+    # what is packed inside, so the far LODs can leave it out
+    inner = me.attributes.new("inner", "INT", "POINT")
+    inner.data.foreach_set("value", [int(GROUP[-1] == "contents")] * len(me.vertices))
     ob = bpy.data.objects.new(name, me)
     bpy.context.scene.collection.objects.link(ob)
     ob.matrix_world = matrix
@@ -1256,13 +1259,20 @@ def flip_green(src, dst):
 
 
 # --- LODs and the p3d -------------------------------------------------------------------------------
-def lod_mesh(ob, ratio=1.0, angle=40.0, drop=0.0, dissolve=0.0):
+def lod_mesh(ob, ratio=1.0, angle=40.0, drop=0.0, dissolve=0.0, inner=True):
     """A copy of ob's mesh for a LOD, triangulated, as a new mesh datablock. No decimation - it tears
     thin bevelled parts into shards. Instead: drop leaves out every part whose largest size is below it
     (screws, rivets, plates - the 'comp' attribute tells the parts apart), dissolve merges flat faces
     within that many degrees without crossing a UV seam, so the baked texture still fits exactly.
-    ratio is ignored (kept for old callers)."""
+    inner=False leaves out what is packed inside (contents()). ratio is ignored (kept for old callers)."""
     me = ob.data.copy()
+    if not inner and me.attributes.get("inner") is not None:
+        bm = bmesh.new()
+        bm.from_mesh(me)
+        layer = bm.verts.layers.int.get("inner")
+        bmesh.ops.delete(bm, geom=[v for v in bm.verts if v[layer]], context="VERTS")
+        bm.to_mesh(me)
+        bm.free()
     if drop > 0.0:
         comp = me.attributes.get("comp")
         if comp is not None:
@@ -1469,7 +1479,9 @@ def shadow_open_edges(tris):
 
 
 # LOD 1, 2 and 4: (leave out parts smaller than this in metres, merge flat faces within this many degrees)
-LODS = ((0.0, 0.0), (0.012, 1.0), (0.03, 2.0))
+# (drop parts smaller than, dissolve flat faces within degrees, keep the contents) per LOD 1, 2, 4, 8,
+# 16: the contents only matter up close, where someone has the lid open; far away a kit is its case.
+LODS = ((0.0, 0.0, True), (0.012, 1.0, True), (0.03, 2.0, False), (0.06, 4.0, False), (0.12, 8.0, False))
 
 
 def write_p3d(path, ob, tex, mat, shadow=None):
@@ -1477,8 +1489,11 @@ def write_p3d(path, ob, tex, mat, shadow=None):
     suits shapes without hollows."""
     lods = []
     last = None
-    for i, (drop, dissolve) in enumerate(LODS):
-        me = lod_mesh(ob, drop=drop, dissolve=dissolve)
+    # a small kit must not lose its body: no part above a third of the kit's size is ever dropped
+    bb = [ob.matrix_world @ v.co for v in ob.data.vertices]
+    span = max(max(p[i] for p in bb) - min(p[i] for p in bb) for i in range(3))
+    for i, (drop, dissolve, keep) in enumerate(LODS):
+        me = lod_mesh(ob, drop=min(drop, span / 3), dissolve=dissolve, inner=keep)
         data, npt, nf = lod_bytes(float(2 ** i), mesh_tris(me), tex, mat, selections=group_names())
         print("LOD", 2 ** i, "points", npt, "faces", nf)
         lods.append(data)

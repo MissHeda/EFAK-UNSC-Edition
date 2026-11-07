@@ -114,6 +114,17 @@ if (!hasInterface) exitWith {};
     private _cam = "camera" camCreate [4096, 4093, 3.2];
     _cam cameraEffect ["internal", "back"];
     showCinemaBorder false;
+    // the row from further away, for the far LODs
+    {
+        _x params ["_d", "_fov"];
+        _cam camSetPos [4096, 4100 - _d, 1.6];
+        _cam camSetTarget [4096, 4100, 0];
+        _cam camSetFov _fov;
+        _cam camCommit 0;
+        sleep 2.5;
+        diag_log format ["EFKUTEST SHOT sr_far_%1", _d];
+        sleep 1;
+    } forEach [[8, 0.75], [25, 0.25], [60, 0.11]];
     {
         _x params ["_i", "_name"];
         private _p = [4096 + (_i - 4.5) * 1.4, 4100, 0];
