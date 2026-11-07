@@ -33,6 +33,22 @@ views = ["icon"]
 if "--views" in argv:
     views = argv[argv.index("--views") + 1].split(",")
 
+# The shadow LOD first: the same parts, sharp and without the small ones, each a closed volume. A
+# convex hull would span the hollows (under a handle, round a cut corner) and shade the model itself.
+U.reset()
+U.SHADOW[0] = True
+kits.BUILDERS[kit]()
+shadow_ob = U.assemble(kit + "_shadow")
+shadow_tris = U.mesh_tris(U.lod_mesh(shadow_ob, 1.0), use_comp=True)
+print("shadow parts:", len({t[0][4] for t in shadow_tris}), "triangles:", len(shadow_tris))
+open_edges = U.shadow_open_edges(shadow_tris)
+if open_edges:
+    raise SystemExit("shadow LOD of %s has %d open edges" % (kit, open_edges))
+U.SHADOW[0] = False
+U.PARTS.clear()
+U.PROJECTORS.clear()
+U.LID_AXIS.clear()
+
 U.reset()
 size = kits.BUILDERS[kit]()
 ob = U.assemble(kit)
@@ -70,7 +86,8 @@ U.to_paa(U.downscale(paths["as"], size // 2), os.path.join(data, kit + "_as.paa"
 with open(os.path.join(data, kit + ".rvmat"), "w", newline="\n") as f:
     f.write(U.RVMAT % {"dir": game_dir, "kit": kit})
 
-U.write_p3d(os.path.join(data, kit + ".p3d"), ob, game_dir + "\\%s_co.paa" % kit, game_dir + "\\%s.rvmat" % kit)
+U.write_p3d(os.path.join(data, kit + ".p3d"), ob, game_dir + "\\%s_co.paa" % kit, game_dir + "\\%s.rvmat" % kit,
+            shadow=shadow_tris)
 
 shots = U.render_views(ob, paths, kit, views, size=1024, samples=128)
 U.to_paa(shots["icon"], os.path.join(ui, kit + "_ca.paa"))

@@ -145,6 +145,7 @@ def reset():
 PARTS = []          # every object made, joined at the end
 PROJECTORS = []     # decals: dicts made by decal()
 GROUP = [""]        # the group new parts go into, see lid()
+SHADOW = [False]    # True while building the shadow LOD: sharp parts, no small ones, no decals
 LID_AXIS = []       # two points of the lid's hinge, see lid_axis()
 
 
@@ -177,6 +178,9 @@ def _finish(bm, name, mat, matrix):
     # 1 on the parts of the lid, so the p3d writer can put them in the 'lid' selection
     lid_attr = me.attributes.new("lid", "FLOAT", "POINT")
     lid_attr.data.foreach_set("value", [1.0 if GROUP[-1] == "lid" else 0.0] * len(me.vertices))
+    # which part a point belongs to, so the shadow LOD keeps every part a closed volume of its own
+    comp = me.attributes.new("comp", "INT", "POINT")
+    comp.data.foreach_set("value", [len(PARTS)] * len(me.vertices))
     ob = bpy.data.objects.new(name, me)
     bpy.context.scene.collection.objects.link(ob)
     ob.matrix_world = matrix
@@ -205,6 +209,17 @@ def prism(profile, depth, look="olive", loc=(0, 0, 0), rot=(0, 0, 0), bevel=0.00
           taper=0.0, matrix=None):
     """A 2D outline (local x, y; counter-clockwise) extruded along local z from 0 to depth, edges
     bevelled. taper shrinks the top outline by that much (a draft/chamfered top)."""
+    if SHADOW[0]:
+        # The shadow LOD wants few, closed, sharp volumes: leave out what is too small to cast a
+        # shadow that matters, thin out round outlines, drop the bevels.
+        xs = [p[0] for p in profile]
+        ys = [p[1] for p in profile]
+        dims = (max(xs) - min(xs), max(ys) - min(ys), depth)
+        if min(dims) < 0.005 or max(dims) < 0.02:
+            return None
+        if len(profile) > 12:
+            profile = profile[::-(-len(profile) // 12)]
+        bevel = 0
     bm = bmesh.new()
     n = len(profile)
     cx = sum(p[0] for p in profile) / n
@@ -400,6 +415,8 @@ def plate(center, normal, up, w, h, look="steel", image=None, rivet_look="steel"
 
 
 def decal(image, center, normal, up, width, height=None, depth=0.01, looks=None, check=True):
+    if SHADOW[0]:
+        return
     """Project a decal PNG (out/decals/<image>.png) onto the surfaces facing `normal` within `depth`
     of `center`. width/height in metres; height follows the image's aspect if left out."""
     path = os.path.join(DECALS, image + ".png")
@@ -860,21 +877,48 @@ def flip_green(src, dst):
 
 
 # --- LODs and the p3d -------------------------------------------------------------------------------
-def lod_mesh(ob, ratio, angle=40.0):
-    """A decimated copy of ob's mesh (ratio 1 = as is), triangulated, as a new mesh datablock."""
-    tmp = ob.copy()
-    tmp.data = ob.data.copy()
+def lod_mesh(ob, ratio=1.0, angle=40.0, drop=0.0, dissolve=0.0):
+    """A copy of ob's mesh for a LOD, triangulated, as a new mesh datablock. No decimation - it tears
+    thin bevelled parts into shards. Instead: drop leaves out every part whose largest size is below it
+    (screws, rivets, plates - the 'comp' attribute tells the parts apart), dissolve merges flat faces
+    within that many degrees without crossing a UV seam, so the baked texture still fits exactly.
+    ratio is ignored (kept for old callers)."""
+    me = ob.data.copy()
+    if drop > 0.0:
+        comp = me.attributes.get("comp")
+        if comp is not None:
+            ids = [d.value for d in comp.data]
+            lo, hi = {}, {}
+            for v, c in zip(me.vertices, ids):
+                p = v.co
+                if c not in lo:
+                    lo[c] = list(p)
+                    hi[c] = list(p)
+                else:
+                    for i in range(3):
+                        lo[c][i] = min(lo[c][i], p[i])
+                        hi[c][i] = max(hi[c][i], p[i])
+            small = {c for c in lo if max(hi[c][i] - lo[c][i] for i in range(3)) < drop}
+            bm = bmesh.new()
+            bm.from_mesh(me)
+            layer = bm.verts.layers.int.get("comp")
+            gone = [v for v in bm.verts if v[layer] in small]
+            bmesh.ops.delete(bm, geom=gone, context="VERTS")
+            bm.to_mesh(me)
+            bm.free()
+    tmp = bpy.data.objects.new("lod_tmp", me)
     bpy.context.scene.collection.objects.link(tmp)
-    if ratio < 1.0:
-        mod = tmp.modifiers.new("dec", "DECIMATE")
-        mod.ratio = ratio
-        mod.use_collapse_triangulate = True
-    mod = tmp.modifiers.new("tri", "TRIANGULATE")
+    if dissolve > 0.0:
+        mod = tmp.modifiers.new("flat", "DECIMATE")
+        mod.decimate_type = "DISSOLVE"
+        mod.angle_limit = math.radians(dissolve)
+        mod.delimit = {"UV", "SHARP", "MATERIAL"}
+    tmp.modifiers.new("tri", "TRIANGULATE")
     dg = bpy.context.evaluated_depsgraph_get()
-    me = bpy.data.meshes.new_from_object(tmp.evaluated_get(dg))
+    out = bpy.data.meshes.new_from_object(tmp.evaluated_get(dg))
     bpy.data.objects.remove(tmp)
-    _smooth(me, angle)
-    return me
+    _smooth(out, angle)
+    return out
 
 
 def hull_tris(me, inflate=0.0):
@@ -903,24 +947,28 @@ def _to_game_n(n):
     return (n[0], -n[1], n[2])
 
 
-def mesh_tris(me):
-    """Game triangles [(pos, normal, uv)] * 3 from a triangulated mesh, CCW seen from outside."""
+def mesh_tris(me, use_comp=False):
+    """Game triangles [(pos, normal, uv, lid, part)] * 3 from a triangulated mesh, CCW seen from
+    outside. use_comp keeps the points of different parts apart when they are welded."""
     me.calc_loop_triangles()
-    uv = me.uv_layers.active.data
+    uv = me.uv_layers.active.data if me.uv_layers.active is not None else None
     cn = me.corner_normals
     lid_attr = me.attributes.get("lid")
     lid_v = [d.value > 0.5 for d in lid_attr.data] if lid_attr is not None else None
+    comp_attr = me.attributes.get("comp") if use_comp else None
+    comp_v = [d.value for d in comp_attr.data] if comp_attr is not None else None
     tris = []
     for t in me.loop_triangles:
+        v0 = me.loops[t.loops[0]].vertex_index
+        flag = lid_v[v0] if lid_v is not None else False
+        part = comp_v[v0] if comp_v is not None else 0
         tri = []
         for li in reversed(t.loops):   # the mirror flips the winding
             vi = me.loops[li].vertex_index
             co = me.vertices[vi].co
             n = cn[li].vector
-            u, v = uv[li].uv
-            tri.append((_to_game(co), _to_game_n(n), (u, 1.0 - v)))
-        if lid_v is not None:
-            tri = [(p, n, uv_, lid_v[me.loops[t.loops[0]].vertex_index]) for p, n, uv_ in tri]
+            u, v = uv[li].uv if uv is not None else (0.0, 0.0)
+            tri.append((_to_game(co), _to_game_n(n), (u, 1.0 - v), flag, part))
         tris.append(tri)
     return tris
 
@@ -930,11 +978,12 @@ def _weld(tris, eps=1e-6, sel=None):
     for t in tris:
         f = []
         flag = len(t[0]) > 3 and t[0][3]
+        part = t[0][4] if len(t[0]) > 4 else 0
         if sel is not None:
             sel["faces"].append(flag)
         for c in t:
             p, n, uv = c[0], c[1], c[2]
-            kp = tuple(round(v / eps) for v in p) + (flag,)
+            kp = tuple(round(v / eps) for v in p) + (flag, part)
             if kp not in pidx:
                 pidx[kp] = len(pts)
                 pts.append(p)
@@ -1015,16 +1064,37 @@ def lod_bytes(resolution, tris, tex, mat, sharp=False, mass=None, props=(), sele
     return bytes(out), len(pts), len(faces)
 
 
-def write_p3d(path, ob, tex, mat, ratios=(1.0, 0.45, 0.16)):
+def shadow_open_edges(tris):
+    """Edges of the shadow LOD not shared by exactly two triangles of the same part. Arma's shadow
+    volumes need every part closed; 0 is the only good answer."""
+    from collections import Counter
+    count = Counter()
+    for t in tris:
+        part = t[0][4]
+        keys = [tuple(round(v * 1e6) for v in c[0]) for c in t]
+        for i in range(3):
+            a, b = keys[i], keys[(i + 1) % 3]
+            count[(part,) + tuple(sorted((a, b)))] += 1
+    return sum(1 for v in count.values() if v != 2)
+
+
+# LOD 1, 2 and 4: (leave out parts smaller than this in metres, merge flat faces within this many degrees)
+LODS = ((0.0, 0.0), (0.012, 1.0), (0.03, 2.0))
+
+
+def write_p3d(path, ob, tex, mat, shadow=None):
+    """shadow: triangles for the shadow LOD (see build_kit.py); a convex hull if left out, which only
+    suits shapes without hollows."""
     lods = []
     last = None
-    for i, r in enumerate(ratios):
-        me = lod_mesh(ob, r)
+    for i, (drop, dissolve) in enumerate(LODS):
+        me = lod_mesh(ob, drop=drop, dissolve=dissolve)
         data, npt, nf = lod_bytes(float(2 ** i), mesh_tris(me), tex, mat, selection="lid" if LID_AXIS else None)
         print("LOD", 2 ** i, "points", npt, "faces", nf)
         lods.append(data)
         last = me
-    data, npt, nf = lod_bytes(10000.0, hull_tris(last), "", "", sharp=True)
+    data, npt, nf = lod_bytes(10000.0, shadow if shadow else hull_tris(last), "", "", sharp=True,
+                              selection="lid" if LID_AXIS and shadow else None)
     print("shadow faces", nf)
     lods.append(data)
     data, npt, nf = lod_bytes(1e13, hull_tris(last, 0.001), "", "", mass=1.0, props=(("autocenter", "0"),))
