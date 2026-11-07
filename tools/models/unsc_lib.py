@@ -54,6 +54,7 @@ def look(color, wear_color=None, wear=0.4, grime=0.5, mottle=0.03, grain=0.15, s
 
 
 STEEL = srgb(150, 152, 154)
+WEAR_BOOST = 1.6
 PRIMER = srgb(118, 112, 96)
 
 LOOKS = {
@@ -456,21 +457,54 @@ def _build_material(name, lk, projectors, bake_img):
     L.new(bev.outputs["Normal"], dot.inputs[0])
     L.new(geo.outputs["Normal"], dot.inputs[1])
     edge = ramp(math_("SUBTRACT", 1.0, dot.outputs["Value"]), 0.004, 0.07)
-    # chips: edges broken up by noise
-    chip_noise = noise(48.0, 8.0, 0.7)
-    chips = ramp(math_("MULTIPLY", edge, ramp(chip_noise, 0.3, 0.7)), 0.15, 0.42)
-    wear_mask = math_("MULTIPLY", chips, lk["wear"], clamp=True)
-    # scratches: fine streaks
+    # How worn everything is: field kit that has been carried for a while. Scales every look's wear.
+    W = min(1.0, lk["wear"] * WEAR_BOOST)
+    # chips: edges broken up by noise, a few big bites among the small ones
+    chip_noise = noise(34.0, 8.0, 0.7)
+    chips = ramp(math_("MULTIPLY", edge, ramp(chip_noise, 0.47, 0.62)), 0.12, 0.38)
+    bites = math_("MULTIPLY", ramp(edge, 0.0, 0.3), ramp(noise(9.0, 3.0, 0.5), 0.64, 0.68))
+    chips = math_("MAXIMUM", chips, bites)
+    # knocks: small chips away from the edges, where something hit the flat
+    knocks = math_("MULTIPLY", ramp(noise(110.0, 2.0, 0.5), 0.72, 0.77), ramp(noise(4.0, 2.0), 0.5, 0.62))
+    wear_mask = math_("MULTIPLY", math_("MAXIMUM", chips, knocks), W, clamp=True)
+
+    # scratches: straight thin lines in a few directions, broken into short random runs - a band
+    # texture gives the lines, a noise stretched along them picks the few that show
+    lines = None
+    for rot, sc, dens, seed in ((0.5, 70.0, 0.66, 0.0), (-0.8, 90.0, 0.68, 3.1), (1.35, 55.0, 0.7, 7.7),
+                                (2.2, 110.0, 0.7, 12.4), (-1.9, 80.0, 0.72, 5.3)):
+        tcx = node("ShaderNodeTexCoord")
+        mpx = node("ShaderNodeMapping")
+        mpx.inputs["Location"].default_value = (seed, seed * 0.7, seed * 1.3)
+        mpx.inputs["Rotation"].default_value = (0.3 * rot, 0.2 * rot, rot)
+        L.new(tcx.outputs["Object"], mpx.inputs["Vector"])
+        band = node("ShaderNodeTexWave", wave_type="BANDS", bands_direction="X", wave_profile="SIN")
+        band.inputs["Scale"].default_value = sc
+        band.inputs["Distortion"].default_value = 0.6
+        band.inputs["Detail"].default_value = 1.0
+        L.new(mpx.outputs["Vector"], band.inputs["Vector"])
+        line = ramp(band.outputs["Fac"], 0.975, 0.997)
+        # the mask: long along the line (y, z of the mapped space), short across it (x)
+        mk = node("ShaderNodeMapping")
+        mk.inputs["Scale"].default_value = (sc * 0.5, 4.0, 4.0)
+        L.new(mpx.outputs["Vector"], mk.inputs["Vector"])
+        nz = node("ShaderNodeTexNoise", noise_dimensions="3D")
+        nz.inputs["Scale"].default_value = 1.0
+        nz.inputs["Detail"].default_value = 2.0
+        L.new(mk.outputs["Vector"], nz.inputs["Vector"])
+        line = math_("MULTIPLY", line, ramp(nz.outputs["Fac"], dens, dens + 0.05))
+        lines = line if lines is None else math_("MAXIMUM", lines, line)
     scr = node("ShaderNodeTexWave", wave_type="BANDS", bands_direction="DIAGONAL")
     scr.inputs["Scale"].default_value = 140.0
     scr.inputs["Distortion"].default_value = 18.0
     scr.inputs["Detail"].default_value = 4.0
     tc = node("ShaderNodeTexCoord")
     L.new(tc.outputs["Object"], scr.inputs["Vector"])
-    scratch = math_("MULTIPLY", ramp(scr.outputs["Fac"], 0.93, 0.99), ramp(noise(6.0), 0.5, 0.65))
-    wear_mask = math_("MAXIMUM", wear_mask, math_("MULTIPLY", scratch, lk["wear"] * 0.8), clamp=True)
+    hair = math_("MULTIPLY", ramp(scr.outputs["Fac"], 0.94, 0.99), ramp(noise(6.0), 0.55, 0.7))
+    scratch = math_("MULTIPLY", math_("MAXIMUM", lines, math_("MULTIPLY", hair, 0.7)), W * 1.2, clamp=True)
+    wear_mask = math_("MAXIMUM", wear_mask, math_("MULTIPLY", scratch, 0.75), clamp=True)
     # scuffs: dull, slightly lighter patches where things rub, anywhere on the surface
-    scuff = math_("MULTIPLY", ramp(noise(14.0, 6.0, 0.7), 0.58, 0.75), lk["wear"] * 0.35, clamp=True)
+    scuff = math_("MULTIPLY", ramp(noise(14.0, 6.0, 0.7), 0.52, 0.72), W * 0.45, clamp=True)
 
     # cavity grime from ambient occlusion
     ao = node("ShaderNodeAmbientOcclusion", samples=16, only_local=True)
@@ -575,11 +609,23 @@ def _build_material(name, lk, projectors, bake_img):
     # normals: rounded edges plus surface grain
     nb = node("ShaderNodeBevel", samples=16)
     nb.inputs["Radius"].default_value = lk["bevel"]
+    # dents: a slow wave over the panels, more on worn kit
+    dent = node("ShaderNodeBump")
+    dent.inputs["Strength"].default_value = 0.25 * W
+    dent.inputs["Distance"].default_value = 0.002
+    L.new(ramp(noise(6.0, 3.0, 0.55), 0.35, 0.75), dent.inputs["Height"])
+    L.new(nb.outputs["Normal"], dent.inputs["Normal"])
+    # scratches and chips cut into the surface
+    cut = node("ShaderNodeBump", invert=True)
+    cut.inputs["Strength"].default_value = 0.6
+    cut.inputs["Distance"].default_value = 0.0003
+    L.new(math_("MAXIMUM", scratch, math_("MULTIPLY", wear_mask, 0.6)), cut.inputs["Height"])
+    L.new(dent.outputs["Normal"], cut.inputs["Normal"])
     bump = node("ShaderNodeBump")
     bump.inputs["Strength"].default_value = lk["grain"]
     bump.inputs["Distance"].default_value = 0.0004
     L.new(_pattern(node, L, noise, math_, lk["pattern"]), bump.inputs["Height"])
-    L.new(nb.outputs["Normal"], bump.inputs["Normal"])
+    L.new(cut.outputs["Normal"], bump.inputs["Normal"])
     bsdf = node("ShaderNodeBsdfPrincipled")
     L.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
 
