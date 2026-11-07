@@ -4,5 +4,7 @@ PREP(holderSlots);
 PREP(openHolder);
 PREP(openLids);
 PREP(placeProp);
+PREP(propOf);
 PREP(restoreHolder);
+PREP(shadows);
 PREP(watch);

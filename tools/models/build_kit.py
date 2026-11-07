@@ -104,6 +104,7 @@ with open(os.path.join(data, kit + ".rvmat"), "w", newline="\n") as f:
 
 U.write_p3d(os.path.join(data, kit + ".p3d"), ob, game_dir + "\\%s_co.paa" % kit, game_dir + "\\%s.rvmat" % kit,
             shadow=shadow_tris)
+U.write_shadow_p3d(os.path.join(data, kit + "_shadow.p3d"), shadow_tris)
 
 shots = U.render_views(ob, paths, kit, views, size=1024, samples=128)
 U.to_paa(shots["icon"], os.path.join(ui, kit + "_ca.paa"))

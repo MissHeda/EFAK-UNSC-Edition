@@ -37,9 +37,9 @@ private _kits = [];
     _x params ["_kind", "_class"];
 
     if (_kind isEqualTo "item" && {_forEachIndex < count _slots} && {_only isEqualTo "" || {(toLowerANSI _class) isEqualTo _only}}) then {
-        private _propClass = getText (configFile >> "CfgWeapons" >> _class >> "efku_lidProp");
+        private _propClass = [_class] call FUNC(propOf);
 
-        if (_propClass isNotEqualTo "" && {isClass (configFile >> "CfgVehicles" >> _propClass)}) then {
+        if (_propClass isNotEqualTo "") then {
             _kits pushBack [_forEachIndex, _class, _propClass];
         };
     };
@@ -60,6 +60,7 @@ if (_kits isEqualTo []) exitWith {false};
 private _copy = objNull;
 if (count _pieces > count _kits) then {
     _copy = (typeOf _holder) createVehicleLocal [0, 0, 0];
+    _copy setVariable [QGVAR(copy), true];
     _copy enableSimulation false;
     _copy setVectorDirAndUp [vectorDirVisual _holder, vectorUpVisual _holder];
     _copy setPosWorld (getPosWorldVisual _holder);
@@ -107,6 +108,6 @@ private _props = [];
 
 _holder hideObject true;
 
-GVAR(open) pushBack [_holder, _props, _copy, [_holder] call FUNC(holderPieces), _source, _only];
+GVAR(open) pushBack [_holder, _props, _copy, [_holder] call FUNC(holderPieces), _source, _only, _kits apply {_x select 0}];
 
 true

@@ -67,7 +67,7 @@ if (!hasInterface) exitWith {};
     _onTable setPosASL ((getPosASL _table) vectorAdd [0, 0, 0.82]);
 
     // An ACE Arsenal box with everything in it.
-    private _box = createVehicle ["B_supplyCrate_F", _center vectorAdd [-4, 1, 0], [], 0, "CAN_COLLIDE"];
+    private _box = createVehicle ["B_supplyCrate_F", _center vectorAdd [-3, -4, 0], [], 0, "CAN_COLLIDE"];
     clearItemCargoGlobal _box;
     clearWeaponCargoGlobal _box;
     clearMagazineCargoGlobal _box;
@@ -102,45 +102,36 @@ if (!hasInterface) exitWith {};
         ["showroom"] call efku_lids_fnc_closeLids;
     }, nil, 10, false, true, "", "efku_showroom_playing"];
 
-    hint "UNSC Edition showroom\n\nScroll menu: Play animation\nACE Arsenal box on the left.";
+    hint "UNSC Edition showroom\n\nScroll menu: Play animation\nACE Arsenal box behind you.";
 };
 
-// Test driver (tools/ingame_test only): wait for the room, look at it, play the loop, shoot.
+// Test driver (tools/ingame_test only): close-ups of a few kits from the side their lid opens to,
+// shut (for the shadow) and open.
 [] spawn {
     waitUntil {!isNil "efku_showroom_playing"};
-    sleep 2;
+    sleep 3;
     disableUserInput true;
     private _cam = "camera" camCreate [4096, 4093, 3.2];
     _cam cameraEffect ["internal", "back"];
     showCinemaBorder false;
-    _cam camSetTarget [4096, 4103, 0];
-    _cam camSetFov 0.75;
-    _cam camCommit 0;
-    sleep 2;
-    diag_log "EFKUTEST SHOT room_closed";
-    sleep 1;
-    efku_showroom_playing = true;
-    [] spawn {
-        while {efku_showroom_playing} do {
-            {[_x, "", "showroom"] call efku_lids_fnc_openHolder} forEach efku_showroom_holders;
-            sleep 2.6;
-            ["showroom"] call efku_lids_fnc_closeLids;
-            sleep 2.65;
-        };
-    };
-    sleep 1.5;
-    diag_log "EFKUTEST SHOT room_open";
-    sleep 2.5;
-    diag_log "EFKUTEST SHOT room_shut";
-    sleep 3;
-    diag_log "EFKUTEST SHOT room_open2";
-    _cam camSetPos [4099.5, 4105.5, 1.8];
-    _cam camSetTarget [4101, 4104, 0.7];
-    _cam camCommit 0;
-    sleep 3.5;
-    diag_log "EFKUTEST SHOT room_table";
-    efku_showroom_playing = false;
-    sleep 1;
-    diag_log format ["EFKUTEST OPENCOUNT %1", count efku_lids_open];
+    {
+        _x params ["_i", "_name"];
+        private _p = [4096 + (_i - 4.5) * 1.4, 4100, 0];
+        private _h = efku_showroom_holders select _i;
+        _cam camSetPos (_p vectorAdd [0.25, -0.75, 0.75]);
+        _cam camSetTarget (_p vectorAdd [0, 0, 0.05]);
+        _cam camSetFov 0.45;
+        _cam camCommit 0;
+        sleep 2;
+        diag_log format ["EFKUTEST SHOT sr_%1_shut", _name];
+        sleep 1;
+        [_h] call efku_lids_fnc_openHolder;
+        sleep 1.5;
+        diag_log format ["EFKUTEST SHOT sr_%1_open", _name];
+        sleep 1;
+        ["", true] call efku_lids_fnc_closeLids;
+        sleep 0.5;
+    } forEach [[0, "ifak"], [1, "afak"], [2, "mfak"], [6, "pouch"], [7, "ammobag"]];
+    diag_log format ["EFKUTEST CASTERS %1", count efku_lids_casters];
     diag_log "EFKUTEST DONE";
 };

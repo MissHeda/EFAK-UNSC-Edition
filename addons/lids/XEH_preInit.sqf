@@ -8,6 +8,11 @@ ADDON = false;
 GVAR(open) = [];
 // Slots per holder model, see fnc_holderSlots.
 GVAR(slots) = createHashMap;
+// Prop class per item class, see fnc_propOf.
+GVAR(propOf) = createHashMap;
+// Shadow casters per holder (hashValue): [holder, pieces, [[caster, piece index, prop config]], last place].
+GVAR(casters) = createHashMap;
+GVAR(tick) = 0;
 // What EFAK's kit window shows on the ground: [holder, kit class] or [].
 GVAR(kitWindow) = [];
 

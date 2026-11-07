@@ -164,12 +164,14 @@ def ifak():
         # raised label field on the lid
         box((0.128, 0.003, 0.066), (0, -D / 2 - 0.009, 0.07), "olive_dark", cut=0.006, axis="y", bevel=0.001,
             segs=1)
-        # finger notch to open the lid, top middle
-        box((0.03, 0.003, 0.008), (0, lf - 0.0015, 0.112), "olive_dark", cut=0.003, axis="y", bevel=0.0012, segs=1)
-    lid_axis((-0.07, lf + 0.001, 0.008), (0.07, lf + 0.001, 0.008))
+        # finger notch to open the lid, at its free edge (bottom middle)
+        box((0.03, 0.003, 0.008), (0, lf - 0.0015, 0.02), "olive_dark", cut=0.003, axis="y", bevel=0.0012, segs=1)
+    # The IFAK lies on its back in the game (EXPORT_ROT): the lid is hinged along the top, so it swings
+    # up away from whoever opens it, and the label reads from that side - its top towards the hinge.
+    lid_axis((-0.07, lf + 0.001, 0.124), (0.07, lf + 0.001, 0.124))
     decal("ifak_label", (0, -D / 2 - 0.0105, 0.07), F, UP, 0.104, depth=0.003)
-    # hinge along the foot of the lid
-    hinge((-0.055, lf + 0.001, 0.008), (0.055, lf + 0.001, 0.008), r=0.0032, knuckles=5)
+    # hinge along the top of the lid
+    hinge((-0.055, lf + 0.001, 0.124), (0.055, lf + 0.001, 0.124), r=0.0032, knuckles=5)
     # pull tab on top, and its loop
     box((0.05, 0.018, 0.012), (0, -0.012, H + 0.004), "red", cut=0.004, axis="y", bevel=0.002, segs=2)
     box((0.03, 0.006, 0.02), (0, -0.024, H + 0.012), "red", cut=0.006, cuts=(0, 0, 1, 1), axis="y",
@@ -180,13 +182,14 @@ def ifak():
         for k in range(2):
             box((0.006, 0.044, 0.007), (sx * (W / 2 + 0.001), 0, 0.03 + k * 0.022), "olive_dark", bevel=0.0015,
                 segs=2)
-    decal("cross_tag", (W / 2, 0.01, 0.08), R, UP, 0.018, depth=0.003)
-    plate((-W / 2, 0, 0.08), L_, UP, 0.04, 0.022, "black_metal", "serial_white")
+    # side markings upright as the case lies (on its back: the front F points up)
+    decal("cross_tag", (W / 2, 0.01, 0.08), R, F, 0.018, depth=0.003)
+    plate((-W / 2, 0, 0.08), L_, F, 0.04, 0.022, "black_metal", "serial_white")
     # guards on the cut top corners
     for sx in (-1, 1):
         (cx, cz), ang, ln = _on_face(sx * (W / 2 - cut), H, sx * W / 2, H - cut)
         prism(rect(ln * 0.8, D + 0.004), 0.004, "dark_poly", (cx, 0, cz), (0, ang, 0), bevel=0.0012, segs=1)
-    decal("egb_white", (0.044, 0.01, H), UP, B, 0.012, depth=0.003)
+    decal("egb_white", (0.044, 0.01, H), UP, F, 0.012, depth=0.003)
     molle_back(W, D, H, D / 2)
     return 2048
 
@@ -260,7 +263,7 @@ def afak():
     hinge((-0.09, D / 2 + 0.004, lid_z), (0.09, D / 2 + 0.004, lid_z), r=0.0045, knuckles=7, look="shell_dark")
     # labels
     decal("afak_label", (0, -0.095, top), UP, B, 0.12, depth=0.003)
-    decal("serial_white", (0, 0.098, top), UP, (0, -1, 0), 0.08, depth=0.003)
+    decal("serial_white", (0, 0.098, top), UP, B, 0.08, depth=0.003)
     feet((-0.12, 0.12), (-0.08, 0.08))
     return 2048
 
@@ -618,13 +621,38 @@ def pill_box(c):
 
 
 @clustered
-def mag_top(c, h=0.012):
-    """The top of an MA5 magazine standing in its slot: body, feed lips, the top round."""
+def mag_top(c, h=0.012, w=0.026, d=0.044):
+    """The top of an MA5 magazine standing in its slot: the body, long side front to back (d), the two
+    feed lips along it, and the top round lying between them, bullet forward (-y), all within the
+    body's length - the way a loaded magazine looks from above."""
     x, y, z = c
-    box((0.03, 0.02, h), (x, y, z + h / 2), "dark_poly", cut=0.003, bevel=0.0012, segs=1)
-    box((0.026, 0.006, 0.003), (x, y, z + h + 0.0015), "black_metal", bevel=0.0006, segs=1)
-    cyl(0.0034, 0.016, (x, y - 0.001, z + h + 0.0034), "brass", axis="y", n=12, bevel=0.0008)
-    cyl(0.0022, 0.006, (x, y - 0.012, z + h + 0.0034), "steel", axis="y", n=10, bevel=0.0015, segs=2)
+    box((w, d, h), (x, y, z + h / 2), "dark_poly", cut=0.003, bevel=0.0012, segs=1)
+    for sx in (-1, 1):
+        box((0.0035, d - 0.012, 0.004), (x + sx * (w / 2 - 0.004), y + 0.002, z + h + 0.002), "black_metal",
+            bevel=0.0006, segs=1)
+    rz = z + h + 0.0032
+    cyl(0.0036, 0.026, (x, y + 0.004, rz), "brass", axis="y", n=12, bevel=0.0008)
+    cyl(0.0024, 0.009, (x, y - 0.0135, rz), "steel", axis="y", n=10, bevel=0.0016, segs=2)
+
+
+@clustered
+def mag_flat(c, length=0.132, depth=0.062, thick=0.024):
+    """A full MA5 magazine lying flat in foam: the body along y (feed end at +y), its front-to-back
+    depth along x, ribs on the face, the floor plate, feed lips and the top round lying front to back
+    (bullet towards -x) inside the lips."""
+    x, y, z = c
+    box((depth, length, thick), (x, y, z + thick / 2), "dark_poly", cut=0.004, bevel=0.0015, segs=1)
+    for sx in (-1, 1):
+        box((0.005, length * 0.72, 0.0016), (x + sx * depth * 0.22, y - 0.006, z + thick + 0.0008), "dark_poly",
+            bevel=0.0005, segs=1)
+    box((depth + 0.004, 0.009, thick + 0.003), (x, y - length / 2 - 0.0035, z + thick / 2 + 0.0005),
+        "black_metal", cut=0.002, bevel=0.0012, segs=1)
+    yl = y + length / 2
+    for sz in (-1, 1):
+        box((depth - 0.016, 0.006, 0.0035), (x + 0.004, yl + 0.003, z + thick / 2 + sz * 0.0085), "black_metal",
+            bevel=0.0006, segs=1)
+    cyl(0.0038, 0.03, (x + 0.007, yl + 0.0045, z + thick / 2), "brass", axis="x", n=12, bevel=0.0008)
+    cyl(0.0026, 0.011, (x - 0.0135, yl + 0.0045, z + thick / 2), "steel", axis="x", n=10, bevel=0.0018, segs=2)
 
 
 @clustered
@@ -780,9 +808,9 @@ def fill_ammo_bag():
     W, D, H, lid_h, cap = 0.36, 0.18, 0.2, 0.042, 0.03
     with contents():
         zf = case_foam(W, D, H, lid_h, cap)
-        for k in range(5):
-            for y in (-0.035, 0.035):
-                mag_top((-0.12 + k * 0.06, y, zf), h=0.02)
+        # four full magazines lying flat, sunk halfway into their foam cut-outs
+        for k in range(4):
+            mag_flat((-0.108 + k * 0.072, -0.004, zf - 0.016))
 
 
 def fill_engineer_bag():

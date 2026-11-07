@@ -48,3 +48,7 @@ if (_want isNotEqualTo [] && {(GVAR(open) findIf {(_x select 0) isEqualTo (_want
         [_holder, _only, _by, true] call FUNC(openHolder);
     };
 } forEach +GVAR(open);
+
+// Shadows: new and gone holders once a second, moving ones every time.
+GVAR(tick) = GVAR(tick) + 1;
+[GVAR(tick) % 5 == 0] call FUNC(shadows);

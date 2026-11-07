@@ -11,7 +11,8 @@
  * Arguments:
  * 0: Holder <OBJECT>
  * 1: Slot, see fnc_holderSlots <ARRAY>
- * 2: Prop <OBJECT>
+ * 2: Prop, or its shadow caster <OBJECT>
+ * 3: The prop's config, when the object is not the prop itself <CONFIG> (default: configOf the object)
  *
  * Return Value:
  * None
@@ -22,10 +23,10 @@
  * Public: No
  */
 
-params ["_holder", "_slot", "_prop"];
+params ["_holder", "_slot", "_prop", ["_config", configNull]];
 _slot params ["_corner", "_dir"];
 
-private _config = configOf _prop;
+if (isNull _config) then {_config = configOf _prop};
 private _offset = getArray (_config >> "efku_offset");
 if (count _offset != 3) then {_offset = [0, 0, 0]};
 

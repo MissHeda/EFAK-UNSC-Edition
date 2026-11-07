@@ -1348,6 +1348,30 @@ def write_p3d(path, ob, tex, mat, shadow=None):
     print("wrote", path)
 
 
+def write_shadow_p3d(path, shadow):
+    """A shadow caster for a kit lying in a ground holder, where the game draws no shadow for it: the
+    kit's own shadow LOD (lid shut) and nothing to see - one tiny face deep inside the closed case,
+    so the model is not culled as empty."""
+    xs = [p[0][0] for t in shadow for p in t]
+    ys = [p[0][1] for t in shadow for p in t]
+    zs = [p[0][2] for t in shadow for p in t]
+    c = ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2, (min(zs) + max(zs)) / 2)
+    n = (0.0, 0.0, 1.0)
+    e = 0.0005
+    tri = [((c[0], c[1], c[2]), n, (0.0, 0.0)), ((c[0] + e, c[1], c[2]), n, (0.0, 0.0)),
+           ((c[0], c[1] + e, c[2]), n, (0.0, 0.0))]
+    lods = []
+    data, npt, nf = lod_bytes(1.0, [tri], "#(argb,8,8,3)color(0,0,0,0)", "")
+    lods.append(data)
+    data, npt, nf = lod_bytes(10000.0, shadow, "", "", sharp=True)
+    lods.append(data)
+    with open(path, "wb") as f:
+        f.write(b"MLOD" + struct.pack("<II", 257, len(lods)))
+        for l in lods:
+            f.write(l)
+    print("wrote", path, "shadow faces", nf)
+
+
 RVMAT = """ambient[]={1,1,1,1};
 diffuse[]={1,1,1,1};
 forcedDiffuse[]={0,0,0,0};
