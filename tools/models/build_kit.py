@@ -15,6 +15,15 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import unsc_lib as U  # noqa: E402
+
+# Blender exits 0 even when the script fails: make a failure a failure
+def _fail(kind, value, tb):
+    import traceback
+    traceback.print_exception(kind, value, tb)
+    os._exit(1)
+
+
+sys.excepthook = _fail
 import kits  # noqa: E402
 
 argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []

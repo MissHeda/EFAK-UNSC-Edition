@@ -7,16 +7,16 @@ a cyan HUD readout on dark glass. Works with EFAK, EUP or both - whichever is lo
 
 | Kit | Becomes |
 |---|---|
-| IFAK | M7 IFAK - angular polymer case with red pull tab and MOLLE back |
-| AFAK | M9 AFAK - the flat octagonal field medkit with the medical mark and red reflectors |
-| MFAK | MFAK - UNSC supply crate with padded lid and corner posts |
-| MFAK+ | MFAK+ - tall UNSC locker tin with fold handles |
-| Narc Box | Narc case - moulded launcher-ammo style hard case with yellow stencil |
-| Utility Pouch | M12 utility pouch - webbing pouch with moulded lid and buckled straps |
-| Ammo Pouch | double magazine pouch with two mags and rounds showing |
-| Ammo Bag | steel ammunition crate with folding handle and yellow HE band |
-| Engineer Bag | olive tool case with orange bumpers, vents and hazard stripes |
-| CBRN Bag | white sealed CBRN container with seal gauge and purge valve |
+| IFAK | IFAK - angular polymer case with a front lid, red pull tab and MOLLE back |
+| AFAK | AFAK - the flat octagonal field medkit with the medical mark and red reflectors |
+| MFAK | khaki UNSC medical case in the style of Halo Infinite's crates: black frame, EGB emblem |
+| MFAK+ | the same family, taller, olive |
+| Narc Box | narc case - moulded launcher-ammo style hard case with yellow stencil |
+| Utility Pouch | utility pouch - webbing pouch with moulded lid, straps over the flap to buckles |
+| Ammo Pouch | double magazine pouch - two moulded cells, each closed by its own lid and snap |
+| Ammo Bag | olive UNSC ammunition case with Marine Corps insignia and folding handle |
+| Engineer Bag | grey UNSC tool case with hazard stripes |
+| CBRN Bag | white UNSC case with yellow band, seal gauge and purge valve |
 
 Needs EFAK or EUP (EFAK 1.4.0 or later for the window colours; older versions still get the models). Changes nothing
 but the look: names, contents, weights and settings stay EFAK's, so EFAK updates keep working.
@@ -39,4 +39,6 @@ hemtt build
 
 Halo © Microsoft Corporation. EFAK: UNSC Edition was created under Microsoft's
 ["Game Content Usage Rules"](https://www.xbox.com/en-US/developers/rules) using assets from Halo, and it is
-not endorsed by or affiliated with Microsoft. All models and textures here are made from scratch.
+not endorsed by or affiliated with Microsoft. Models and textures are made from scratch; the UNSC emblem
+(Eagle, Globe and Banner), the UNSC Marine Corps insignia and the UNSC wordmark in `tools/models/logos` are
+Microsoft's marks, in versions taken from [Halopedia](https://www.halopedia.org/Symbols_of_the_UNSC).

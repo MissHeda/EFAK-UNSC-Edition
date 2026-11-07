@@ -76,6 +76,12 @@ LOOKS = {
     "shell_grey": look(srgb(150, 153, 154), srgb(200, 202, 204), wear=0.4, grime=0.5, spec=0.2, gloss=0.42,
                        mottle=0.04, pattern="stipple", grain=0.12),
     "shell_dark": look(srgb(72, 75, 78), STEEL, wear=0.45, grime=0.5, spec=0.18, gloss=0.38, primer=srgb(96, 98, 98)),
+    # Halo Infinite UNSC cases: black polymer frame, painted body panels
+    "frame_black": look(srgb(36, 37, 38), srgb(92, 94, 94), wear=0.4, grime=0.45, spec=0.1, gloss=0.3,
+                        pattern="stipple", grain=0.25),
+    "unsc_olive": look(srgb(84, 90, 66), STEEL, wear=0.5, grime=0.55, spec=0.12, gloss=0.3, primer=PRIMER),
+    "unsc_khaki": look(srgb(128, 118, 90), STEEL, wear=0.5, grime=0.55, spec=0.12, gloss=0.3, primer=PRIMER),
+    "unsc_grey": look(srgb(104, 106, 104), STEEL, wear=0.5, grime=0.55, spec=0.14, gloss=0.32, primer=PRIMER),
     # EUP colours
     "hazard_yellow": look(srgb(206, 168, 44), STEEL, wear=0.55, grime=0.55, spec=0.16, gloss=0.38, primer=PRIMER),
     "hazmat_white": look(srgb(196, 196, 186), srgb(150, 150, 142), wear=0.35, grime=0.7, spec=0.2, gloss=0.42,
@@ -977,7 +983,15 @@ def to_paa(png, paa):
     import tempfile
     tmp = os.path.join(tempfile.mkdtemp(), os.path.splitext(os.path.basename(paa))[0] + ".png")
     shutil.copyfile(png, tmp)
-    subprocess.run([IMAGE_TO_PAA, tmp, paa], check=True, capture_output=True)
+    # ImageToPAA now and then fails on a file another process still holds: try again before giving up
+    import time
+    for attempt in range(3):
+        r = subprocess.run([IMAGE_TO_PAA, tmp, paa], capture_output=True)
+        if r.returncode == 0:
+            break
+        time.sleep(2)
+    else:
+        raise RuntimeError("ImageToPAA failed for %s: %s" % (paa, (r.stdout + r.stderr).decode(errors="replace")))
     print("paa", paa)
 
 

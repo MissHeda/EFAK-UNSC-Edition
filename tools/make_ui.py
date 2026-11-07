@@ -27,15 +27,15 @@ IMAGE_TO_PAA = r"D:\Steam\steamapps\common\Arma 3 Tools\ImageToPAA\ImageToPAA.ex
 CYAN = (92, 209, 245)
 
 KITS = {
-    "ifak": ("IFAK", "M7 INDIVIDUAL FIRST AID KIT"),
-    "afak": ("AFAK", "M9 TRAUMA KIT"),
+    "ifak": ("IFAK", "INDIVIDUAL FIRST AID KIT"),
+    "afak": ("AFAK", "TRAUMA KIT"),
     "mfak": ("MFAK", "MULTI-CASUALTY MEDICAL SUPPLY"),
     "mfakplus": ("MFAK+", "FIELD MEDIC RESUPPLY"),
     "narcbox": ("NARC", "CONTROLLED SUBSTANCES"),
-    "utility_pouch": ("UTIL", "M12 UTILITY POUCH"),
+    "utility_pouch": ("UTIL", "UTILITY POUCH"),
     "ammo_pouch": ("AMMO", "DOUBLE MAGAZINE POUCH"),
     "ammo_bag": ("AMMO", "AMMUNITION CRATE  600 RDS"),
-    "engineer_bag": ("ENG", "M88 FIELD REPAIR TOOL SET"),
+    "engineer_bag": ("ENG", "COMBAT ENGINEER TOOL SET"),
     "cbrn_bag": ("CBRN", "DECON & PROTECTION KIT"),
 }
 EUP = ("utility_pouch", "ammo_pouch", "ammo_bag", "engineer_bag", "cbrn_bag")
@@ -200,7 +200,7 @@ def to_paa(im, paa):
 def main():
     os.makedirs(os.path.join(HERE, "models", "out"), exist_ok=True)
     ui = os.path.join(REPO, "addons", "gui", "ui")
-    to_paa(gloss(1024, 1024, 1.1 * 37 / 0.95, 36, 0.6, 36 * 0.95 * 1080 / 37, "UNSC // MED-CORPS  FIELD INVENTORY"),
+    to_paa(gloss(1024, 1024, 1.1 * 37 / 0.95, 36, 0.6, 36 * 0.95 * 1080 / 37, "UNSC // MED CORPS  FIELD INVENTORY"),
            os.path.join(ui, "gloss_pouch_ca.paa"))
     to_paa(gloss(512, 1024, 14.9, 23.05, 0.6, 23.05 * 1080 / 40, "UNSC // CONTENTS"),
            os.path.join(ui, "gloss_contents_ca.paa"))

@@ -66,11 +66,63 @@ def side_handle(x, sx, z, look="black_metal"):
     box((0.012, 0.106, 0.012), (x + sx * 0.024, 0, z + 0.004), look, bevel=0.003, segs=2)
 
 
+def unsc_case(W, D, H, body, lid_h=0.048, base_h=0.026, cap=0.034, latches=2, handles=True):
+    """A UNSC case in the style of Halo Infinite's: a black polymer frame (skid, end caps and lid cap)
+    around a painted body, draw latches on the front, hinge at the back, recessed grips in the end
+    caps. Returns the places the decals of the kit go."""
+    zb, zl = base_h, H - lid_h
+    inner = W - 2 * cap
+    # skid, its lower edges cut
+    box((W + 0.006, D + 0.012, base_h), (0, 0, base_h / 2), "frame_black", cut=0.008, cuts=(1, 1, 0, 0),
+        axis="x", bevel=0.003, segs=2)
+    # body between the end caps
+    box((inner + 0.004, D, zl - zb + 0.004), (0, 0, (zb + zl) / 2), body, bevel=0.003, segs=2)
+    # raised front and back panels with cut lower corners
+    for sy in (-1, 1):
+        box((inner * 0.84, 0.005, (zl - zb) * 0.74), (0, sy * (D / 2 + 0.0025), zb + (zl - zb) * 0.46), body,
+            cut=0.02, cuts=(1, 1, 0, 0), axis="y", bevel=0.002, segs=2)
+    # end caps, proud of the body all round
+    for sx in (-1, 1):
+        x = sx * (W / 2 - cap / 2)
+        box((cap, D + 0.012, zl - zb + 0.006), (x, 0, (zb + zl) / 2), "frame_black", cut=0.006, axis="x",
+            bevel=0.004, segs=3)
+        if handles:
+            # recessed grip: a dark pocket with a bar across it
+            gw = min(0.11, D * 0.6)
+            gz = zb + (zl - zb) * 0.62
+            Fh = frame((sx * W / 2, 0, gz), (sx, 0, 0), UP)
+            lbox(Fh, (gw, 0.034, 0.002), (0, 0, 0), "rubber", cut=0.006, bevel=0.0008)
+            lbox(Fh, (gw - 0.01, 0.012, 0.007), (0, 0.004, 0.0015), "frame_black", cut=0.003, bevel=0.002, segs=2)
+            for sy in (-1, 1):
+                screw((sx * W / 2 + sx * 0.002, sy * (gw / 2 + 0.008), gz), (sx, 0, 0), 0.0022)
+        # small yellow marker in the lower front corner of each cap
+        lbox(frame((x, -D / 2 - 0.006, zb + 0.014), F, UP), (0.012, 0.012, 0.0008), (0, 0, 0), "hazard_yellow",
+             bevel=0.0003)
+    # seal under the lid
+    box((W - 0.004, D + 0.004, 0.005), (0, 0, zl + 0.001), "rubber", bevel=0.001, segs=1)
+    # lid cap over the whole length, with two ribs
+    box((W + 0.006, D + 0.016, lid_h), (0, 0, H - lid_h / 2 + 0.002), "frame_black", bevel=0.008, segs=3,
+        taper=0.003)
+    top = H + 0.002
+    for sy in (-1, 1):
+        lbox(frame((0, sy * (D / 2 - 0.018), top - 0.0005), UP, B), (W * 0.62, 0.008, 0.003), (0, 0, 0),
+             "frame_black", cut=0.003, bevel=0.0012)
+    # latches over the seam, hinge at the back
+    xs = [0.0] if latches == 1 else [sx * inner * 0.3 for sx in (-1, 1)]
+    for x in xs:
+        toggle_latch((x, -D / 2 - 0.0055, zl + 0.004), F, w=0.034, h=0.054, look="frame_black")
+    hinge((-inner * 0.4, D / 2 + 0.008, zl + 0.004), (inner * 0.4, D / 2 + 0.008, zl + 0.004), r=0.005,
+          knuckles=7, look="frame_black")
+    feet((-W / 2 + 0.05, W / 2 - 0.05), (-D / 2 + 0.04, D / 2 - 0.04), size=0.03)
+    return dict(front=-D / 2 - 0.005, back=D / 2 + 0.005, top=top, zb=zb, zl=zl, inner=inner,
+                mid=zb + (zl - zb) * 0.46)
+
+
 # ===================================================================================================
 # EFAK
 # ===================================================================================================
 def ifak():
-    """M7 IFAK: an angular polymer case for one casualty, belt or MOLLE mounted, red pull tab."""
+    """IFAK: an angular polymer case for one casualty, belt or MOLLE mounted, red pull tab."""
     W, D, H = 0.17, 0.06, 0.13
     cut = 0.022
     box((W, D, H), (0, 0, H / 2), "olive", cut=cut, cuts=(0.5, 0.5, 1, 1), axis="y", bevel=0.004, segs=3)
@@ -84,14 +136,10 @@ def ifak():
     # raised label field on the lid
     box((0.128, 0.003, 0.066), (0, -D / 2 - 0.009, 0.07), "olive_dark", cut=0.006, axis="y", bevel=0.001, segs=1)
     decal("ifak_label", (0, -D / 2 - 0.0105, 0.07), F, UP, 0.122, depth=0.004)
-    for sx in (-1, 1):
-        screw((sx * 0.066, lf, 0.017), F)
-        screw((sx * 0.058, lf, 0.112), F)
     # hinge along the foot of the lid
     hinge((-0.055, lf + 0.001, 0.008), (0.055, lf + 0.001, 0.008), r=0.0032, knuckles=5)
-    # status lens and its bezel, top middle of the lid
-    cyl(0.0065, 0.003, (0, lf - 0.0015, 0.112), "black_metal", axis="y", n=20)
-    cyl(0.0042, 0.003, (0, lf - 0.0025, 0.112), "green_lens", axis="y", n=20)
+    # finger notch to open the lid, top middle
+    box((0.03, 0.003, 0.008), (0, lf - 0.0015, 0.112), "olive_dark", cut=0.003, axis="y", bevel=0.0012, segs=1)
     # pull tab on top, and its loop
     box((0.05, 0.018, 0.012), (0, -0.012, H + 0.004), "red", cut=0.004, axis="y", bevel=0.002, segs=2)
     box((0.03, 0.006, 0.02), (0, -0.024, H + 0.012), "red", cut=0.006, cuts=(0, 0, 1, 1), axis="y",
@@ -109,13 +157,13 @@ def ifak():
     for sx in (-1, 1):
         (cx, cz), ang, ln = _on_face(sx * (W / 2 - cut), H, sx * W / 2, H - cut)
         prism(rect(ln * 0.8, D + 0.004), 0.004, "dark_poly", (cx, 0, cz), (0, ang, 0), bevel=0.0012, segs=1)
+    decal("egb_white", (0.045, 0.012, H), UP, B, 0.02, depth=0.004)
     molle_back(W, D, H, D / 2)
-    feet((-0.06, 0.06), (0,), size=0.018)
     return 2048
 
 
 def afak():
-    """M9 AFAK: the flat field medkit - octagonal hard case, light lid with the medical mark, red
+    """AFAK: the flat field medkit - octagonal hard case, light lid with the medical mark, red
     reflectors, rubber grips front and back."""
     W, D = 0.36, 0.27
     C = 0.06
@@ -175,117 +223,42 @@ def afak():
 
 
 def mfak():
-    """MFAK: a UNSC supply crate - tan olive body on a black skid, riveted corner posts, padded lid,
-    toggle latches."""
-    W, D = 0.44, 0.24
-    z0, z1 = 0.03, 0.21
-    box((W + 0.012, D + 0.012, z0), (0, 0, z0 / 2), "dark_poly", bevel=0.003, segs=2)
-    box((W, D, z1 - z0), (0, 0, (z0 + z1) / 2), "olive_tan", bevel=0.003, segs=2)
-    # corner posts, their outer edge cut, riveted
-    cuts = {(1, -1): (0, 1, 0, 0), (-1, -1): (1, 0, 0, 0), (1, 1): (0, 0, 1, 0), (-1, 1): (0, 0, 0, 1)}
-    for (sx, sy), c in cuts.items():
-        px, py = sx * (W / 2 - 0.01), sy * (D / 2 - 0.01)
-        prism(rect(0.04, 0.04, 0.014, c), 0.204, "olive_tan_dark", (px, py, 0.008), bevel=0.0025, segs=2)
-        rivets((px - sx * 0.006, py + sy * 0.02, 0.05), (px - sx * 0.006, py + sy * 0.02, 0.13), (0, sy, 0), 3)
-        rivets((px + sx * 0.02, py - sy * 0.006, 0.05), (px + sx * 0.02, py - sy * 0.006, 0.19), (sx, 0, 0), 4)
-    # front: framed panel with angled lower corners, top rib
-    fy = -D / 2
-    box((0.34, 0.006, 0.15), (0, fy - 0.003, 0.125), "olive_tan", cut=0.03, cuts=(1, 1, 0, 0), axis="y",
-        bevel=0.002, segs=2)
-    box((0.30, 0.004, 0.118), (0, fy - 0.008, 0.118), "olive_tan", cut=0.026, cuts=(1, 1, 0, 0), axis="y",
-        bevel=0.0015, segs=2)
-    panel = fy - 0.010
-    box((0.36, 0.012, 0.014), (0, fy - 0.004, 0.199), "olive_tan_dark", bevel=0.002, segs=2)
+    """MFAK: a khaki UNSC medical case in Halo Infinite's style - black frame, EGB on the front."""
+    W, D, H = 0.46, 0.25, 0.25
+    c = unsc_case(W, D, H, "unsc_khaki")
+    decal("egb_white", (0, c["front"], c["mid"]), F, UP, 0.07, depth=0.004)
+    decal("med_sticker", (0.1, c["front"], c["zb"] + 0.045), F, UP, 0.07, depth=0.004)
+    decal("warning_red", (-0.1, c["front"], c["zb"] + 0.045), F, UP, 0.07, depth=0.004)
+    decal("mfak_white", (0.0, -0.01, c["top"]), UP, B, 0.2, depth=0.006)
+    decal("sticker_orange", (-0.16, 0.06, c["top"]), UP, B, 0.06, depth=0.006)
+    decal("wordmark_white", (0.15, -D / 2 - 0.008, c["zl"] + 0.026), F, UP, 0.07, depth=0.006)
     for sx in (-1, 1):
-        toggle_latch((sx * 0.12, fy - 0.010, 0.208), F)
-    box((0.06, 0.006, 0.012), (0, fy - 0.0125, 0.199), "dark_poly", cut=0.004, axis="y", bevel=0.0012, segs=1)
-    decal("unsc_white", (0.07, panel, 0.096), F, UP, 0.16, depth=0.004)
-    decal("warning_red", (-0.1, panel, 0.088), F, UP, 0.075, depth=0.004)
-    decal("data_panel", (0.118, panel, 0.155), F, UP, 0.05, depth=0.004)
-    # red ring marker on the front left post
-    cyl(0.009, 0.002, (-(W / 2 - 0.01), fy - 0.011, 0.17), "red", axis="y", n=24)
-    cyl(0.0055, 0.0024, (-(W / 2 - 0.01), fy - 0.0112, 0.17), "olive_tan_dark", axis="y", n=20)
-    # sides: panels, handles, a plate and a stencil
-    for sx in (-1, 1):
-        box((0.008, 0.16, 0.13), (sx * (W / 2 + 0.002), 0, 0.12), "olive_tan", cut=0.02, axis="x", bevel=0.002,
-            segs=2)
-        side_handle(sx * (W / 2 + 0.003), sx, 0.16)
-    plate((W / 2 + 0.006, 0, 0.09), R, UP, 0.07, 0.035, "black_metal", "serial_white")
-    decal("side_up_white", (-W / 2 - 0.006, 0, 0.095), L_, UP, 0.11, depth=0.004)
-    # back
-    decal("lift_white", (0, D / 2, 0.15), B, UP, 0.09, depth=0.004)
-    decal("qa_red", (0.15, D / 2, 0.06), B, UP, 0.03, depth=0.004)
-    decal("serial_white", (-0.1, D / 2, 0.08), B, UP, 0.09, depth=0.004)
-    hinge((-0.17, D / 2 + 0.004, z1 + 0.003), (0.17, D / 2 + 0.004, z1 + 0.003), r=0.005, knuckles=7)
-    # lid: padded, a little overhanging, and the seam under it; stacking pads on top
-    box((W + 0.004, D + 0.004, 0.004), (0, 0, z1 + 0.001), "rubber", bevel=0.001, segs=1)
-    box((W + 0.012, D + 0.012, 0.04), (0, 0, z1 + 0.022), "lid_pad", bevel=0.009, segs=3, taper=0.004)
-    lid_top = z1 + 0.042
-    decal("mfak_white", (0.035, 0.0, lid_top), UP, B, 0.22, depth=0.004)
-    decal("emblem_yellow", (-0.17, -0.085, lid_top), UP, B, 0.06, depth=0.004)
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            lbox(frame((sx * 0.19, sy * 0.095, lid_top - 0.001), UP, B), (0.03, 0.03, 0.004), (0, 0, 0), "rubber",
-                 cut=0.006, bevel=0.001)
-    feet((-0.19, 0.19), (-0.1, 0.1), z=0.0, size=0.03)
+        decal("lift_white", (sx * W / 2, 0, c["zb"] + (c["zl"] - c["zb"]) * 0.9), (sx, 0, 0), UP, 0.06,
+              depth=0.006)
+    decal("side_up_white", (-W / 2, 0, c["zb"] + 0.03), L_, UP, 0.07, depth=0.006)
+    decal("code_grey", (W / 2, 0, c["zb"] + 0.03), R, UP, 0.06, depth=0.006)
+    decal("serial_white", (-0.1, c["back"], c["mid"]), B, UP, 0.09, depth=0.004)
+    decal("qa_red", (0.12, c["back"], c["mid"]), B, UP, 0.03, depth=0.004)
     return 4096
 
 
 def mfakplus():
-    """MFAK+: a tall UNSC locker tin - green, framed front, grey feet, black fold handles."""
-    W, D, H = 0.42, 0.19, 0.33
-    box((W, D, H), (0, 0, H / 2), "olive_green", bevel=0.004, segs=3)
-    fy = -D / 2
-    # feet on the four bottom corners, front and back
+    """MFAK+: a taller olive UNSC medical case, the same family as the MFAK."""
+    W, D, H = 0.44, 0.24, 0.36
+    c = unsc_case(W, D, H, "unsc_olive", lid_h=0.05)
+    decal("egb_white", (0, c["front"], c["mid"] + 0.02), F, UP, 0.1, depth=0.004)
+    decal("med_sticker", (0.1, c["front"], c["zb"] + 0.055), F, UP, 0.075, depth=0.004)
+    decal("warning_red", (-0.1, c["front"], c["zb"] + 0.055), F, UP, 0.07, depth=0.004)
+    decal("mfakplus_white", (0.0, -0.01, c["top"]), UP, B, 0.22, depth=0.006)
+    decal("sticker_orange", (-0.15, 0.06, c["top"]), UP, B, 0.06, depth=0.006)
+    decal("wordmark_white", (0.14, -D / 2 - 0.008, c["zl"] + 0.027), F, UP, 0.07, depth=0.006)
     for sx in (-1, 1):
-        for sy in (-1, 1):
-            box((0.05, 0.006, 0.04), (sx * (W / 2 - 0.03), sy * (D / 2 + 0.002), 0.022), "shell_dark",
-                cut=0.012, cuts=(0, 0, 1, 1), axis="y", bevel=0.0015, segs=1)
-            screw((sx * (W / 2 - 0.03), sy * (D / 2 + 0.005), 0.018), (0, sy, 0), 0.0025)
-    # front: riveted corner strips, framed panel, top bracket with a handle bump, latches
-    for sx in (-1, 1):
-        box((0.026, 0.006, 0.27), (sx * (W / 2 - 0.022), fy - 0.002, 0.18), "olive_green", cut=0.008,
-            axis="y", bevel=0.002, segs=2)
-        rivets((sx * (W / 2 - 0.022), fy - 0.005, 0.06), (sx * (W / 2 - 0.022), fy - 0.005, 0.26), F, 6)
-    box((0.30, 0.005, 0.25), (0, fy - 0.0025, 0.16), "olive_green", cut=0.04, cuts=(1, 1, 0, 0), axis="y",
-        bevel=0.002, segs=2)
-    panel = fy - 0.005
-    box((0.18, 0.006, 0.03), (0, fy - 0.006, 0.272), "olive_green", cut=0.012, cuts=(1, 1, 0, 0), axis="y",
-        bevel=0.0015, segs=2)
-    box((0.06, 0.008, 0.014), (0, fy - 0.01, 0.282), "olive_green", cut=0.004, axis="y", bevel=0.0015, segs=2)
-    for sx in (-1, 1):
-        toggle_latch((sx * 0.125, fy - 0.0005, 0.33), F)
-    decal("unsc_white", (0.0, panel, 0.12), F, UP, 0.22, depth=0.004)
-    decal("warning_red", (-0.085, panel, 0.215), F, UP, 0.07, depth=0.004)
-    decal("data_panel", (0.09, panel, 0.215), F, UP, 0.055, depth=0.004)
-    cyl(0.008, 0.002, (-(W / 2 - 0.022), fy - 0.006, 0.29), "red", axis="y", n=24)
-    cyl(0.005, 0.0024, (-(W / 2 - 0.022), fy - 0.0062, 0.29), "olive_green", axis="y", n=20)
-    # sides: panels, a vent, fold handles
-    for sx in (-1, 1):
-        box((0.006, 0.14, 0.24), (sx * (W / 2 + 0.002), 0, 0.165), "olive_green", cut=0.02, axis="x", bevel=0.002,
-            segs=2)
-        box((0.008, 0.044, 0.04), (sx * (W / 2 + 0.008), 0, 0.29), "black_metal", bevel=0.002, segs=2)
-        for sy in (-1, 1):
-            box((0.026, 0.008, 0.008), (sx * (W / 2 + 0.022), sy * 0.022, 0.29), "black_metal", bevel=0.002,
-                segs=1)
-            bolt((sx * (W / 2 + 0.012), sy * 0.015, 0.302), (sx, 0, 0), 0.0024)
-        box((0.008, 0.06, 0.012), (sx * (W / 2 + 0.034), 0, 0.29), "black_metal", bevel=0.003, segs=2)
-    vents((-W / 2 - 0.005, 0, 0.13), L_, UP, 7, 0.09, 0.0095, look="olive_green")
-    decal("side_up_white", (W / 2 + 0.005, 0, 0.13), R, UP, 0.1, depth=0.004)
-    # back: hinge, plate and stencils
-    hinge((-W / 2 + 0.03, D / 2 + 0.003, H + 0.002), (W / 2 - 0.03, D / 2 + 0.003, H + 0.002), r=0.0055, knuckles=9)
-    plate((0.1, D / 2, 0.22), B, UP, 0.075, 0.036, "black_metal", "serial_white")
-    decal("lift_white", (-0.08, D / 2, 0.22), B, UP, 0.09, depth=0.004)
-    decal("qa_red", (0.15, D / 2, 0.07), B, UP, 0.03, depth=0.004)
-    # lid with two stacking ribs
-    box((W + 0.008, D + 0.008, 0.026), (0, 0, H + 0.013), "olive_green", bevel=0.006, segs=3)
-    lid_top = H + 0.026
-    for sx in (-1, 1):
-        lbox(frame((sx * 0.175, 0, lid_top - 0.0005), UP, B), (0.014, 0.16, 0.004), (0, 0, 0), "olive_green",
-             cut=0.004, bevel=0.0012)
-    decal("mfakplus_white", (0.0, 0.0, lid_top), UP, B, 0.25, depth=0.004)
-    decal("emblem_yellow", (-0.13, -0.065, lid_top), UP, B, 0.05, depth=0.004)
-    decal("nostep_yellow", (0.06, 0.07, lid_top), UP, B, 0.1, depth=0.004)
+        decal("lift_white", (sx * W / 2, 0, c["zb"] + (c["zl"] - c["zb"]) * 0.82), (sx, 0, 0), UP, 0.06,
+              depth=0.006)
+    decal("side_up_white", (-W / 2, 0, c["zb"] + 0.04), L_, UP, 0.07, depth=0.006)
+    decal("code_grey", (W / 2, 0, c["zb"] + 0.04), R, UP, 0.06, depth=0.006)
+    decal("serial_white", (-0.1, c["back"], c["mid"]), B, UP, 0.09, depth=0.004)
+    decal("qa_red", (0.12, c["back"], c["mid"]), B, UP, 0.03, depth=0.004)
     return 4096
 
 
@@ -345,174 +318,133 @@ def narcbox():
 # Enhanced Utility Pouches
 # ===================================================================================================
 def utility_pouch():
-    """M12 utility pouch: a webbing pouch with a moulded lid, two straps with buckles, MOLLE back."""
+    """Utility pouch: a webbing pouch with a moulded lid. Two straps run over the lid and down the
+    flap to side-release buckles on the body; the label sits on the flap between them."""
     W, D, H = 0.15, 0.06, 0.118
     box((W, D, H - 0.01), (0, 0, (H - 0.01) / 2), "webbing", bevel=0.01, segs=3)
     # binding tape round the opening
     box((W + 0.003, D + 0.003, 0.006), (0, 0, H - 0.012), "webbing", bevel=0.002, segs=1)
     # moulded lid and its front flap
     box((W + 0.004, D + 0.006, 0.012), (0, 0, H - 0.002), "olive_dark", cut=0.008, bevel=0.003, segs=2)
-    box((W - 0.016, 0.006, 0.05), (0, -D / 2 - 0.004, H - 0.03), "olive_dark", cut=0.012, cuts=(1, 1, 0, 0),
+    flap_y = -D / 2 - 0.004
+    box((W - 0.016, 0.006, 0.05), (0, flap_y, H - 0.03), "olive_dark", cut=0.012, cuts=(1, 1, 0, 0),
         axis="y", bevel=0.002, segs=2)
-    decal("util_label", (0, -D / 2 - 0.007, H - 0.028), F, UP, 0.1, depth=0.004)
+    decal("util_label", (0, flap_y - 0.003, H - 0.026), F, UP, 0.062, depth=0.003)
     for sx in (-1, 1):
-        screw((sx * 0.06, -D / 2 - 0.007, H - 0.012), F, 0.0022)
-    # straps from the flap down the front, with side-release buckles
-    for sx in (-1, 1):
-        x = sx * 0.042
-        box((0.022, 0.004, 0.064), (x, -D / 2 - 0.001, 0.034), "webbing", bevel=0.001, segs=1)
-        Fb = frame((x, -D / 2 - 0.003, 0.046), F, UP)
-        lbox(Fb, (0.026, 0.018, 0.006), (0, -0.006, 0), "dark_poly", cut=0.004, cuts=(1, 1, 0, 0), bevel=0.0012)
-        lbox(Fb, (0.024, 0.012, 0.007), (0, 0.009, 0), "dark_poly", cut=0.004, cuts=(0, 0, 1, 1), bevel=0.0012)
+        x = sx * 0.047
+        # strap: over the lid, down the flap, ending in the male half of the buckle below the flap
+        box((0.02, 0.064, 0.0025), (x, -0.004, H + 0.0055), "webbing", bevel=0.0008, segs=1)
+        box((0.02, 0.003, 0.058), (x, flap_y - 0.0045, H - 0.026), "webbing", bevel=0.0008, segs=1)
+        Fb = frame((x, -D / 2 - 0.002, H - 0.066), F, UP)
+        lbox(Fb, (0.024, 0.016, 0.006), (0, 0.006, 0.002), "dark_poly", cut=0.004, cuts=(0, 0, 1, 1),
+             bevel=0.0012)
         for k in (-1, 1):
-            lbox(Fb, (0.004, 0.01, 0.002), (k * 0.008, -0.006, 0.006), "dark_poly", bevel=0.0004)
-    # side compression straps and grommets
+            lbox(Fb, (0.004, 0.01, 0.002), (k * 0.007, 0.006, 0.008), "dark_poly", bevel=0.0004)
+        # female half on a short strap sewn to the body
+        lbox(Fb, (0.026, 0.016, 0.006), (0, -0.01, 0.0), "dark_poly", cut=0.004, cuts=(1, 1, 0, 0), bevel=0.0012)
+        box((0.02, 0.003, 0.03), (x, -D / 2 - 0.0005, H - 0.098), "webbing", bevel=0.0008, segs=1)
+    # side compression straps
     for sx in (-1, 1):
         box((0.004, D * 0.8, 0.014), (sx * (W / 2 + 0.002), 0, 0.05), "webbing", bevel=0.001, segs=1)
-        lcyl(frame((sx * 0.045, 0, 0.0005), DOWN, B), 0.0045, 0.002, look="steel", n=16, bevel=0.0006)
-    decal("qa_red", (W / 2 + 0.004, 0.0, 0.085), R, UP, 0.02, depth=0.006)
+    decal("marines_yellow", (W / 2 + 0.004, 0, 0.082), R, UP, 0.03, depth=0.006)
+    decal("qa_red", (-W / 2 - 0.004, 0.0, 0.085), L_, UP, 0.02, depth=0.006)
     molle_back(W, D, H - 0.01, D / 2)
     return 2048
 
 
 def ammo_pouch():
-    """Double magazine pouch: a moulded open-top shell, two magazines with rounds showing, bungee
-    retention and pull tabs."""
-    W, D, H = 0.095, 0.06, 0.12
-    box((W, D, H), (0, 0, H / 2), "olive", cut=0.012, cuts=(0.5, 0.5, 1, 1), axis="y", bevel=0.004, segs=3)
-    # rim of the opening
-    box((W + 0.004, D + 0.004, 0.008), (0, 0, H - 0.004), "olive_dark", cut=0.006, bevel=0.002, segs=2)
+    """Double magazine pouch: two moulded cells side by side, each closed by its own lid with a
+    tongue, snap and pull tab - the magazines are inside, as they would be."""
+    W, D, H = 0.1, 0.056, 0.14
     for sx in (-1, 1):
-        x = sx * 0.022
-        # magazine body above the shell: slightly curved look with ribs
-        box((0.036, 0.024, 0.05), (x, -0.003, H + 0.022), "dark_poly", cut=0.004, axis="y", bevel=0.002, segs=2)
-        for k in range(2):
-            box((0.03, 0.002, 0.003), (x, -0.003 - 0.0125, H + 0.012 + k * 0.012), "dark_poly", bevel=0.0005,
-                segs=1)
-        box((0.03, 0.014, 0.004), (x, -0.003, H + 0.048), "black_metal", bevel=0.0008, segs=1)
-        # two rounds in the feed lips: brass case, steel tip
-        for k, (dx, dz) in enumerate(((-0.0045, 0.0545), (0.0045, 0.0525))):
-            cyl(0.0042, 0.016, (x + dx, 0.0, H + dz), "brass", axis="y", n=14, bevel=0.0008)
-            cyl(0.0028, 0.007, (x + dx, -0.0115, H + dz), "steel", axis="y", n=12, bevel=0.0012, segs=2)
-        # bungee loop over the mag and a pull tab
-        box((0.04, 0.004, 0.008), (x, -0.0175, H + 0.03), "webbing", bevel=0.0012, segs=1)
-        box((0.014, 0.004, 0.022), (x, -0.0195, H + 0.022), "olive_dark", cut=0.004, cuts=(1, 1, 0, 0), axis="y",
-            bevel=0.001, segs=1)
-    decal("ammo_label", (0, -D / 2, 0.062), F, UP, 0.078, depth=0.004)
+        x = sx * 0.025
+        box((0.048, D, H - 0.012), (x, 0, (H - 0.012) / 2), "olive", cut=0.008, cuts=(0.6, 0.6, 0, 0), axis="y",
+            bevel=0.004, segs=3)
+        # rib down the outer side of each cell
+        box((0.004, D * 0.7, 0.07), (sx * (W / 2 + 0.0005), 0, 0.055), "olive_dark", bevel=0.001, segs=1)
+        # lid and its tongue down the front
+        box((0.05, D + 0.006, 0.012), (x, 0, H - 0.006), "olive_dark", cut=0.004, bevel=0.003, segs=2)
+        box((0.032, 0.005, 0.034), (x, -D / 2 - 0.003, H - 0.024), "olive_dark", cut=0.008, cuts=(1, 1, 0, 0),
+            axis="y", bevel=0.0015, segs=2)
+        Fs = frame((x, -D / 2 - 0.0055, H - 0.03), F, UP)
+        lcyl(Fs, 0.0045, 0.002, look="steel", n=16, bevel=0.0006)
+        lcyl(Fs, 0.0025, 0.003, look="steel", n=12, bevel=0.0008)
+        # pull tab hanging from the tongue
+        box((0.014, 0.003, 0.018), (x, -D / 2 - 0.0045, H - 0.047), "webbing", cut=0.004, cuts=(1, 1, 0, 0),
+            axis="y", bevel=0.0006, segs=1)
+        decal("ammo_cell", (x, -D / 2, 0.055), F, UP, 0.036, depth=0.004)
+    decal("marines_yellow", (W / 2 + 0.0025, 0, 0.105), R, UP, 0.026, depth=0.006)
+    decal("qa_red", (-W / 2, 0, 0.105), L_, UP, 0.018, depth=0.006)
+    # drain grommets in the floor
     for sx in (-1, 1):
-        screw((sx * 0.04, -D / 2, 0.012), F, 0.002)
-        for k in range(3):
-            box((0.005, 0.044, 0.006), (sx * (W / 2 + 0.001), 0, 0.03 + k * 0.022), "olive_dark", bevel=0.0012,
-                segs=1)
-    decal("qa_red", (W / 2 + 0.004, 0, 0.098), R, UP, 0.018, depth=0.006)
+        lcyl(frame((sx * 0.025, 0, 0.0005), DOWN, B), 0.004, 0.0015, look="steel", n=14, bevel=0.0004)
     molle_back(W, D, H, D / 2)
     return 2048
 
 
 def ammo_bag():
-    """Ammunition crate: a steel can with ribs, a sealed lid, folding carry handle, toggle latches,
-    yellow HE band."""
-    W, D, H = 0.34, 0.17, 0.17
-    box((W, D, H), (0, 0, H / 2), "olive_green", bevel=0.004, segs=3)
-    # reinforcing ribs all round
-    for z in (0.03, 0.14):
-        for sy in (-1, 1):
-            box((W - 0.01, 0.006, 0.012), (0, sy * (D / 2 + 0.002), z), "olive_green", bevel=0.002, segs=2)
-        for sx in (-1, 1):
-            box((0.006, D - 0.01, 0.012), (sx * (W / 2 + 0.002), 0, z), "olive_green", bevel=0.002, segs=2)
-    # gasket and lid
-    box((W + 0.004, D + 0.004, 0.004), (0, 0, H + 0.001), "rubber", bevel=0.001, segs=1)
-    box((W + 0.008, D + 0.008, 0.03), (0, 0, H + 0.016), "olive_green", bevel=0.005, segs=3)
-    lid_top = H + 0.031
-    carry_handle(0, 0, lid_top, 0.13)
-    for sx in (-1, 1):
-        toggle_latch((sx * 0.1, -D / 2 - 0.0005, H + 0.002), F, w=0.03, h=0.046)
-        side_handle(sx * W / 2 + sx * 0.003, sx, 0.09)
-    hinge((-0.14, D / 2 + 0.004, H + 0.002), (0.14, D / 2 + 0.004, H + 0.002), r=0.005, knuckles=7)
-    decal("ammo_crate_label", (0, -D / 2 - 0.0, 0.085), F, UP, 0.24, depth=0.004)
-    decal("yellow_band", (0, -D / 2 - 0.004, H + 0.016), F, UP, 0.3, 0.02, depth=0.004)
-    decal("yellow_band", (0, D / 2 + 0.004, H + 0.016), B, UP, 0.3, 0.02, depth=0.004)
-    decal("ammo_crate_label", (0, D / 2, 0.085), B, UP, 0.24, depth=0.004)
-    decal("unsc_white", (0.0, 0.0, lid_top), UP, B, 0.1, depth=0.004)
-    plate((0.0, D / 2 + 0.002, 0.03), B, UP, 0.06, 0.008, "black_metal")
-    decal("qa_red", (-0.13, -D / 2, 0.03), F, UP, 0.022, depth=0.006)
-    feet((-0.14, 0.14), (-0.06, 0.06), size=0.024)
+    """Ammunition case: an olive UNSC case with a folding top handle, Marine Corps insignia and the
+    ammunition stencil."""
+    W, D, H = 0.36, 0.18, 0.2
+    c = unsc_case(W, D, H, "unsc_olive", lid_h=0.042, cap=0.03)
+    carry_handle(0, 0, c["top"], 0.13, look="rubber")
+    decal("marines_white", (-0.07, c["front"], c["mid"] + 0.006), F, UP, 0.06, depth=0.004)
+    decal("ammo_crate_label", (0.05, c["front"], c["mid"] + 0.006), F, UP, 0.14, depth=0.004)
+    decal("wordmark_white", (0.12, -D / 2 - 0.008, c["zl"] + 0.022), F, UP, 0.06, depth=0.006)
+    decal("sticker_orange", (-0.12, 0.05, c["top"]), UP, B, 0.05, depth=0.006)
+    decal("ammo_crate_label", (0, c["back"], c["mid"]), B, UP, 0.18, depth=0.004)
+    decal("code_grey", (W / 2, 0, c["zb"] + 0.028), R, UP, 0.05, depth=0.006)
+    decal("side_up_white", (-W / 2, 0, c["zb"] + 0.028), L_, UP, 0.06, depth=0.006)
     return 4096
 
 
 def engineer_bag():
-    """Engineer's tool case: an olive polymer case with orange corner bumpers, top handle, side vents,
-    hazard stripes on the lid."""
-    W, D, H = 0.40, 0.2, 0.16
-    box((W, D, H), (0, 0, H / 2), "olive_dark", cut=0.02, bevel=0.005, segs=3)
-    box((W + 0.004, D + 0.004, 0.004), (0, 0, H + 0.001), "rubber", cut=0.021, bevel=0.001, segs=1)
-    box((W + 0.004, D + 0.004, 0.04), (0, 0, H + 0.022), "olive_dark", cut=0.021, bevel=0.008, segs=3, taper=0.006)
-    lid_top = H + 0.042
-    # orange bumpers on the cut corners, body and lid
+    """Engineer's tool case: a grey UNSC case with hazard stripes on the lid and the engineering
+    stencil."""
+    W, D, H = 0.42, 0.21, 0.21
+    c = unsc_case(W, D, H, "unsc_grey", lid_h=0.046)
+    carry_handle(0, 0, c["top"], 0.15, look="rubber")
+    decal("eng_label", (0, c["front"], c["mid"] + 0.004), F, UP, 0.19, depth=0.004)
+    decal("hazard", (0, -D / 2 - 0.008, c["zl"] + 0.024), F, UP, 0.11, depth=0.006)
+    decal("wordmark_white", (0.14, -D / 2 - 0.008, c["zl"] + 0.024), F, UP, 0.06, depth=0.006)
+    decal("egb_white", (-0.11, c["front"], c["zb"] + 0.042), F, UP, 0.026, depth=0.004)
+    decal("sticker_orange", (-0.14, 0.055, c["top"]), UP, B, 0.06, depth=0.006)
+    plate((0.0, c["back"], c["mid"]), B, UP, 0.08, 0.036, "black_metal", "serial_white")
     for sx in (-1, 1):
-        for sy in (-1, 1):
-            cx, cy = sx * (W / 2 - 0.01), sy * (D / 2 - 0.01)
-            n = (sx / math.sqrt(2), sy / math.sqrt(2), 0)
-            for z, h in ((0.075, 0.13), (H + 0.02, 0.03)):
-                Fc = frame((cx + n[0] * 0.0005, cy + n[1] * 0.0005, z), n, UP)
-                lbox(Fc, (0.034, h, 0.006), (0, 0, 0), "orange", cut=0.006, bevel=0.0018, segs=2)
-                screw((cx + n[0] * 0.0065, cy + n[1] * 0.0065, z + h * 0.32), n, 0.002)
-    carry_handle(0, 0, lid_top, 0.16)
-    # front: label, latches, hazard stripes on the lid
-    fy = -D / 2
-    for sx in (-1, 1):
-        toggle_latch((sx * 0.12, fy - 0.0005, H + 0.002), F)
-    decal("eng_label", (0, fy, 0.08), F, UP, 0.2, depth=0.004)
-    decal("hazard", (0, fy - 0.002, H + 0.02), F, UP, 0.12, depth=0.006)
-    # sides: vents and a plate
-    for sx in (-1, 1):
-        vents((sx * W / 2, 0, 0.085), (sx, 0, 0), UP, 7, 0.1, 0.0095, look="dark_poly")
-    plate((0.0, D / 2, 0.09), B, UP, 0.08, 0.036, "black_metal", "serial_white")
-    decal("lift_white", (0.12, D / 2, 0.1), B, UP, 0.08, depth=0.004)
-    decal("qa_red", (-0.13, D / 2, 0.04), B, UP, 0.026, depth=0.004)
-    hinge((-0.15, D / 2 + 0.004, H + 0.002), (0.15, D / 2 + 0.004, H + 0.002), r=0.005, knuckles=7)
-    decal("emblem_yellow", (0.13, -0.05, lid_top - 0.006), UP, B, 0.05, depth=0.008)
-    feet((-0.15, 0.15), (-0.06, 0.06), size=0.026)
+        decal("lift_white", (sx * W / 2, 0, c["zb"] + (c["zl"] - c["zb"]) * 0.9), (sx, 0, 0), UP, 0.055,
+              depth=0.006)
+    decal("code_grey", (W / 2, 0, c["zb"] + 0.03), R, UP, 0.055, depth=0.006)
     return 4096
 
 
 def cbrn_bag():
-    """CBRN container: a white sealed case with yellow bands, a seal pressure gauge, purge valve,
-    rubber gasket and toggle latches."""
-    W, D, H = 0.38, 0.22, 0.2
-    box((W, D, H), (0, 0, H / 2), "hazmat_white", bevel=0.01, segs=3)
-    for z in (0.04, 0.165):
-        box((W + 0.004, D + 0.004, 0.02), (0, 0, z), "hazard_yellow", bevel=0.003, segs=2)
-    box((W + 0.006, D + 0.006, 0.008), (0, 0, H + 0.002), "rubber", bevel=0.002, segs=1)
-    box((W + 0.004, D + 0.004, 0.045), (0, 0, H + 0.0275), "hazmat_white", bevel=0.012, segs=3, taper=0.004)
-    lid_top = H + 0.05
-    carry_handle(0, 0, lid_top, 0.15)
-    fy = -D / 2
+    """CBRN container: a white UNSC case with a yellow band, a seal pressure gauge and a purge valve."""
+    W, D, H = 0.4, 0.23, 0.24
+    c = unsc_case(W, D, H, "hazmat_white", lid_h=0.05)
+    inner = c["inner"]
+    # yellow band round the body
+    box((inner * 0.98, D + 0.012, 0.018), (0, 0, c["zb"] + 0.022), "hazard_yellow", bevel=0.002, segs=1)
+    carry_handle(0, 0, c["top"], 0.15, look="rubber")
+    fy = c["front"]
     # seal gauge
-    Fg = frame((0.12, fy, 0.105), F, UP)
+    gz = c["mid"] + 0.01
+    Fg = frame((0.1, fy, gz), F, UP)
     lcyl(Fg, 0.03, 0.006, look="black_metal", n=36, bevel=0.0015, segs=2)
     lcyl(Fg, 0.024, 0.0075, look="dial", n=36, bevel=0.0004)
-    decal("gauge_face", (0.12, fy - 0.0075, 0.105), F, UP, 0.047, depth=0.002)
+    decal("gauge_face", (0.1, fy - 0.0075, gz), F, UP, 0.047, depth=0.002)
     for k in range(4):
         a = math.radians(45 + 90 * k)
-        screw((0.12 + 0.027 * math.cos(a), fy - 0.006, 0.105 + 0.027 * math.sin(a)), F, 0.0016, "steel")
-    decal("cbrn_label", (-0.06, fy, 0.1), F, UP, 0.2, depth=0.004)
-    for sx in (-1, 1):
-        toggle_latch((sx * 0.12, fy - 0.003, H + 0.004), F)
-        side_handle(sx * W / 2 + sx * 0.002, sx, 0.12)
-    # purge valve with red knob on the right side
-    Fv = frame((W / 2 + 0.001, 0.06, 0.1), R, UP)
-    lcyl(Fv, 0.014, 0.006, look="steel", n=6, bevel=0.0008)
-    lcyl(Fv, 0.006, 0.012, (0, 0, 0.004), "steel", n=16)
-    lcyl(Fv, 0.011, 0.008, (0, 0, 0.014), "red", n=12, bevel=0.002, segs=2)
-    # back
-    hinge((-0.15, D / 2 + 0.005, H + 0.004), (0.15, D / 2 + 0.005, H + 0.004), r=0.0055, knuckles=7)
-    plate((0.0, D / 2, 0.1), B, UP, 0.08, 0.036, "steel", None)
-    decal("cbrn_label", (0.0, D / 2, 0.1), B, UP, 0.07, depth=0.006)
-    decal("side_up_white", (-W / 2, -0.03, 0.1), L_, UP, 0.1, depth=0.004, looks=["hazmat_white"])
-    decal("qa_red", (0.14, D / 2, 0.11), B, UP, 0.026, depth=0.004)
-    decal("cbrn_label", (0.0, 0.0, lid_top), UP, B, 0.16, depth=0.004)
-    feet((-0.15, 0.15), (-0.07, 0.07), size=0.026)
+        screw((0.1 + 0.027 * math.cos(a), fy - 0.006, gz + 0.027 * math.sin(a)), F, 0.0016, "steel")
+    decal("cbrn_label", (-0.05, fy, gz), F, UP, 0.17, depth=0.004)
+    decal("wordmark_white", (0.13, -D / 2 - 0.008, c["zl"] + 0.026), F, UP, 0.065, depth=0.006)
+    # purge valve with a red knob on the right end cap, above the grip
+    Fv = frame((W / 2 + 0.001, 0.0, c["zl"] - 0.022), R, UP)
+    lcyl(Fv, 0.013, 0.005, look="steel", n=6, bevel=0.0008)
+    lcyl(Fv, 0.006, 0.01, (0, 0, 0.004), "steel", n=16)
+    lcyl(Fv, 0.01, 0.008, (0, 0, 0.012), "red", n=12, bevel=0.002, segs=2)
+    decal("cbrn_label", (0.0, c["back"], c["mid"]), B, UP, 0.12, depth=0.004)
+    decal("sticker_orange", (-0.13, 0.06, c["top"]), UP, B, 0.06, depth=0.006)
+    decal("side_up_white", (-W / 2, 0, c["zb"] + 0.034), L_, UP, 0.06, depth=0.006)
     return 4096
 
 
