@@ -51,7 +51,7 @@ U.LID_AXIS.clear()
 
 U.reset()
 size = kits.BUILDERS[kit]()
-overlaps = U.check_overlaps()
+overlaps = U.check_overlaps() + U.check_lid_attached()
 for line in overlaps:
     print("OVERLAP", kit, line)
 ob = U.assemble(kit)

@@ -5,8 +5,8 @@ pouches of Enhanced Utility Pouches into addons/eup (ADDON below).
 """
 import math
 
-from unsc_lib import (box, bolt, cluster, clustered, cyl, decal, frame, hinge, lbox, lcyl, lid, lid_axis, plate,
-                      prism, rect, rivets, rrect, screw, toggle_latch, vents)
+from unsc_lib import (box, bolt, cluster, clustered, cyl, decal, frame, hinge, inset, lbox, lcyl, lid, lid_axis,
+                      plate, prism, rect, rivets, rrect, screw, toggle_latch, vents)
 
 F = (0, -1, 0)   # front normal
 B = (0, 1, 0)
@@ -72,14 +72,17 @@ def side_handle(x, sx, z, look="black_metal"):
 def unsc_case(W, D, H, body, lid_h=0.048, base_h=0.026, cap=0.034, latches=2, handles=True):
     """A UNSC case in the style of Halo Infinite's: a black polymer frame (skid, end caps and lid cap)
     around a painted body, draw latches on the front, hinge at the back, recessed grips in the end
-    caps. Returns the places the decals of the kit go."""
+    caps. The body is a tub with a gasket on its rim, the lid a shell lined with egg-crate foam, so an
+    open case is a case and not a block. Returns the places the decals of the kit go."""
     zb, zl = base_h, H - lid_h
     inner = W - 2 * cap
+    well = min(0.05, (zl - zb) * 0.45)
     # skid, its lower edges cut
     box((W + 0.006, D + 0.012, base_h), (0, 0, base_h / 2), "frame_black", cut=0.008, cuts=(1, 1, 0, 0),
         axis="x", bevel=0.003, segs=2)
-    # body between the end caps
-    box((inner + 0.004, D, zl - zb + 0.004), (0, 0, (zb + zl) / 2), body, bevel=0.003, segs=2)
+    # body between the end caps: solid below the well, a wall round the well above
+    box((inner + 0.004, D, zl - well - zb + 0.004), (0, 0, (zb + zl - well) / 2), body, bevel=0.003, segs=2)
+    box((inner + 0.004, D, well), (0, 0, zl - well / 2), body, bevel=0.003, segs=2, hollow=0.008)
     # raised front and back panels with cut lower corners
     for sy in (-1, 1):
         box((inner * 0.84, 0.005, (zl - zb) * 0.74), (0, sy * (D / 2 + 0.0025), zb + (zl - zb) * 0.46), body,
@@ -101,12 +104,16 @@ def unsc_case(W, D, H, body, lid_h=0.048, base_h=0.026, cap=0.034, latches=2, ha
         # small yellow marker in the lower front corner of each cap
         lbox(frame((x, -D / 2 - 0.006, zb + 0.014), F, UP), (0.012, 0.012, 0.0008), (0, 0, 0), "hazard_yellow",
              bevel=0.0003)
-    # seal under the lid
-    box((W - 0.004, D + 0.004, 0.005), (0, 0, zl + 0.001), "rubber", bevel=0.001, segs=1)
-    # lid cap over the whole length, with two ribs
+    # gasket on the rim of the tub
+    box((inner + 0.002, D - 0.002, 0.004), (0, 0, zl + 0.0005), "rubber", bevel=0.001, segs=1, hollow=0.006)
+    # the lid: a top plate on a skirt, lined with egg-crate foam, ribs on top
     top = H + 0.002
+    lb = zl + 0.002
     with lid():
-        box((W + 0.006, D + 0.016, lid_h), (0, 0, H - lid_h / 2 + 0.002), "frame_black", bevel=0.008, segs=3)
+        box((W + 0.006, D + 0.016, 0.01), (0, 0, top - 0.005), "frame_black", bevel=0.006, segs=3)
+        box((W + 0.006, D + 0.016, lid_h - 0.006), (0, 0, lb + (lid_h - 0.006) / 2), "frame_black", bevel=0.004,
+            segs=2, hollow=0.008)
+        box((W + 0.006 - 0.02, D + 0.016 - 0.02, 0.006), (0, 0, top - 0.013), "foam_egg", bevel=0.0015, segs=1)
         for sy in (-1, 1):
             lbox(frame((0, sy * (D / 2 - 0.018), top - 0.0005), UP, B), (W * 0.62, 0.008, 0.003), (0, 0, 0),
                  "frame_black", cut=0.003, bevel=0.0012)
@@ -121,26 +128,39 @@ def unsc_case(W, D, H, body, lid_h=0.048, base_h=0.026, cap=0.034, latches=2, ha
     grip_top = zb + (zl - zb) * 0.62 + 0.017
     keeper = (inner * 0.3 + 0.0136) if latches == 2 else 0.0136
     return dict(front=-D / 2 - 0.005, back=D / 2 + 0.005, top=top, zb=zb, zl=zl, inner=inner,
-                mid=zb + (zl - zb) * 0.46, lid_front=-D / 2 - 0.008, lid_z=H - lid_h / 2 + 0.002,
+                mid=zb + (zl - zb) * 0.46, lid_front=-D / 2 - 0.008, lid_z=H - lid_h / 2 - 0.002,
                 lift_z=(grip_top + zl - 0.004) / 2, keeper=keeper, lid_x=W / 2 + 0.003 - 0.008)
+
+
+def case_foam(W, D, H, lid_h, cap):
+    """The foam insert in a UNSC case's tub, a little under the rim. Returns the height of its top."""
+    inner = W - 2 * cap
+    return foam((inner + 0.004 - 0.017, D - 0.017, 0.004), (0, 0, H - lid_h - 0.010))
 
 
 # ===================================================================================================
 # EFAK
 # ===================================================================================================
 def ifak():
-    """IFAK: an angular polymer case for one casualty, belt or MOLLE mounted, red pull tab."""
+    """IFAK: an angular polymer case for one casualty, belt or MOLLE mounted, red pull tab. The front
+    lid closes over a real compartment."""
     W, D, H = 0.17, 0.06, 0.13
     cut = 0.022
-    box((W, D, H), (0, 0, H / 2), "olive", cut=cut, cuts=(0.5, 0.5, 1, 1), axis="y", bevel=0.004, segs=3)
+    # solid back half, and the walls of the compartment in front of it
+    box((W, 0.042, H), (0, 0.009, H / 2), "olive", cut=cut, cuts=(0.5, 0.5, 1, 1), axis="y", bevel=0.004, segs=3)
+    box((W, 0.02, H), (0, -0.02, H / 2), "olive", cut=cut, cuts=(0.5, 0.5, 1, 1), axis="y", bevel=0.003, segs=2,
+        hollow=0.006)
     # moulded parting line round the body
     for sy in (-1, 1):
         box((W - 0.03, 0.002, 0.003), (0, sy * (D / 2 + 0.0006), 0.006), "olive", bevel=0.0006, segs=1)
-    # front lid, a little smaller, so the seam shows all round
+    # front lid: a plate on a short skirt, lined, a little smaller so the seam shows
     lf = -D / 2 - 0.0075
     with lid():
-        box((0.152, 0.008, 0.114), (0, -D / 2 - 0.0035, 0.066), "olive_dark", cut=0.018, cuts=(0.5, 0.5, 1, 1),
-            axis="y", bevel=0.0025, segs=2)
+        box((0.152, 0.004, 0.114), (0, -D / 2 - 0.0055, 0.066), "olive_dark", cut=0.018, cuts=(0.5, 0.5, 1, 1),
+            axis="y", bevel=0.0018, segs=2)
+        box((0.152, 0.004, 0.114), (0, -D / 2 - 0.0016, 0.066), "olive_dark", cut=0.018, cuts=(0.5, 0.5, 1, 1),
+            axis="y", bevel=0.0012, segs=1, hollow=0.005)
+        box((0.13, 0.002, 0.09), (0, -D / 2 - 0.0025, 0.066), "foam_egg", cut=0.01, axis="y", bevel=0.0006, segs=1)
         # raised label field on the lid
         box((0.128, 0.003, 0.066), (0, -D / 2 - 0.009, 0.07), "olive_dark", cut=0.006, axis="y", bevel=0.001,
             segs=1)
@@ -160,48 +180,61 @@ def ifak():
         for k in range(2):
             box((0.006, 0.044, 0.007), (sx * (W / 2 + 0.001), 0, 0.03 + k * 0.022), "olive_dark", bevel=0.0015,
                 segs=2)
-    decal("cross_tag", (W / 2, 0, 0.08), R, UP, 0.024, depth=0.003)
+    decal("cross_tag", (W / 2, 0.01, 0.08), R, UP, 0.018, depth=0.003)
     plate((-W / 2, 0, 0.08), L_, UP, 0.04, 0.022, "black_metal", "serial_white")
     # guards on the cut top corners
     for sx in (-1, 1):
         (cx, cz), ang, ln = _on_face(sx * (W / 2 - cut), H, sx * W / 2, H - cut)
         prism(rect(ln * 0.8, D + 0.004), 0.004, "dark_poly", (cx, 0, cz), (0, ang, 0), bevel=0.0012, segs=1)
-    decal("egb_white", (0.044, 0.004, H), UP, B, 0.014, depth=0.003)
+    decal("egb_white", (0.044, 0.01, H), UP, B, 0.012, depth=0.003)
     molle_back(W, D, H, D / 2)
     return 2048
 
 
 def afak():
     """AFAK: the flat field medkit - octagonal hard case, light lid with the medical mark, red
-    reflectors, rubber grips front and back."""
+    reflectors, rubber grips front and back. A tray with a gasket below, a lined shell above."""
     W, D = 0.36, 0.27
     C = 0.06
     base_h, lid_z, lid_h = 0.034, 0.039, 0.040
     top = lid_z + lid_h
-    prism(rect(W, D, C), base_h, "shell_dark", bevel=0.003, segs=2)
-    prism(rect(W - 0.008, D - 0.008, C - 0.002), 0.008, "rubber", (0, 0, base_h - 0.002), bevel=0.001, segs=1)
+    outline = rect(W, D, C)
+    prism(outline, 0.012, "shell_dark", bevel=0.003, segs=2)
+    prism(outline, base_h - 0.01, "shell_dark", (0, 0, 0.01), bevel=0.003, segs=2, hollow=0.008)
+    prism(rect(W - 0.004, D - 0.004, C - 0.001), 0.006, "rubber", (0, 0, base_h - 0.002), bevel=0.001, segs=1,
+          hollow=0.006)
     lid_axis((-W / 2 + C, D / 2, lid_z), (W / 2 - C, D / 2, lid_z))
-    lid().__enter__()
-    prism(rect(W, D, C), lid_h, "shell_grey", (0, 0, lid_z), bevel=0.003, segs=2, taper=0.012)
-    # centre plate with the mark, screwed down
-    box((0.135, 0.135, 0.008), (0, 0, top + 0.003), "shell_white", cut=0.01, bevel=0.002, segs=2, taper=0.003)
+    with lid():
+        prism(outline, lid_h - 0.014, "shell_grey", (0, 0, lid_z), bevel=0.003, segs=2, hollow=0.008)
+        prism(outline, 0.016, "shell_grey", (0, 0, top - 0.016), bevel=0.003, segs=2, taper=0.012)
+        prism(inset(outline, 0.009), 0.005, "foam_egg", (0, 0, top - 0.021), bevel=0.0015, segs=1)
+        # centre plate with the mark, screwed down
+        box((0.135, 0.135, 0.008), (0, 0, top + 0.003), "shell_white", cut=0.01, bevel=0.002, segs=2, taper=0.003)
+        for sx in (-1, 1):
+            for sy in (-1, 1):
+                screw((sx * 0.056, sy * 0.056, top + 0.007), UP, 0.0024)
+        # wings left and right of it, each with a vent
+        wing = [(0.078, -0.072), (0.138, -0.046), (0.138, 0.046), (0.078, 0.072)]
+        prism(wing, 0.004, "shell_white", (0, 0, top - 0.001), bevel=0.0012, segs=1)
+        prism([(-x, y) for x, y in reversed(wing)], 0.004, "shell_white", (0, 0, top - 0.001), bevel=0.0012,
+              segs=1)
+        for sx in (-1, 1):
+            vents((sx * 0.108, 0, top + 0.003), UP, (1, 0, 0), 5, 0.058, 0.0075, look="dark_poly")
+        # reflectors on top, on the diagonals around the plate
+        for sx in (-1, 1):
+            for sy in (-1, 1):
+                ang = math.degrees(math.atan2(sy * 0.085, sx * 0.1)) + 90
+                prism(rect(0.032, 0.016, 0.006, (1, 1, 0, 0)), 0.003, "red_reflector",
+                      (sx * 0.1, sy * 0.086, top - 0.001), (0, 0, ang), bevel=0.0008, segs=1)
+        # status lens of the sterile field generator, front right, clear of the reflector
+        with cluster():
+            cyl(0.006, 0.003, (0.072, -0.108, top + 0.0005), "black_metal", n=20)
+            cyl(0.0038, 0.003, (0.072, -0.108, top + 0.0015), "green_lens", n=20)
+        # the latch keeper on the front of the lid
+        box((0.03, 0.008, 0.012), (0, -D / 2 - 0.004, lid_z + 0.012), "steel", cut=0.003, axis="y", bevel=0.0012,
+            segs=1)
     decal("med_h", (0, 0, top + 0.007), UP, B, 0.1, depth=0.003)
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            screw((sx * 0.056, sy * 0.056, top + 0.007), UP, 0.0024)
-    # wings left and right of it, each with a vent
-    wing = [(0.078, -0.072), (0.138, -0.046), (0.138, 0.046), (0.078, 0.072)]
-    prism(wing, 0.004, "shell_white", (0, 0, top - 0.001), bevel=0.0012, segs=1)
-    prism([(-x, y) for x, y in reversed(wing)], 0.004, "shell_white", (0, 0, top - 0.001), bevel=0.0012, segs=1)
-    for sx in (-1, 1):
-        vents((sx * 0.108, 0, top + 0.003), UP, (1, 0, 0), 5, 0.058, 0.0075, look="dark_poly")
-    # reflectors on top, on the diagonals around the plate
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            ang = math.degrees(math.atan2(sy * 0.085, sx * 0.1)) + 90
-            prism(rect(0.032, 0.016, 0.006, (1, 1, 0, 0)), 0.003, "red_reflector",
-                  (sx * 0.1, sy * 0.086, top - 0.001), (0, 0, ang), bevel=0.0008, segs=1)
-    # reflectors on the cut corners of the base
+    # reflectors on the cut corners of the base - they stay with the base
     for sx in (-1, 1):
         for sy in (-1, 1):
             nx, ny = sx / math.sqrt(2), sy / math.sqrt(2)
@@ -209,25 +242,22 @@ def afak():
             a = math.degrees(math.atan2(nx, -ny))
             prism(rect(0.04, 0.016, 0.004), 0.003, "red_reflector", (cx, cy, base_h / 2), (90, 0, a),
                   bevel=0.0008, segs=1)
-    # status lens of the sterile field generator, front right, clear of the reflector
-    with cluster():
-        cyl(0.006, 0.003, (0.072, -0.108, top + 0.0005), "black_metal", n=20)
-        cyl(0.0038, 0.003, (0.072, -0.108, top + 0.0015), "green_lens", n=20)
-    lid().__exit__()
-    # rubber grips front and back, ribbed, bolted at the ends
+    # rubber grips on the base, front and back, ribbed, bolted at the ends
     for sy in (-1, 1):
         y = sy * (D / 2 + 0.004)
-        box((0.2, 0.026, 0.05), (0, y, 0.04), "rubber", bevel=0.006, segs=3)
-        for k in range(6):
-            box((0.186, 0.004, 0.003), (0, y + sy * 0.0135, 0.0235 + k * 0.0066), "rubber", bevel=0.0008, segs=1)
+        box((0.2, 0.026, 0.028), (0, y, 0.02), "rubber", bevel=0.006, segs=3)
+        for k in range(4):
+            box((0.186, 0.004, 0.003), (0, y + sy * 0.0135, 0.01 + k * 0.0066), "rubber", bevel=0.0008, segs=1)
         for sx in (-1, 1):
-            bolt((sx * 0.092, y + sy * 0.0155, 0.04), (0, sy, 0), 0.003)
-    # latches on both grips
-    for sy in (-1, 1):
-        with cluster():
-            box((0.034, 0.01, 0.032), (0, sy * (D / 2 + 0.0215), 0.04), "steel", cut=0.005, axis="y",
-                bevel=0.0015, segs=2)
-            box((0.018, 0.004, 0.006), (0, sy * (D / 2 + 0.0275), 0.048), "black_metal", bevel=0.0008, segs=1)
+            bolt((sx * 0.092, y + sy * 0.0155, 0.02), (0, sy, 0), 0.003)
+    # the latch on the front grip, its bail reaching up to the keeper on the lid
+    with cluster():
+        box((0.034, 0.01, 0.022), (0, -D / 2 - 0.0215, 0.023), "steel", cut=0.005, axis="y", bevel=0.0015, segs=2)
+        box((0.018, 0.004, 0.006), (0, -D / 2 - 0.0275, 0.027), "black_metal", bevel=0.0008, segs=1)
+        for sx in (-1, 1):
+            box((0.003, 0.003, 0.02), (sx * 0.01, -D / 2 - 0.012, 0.042), "steel", bevel=0.0004, segs=1)
+    # the hinge along the back
+    hinge((-0.09, D / 2 + 0.004, lid_z), (0.09, D / 2 + 0.004, lid_z), r=0.0045, knuckles=7, look="shell_dark")
     # labels
     decal("afak_label", (0, -0.095, top), UP, B, 0.12, depth=0.003)
     decal("serial_white", (0, 0.098, top), UP, (0, -1, 0), 0.08, depth=0.003)
@@ -275,13 +305,18 @@ def mfakplus():
 
 def narcbox():
     """Narc case: a moulded green hard case like the launcher ammo cases - corner bumpers, grey
-    latches, padlock hasp, yellow stencil."""
+    latches, padlock hasp, yellow stencil. Lower shell a tray, upper shell a lined lid."""
     W, D = 0.30, 0.17
     r = 0.022
-    prism(rrect(W, D, r, 4), 0.044, "poly_green", bevel=0.005, segs=2)
-    prism(rrect(W + 0.006, D + 0.006, r + 0.003, 4), 0.006, "poly_green", (0, 0, 0.041), bevel=0.0015, segs=1)
+    outline = rrect(W, D, r, 4)
+    prism(outline, 0.01, "poly_green", bevel=0.005, segs=2)
+    prism(outline, 0.034, "poly_green", (0, 0, 0.01), bevel=0.004, segs=2, hollow=0.007)
+    prism(rrect(W + 0.006, D + 0.006, r + 0.003, 4), 0.006, "poly_green", (0, 0, 0.041), bevel=0.0015, segs=1,
+          hollow=0.01)
     with lid():
-        prism(rrect(W, D, r, 4), 0.044, "poly_green", (0, 0, 0.046), bevel=0.01, segs=3)
+        prism(outline, 0.03, "poly_green", (0, 0, 0.046), bevel=0.004, segs=2, hollow=0.007)
+        prism(outline, 0.014, "poly_green", (0, 0, 0.076), bevel=0.01, segs=3)
+        prism(inset(outline, 0.008), 0.004, "foam_egg", (0, 0, 0.072), bevel=0.0012, segs=1)
     lid_axis((-W / 2 + r, D / 2 + 0.002, 0.046), (W / 2 - r, D / 2 + 0.002, 0.046))
     top = 0.09
     # moulded grip grooves along the long sides of the base
@@ -289,20 +324,19 @@ def narcbox():
         for k in range(3):
             box((0.16, 0.002, 0.003), (0, sy * (D / 2 + 0.0004), 0.01 + k * 0.007), "poly_green", bevel=0.0006,
                 segs=1)
-    # corner bumpers, top and bottom
+    # corner bumpers, top and bottom, set out so they stay outside the shells' inner walls
     for sx in (-1, 1):
         for sy in (-1, 1):
-            c = (sx * (W / 2 - r), sy * (D / 2 - r))
+            c = (sx * (W / 2 - r + 0.008), sy * (D / 2 - r + 0.008))
             with lid():
-                cyl(0.026, 0.044, (c[0], c[1], 0.071), "poly_green", n=16, bevel=0.012, segs=3)
-            cyl(0.026, 0.044, (c[0], c[1], 0.022), "poly_green", n=16, bevel=0.01, segs=2)
+                cyl(0.024, 0.044, (c[0], c[1], 0.071), "poly_green", n=16, bevel=0.011, segs=3)
+            cyl(0.024, 0.044, (c[0], c[1], 0.022), "poly_green", n=16, bevel=0.009, segs=2)
     # stencil field
     with lid():
         prism(rrect(0.232, 0.116, 0.01, 3), 0.002, "poly_green", (0, 0, top - 0.0005), bevel=0.0008, segs=1)
     decal("narc_yellow", (0, 0, top + 0.0015), UP, B, 0.2, depth=0.003)
     # latches over the seam on the front
     fy = -D / 2
-    # (latches, hinges and feet stay clear of the corner bumpers, which reach in to x = 0.102)
     for sx in (-0.078, 0.078):
         with cluster():
             box((0.05, 0.014, 0.05), (sx, fy - 0.004, 0.046), "latch_grey", cut=0.006, axis="y", bevel=0.003,
@@ -330,7 +364,7 @@ def narcbox():
         Fv = frame((-W / 2, 0, 0.022), L_, UP)
         lcyl(Fv, 0.011, 0.003, look="dark_poly", n=24, bevel=0.0008)
         lcyl(Fv, 0.007, 0.006, (0, 0, 0.002), "dark_poly", n=20, bevel=0.0015, segs=2)
-    decal("hazard", (W / 2, 0, 0.022), R, UP, 0.07, depth=0.004)
+    decal("hazard", (W / 2, 0, 0.027), R, UP, 0.07, depth=0.004)
     feet((-0.075, 0.075), (-0.042, 0.042), size=0.018)
     return 2048
 
@@ -340,16 +374,21 @@ def narcbox():
 # ===================================================================================================
 def utility_pouch():
     """Utility pouch: a webbing pouch with a moulded lid. Two straps run over the lid and down the
-    flap to side-release buckles on the body; the label sits on the flap between them."""
+    flap to side-release buckles on the body; the label sits on the flap between them. The pouch is
+    open under the lid."""
     W, D, H = 0.15, 0.06, 0.118
-    box((W, D, H - 0.01), (0, 0, (H - 0.01) / 2), "webbing", bevel=0.01, segs=3)
+    box((W, D, H - 0.04), (0, 0, (H - 0.04) / 2), "webbing", bevel=0.01, segs=3)
+    box((W, D, 0.032), (0, 0, H - 0.026), "webbing", bevel=0.004, segs=2, hollow=0.005)
     # binding tape round the opening
-    box((W + 0.003, D + 0.003, 0.006), (0, 0, H - 0.012), "webbing", bevel=0.002, segs=1)
-    # moulded lid and its front flap
+    box((W + 0.003, D + 0.003, 0.006), (0, 0, H - 0.012), "webbing", bevel=0.002, segs=1, hollow=0.0065)
+    # moulded lid (a shallow lined shell) and its front flap
     flap_y = -D / 2 - 0.004
     lid_axis((-W / 2, D / 2 + 0.003, H - 0.008), (W / 2, D / 2 + 0.003, H - 0.008))
     with lid():
-        box((W + 0.004, D + 0.006, 0.012), (0, 0, H - 0.002), "olive_dark", cut=0.008, bevel=0.003, segs=2)
+        box((W + 0.004, D + 0.006, 0.005), (0, 0, H + 0.0015), "olive_dark", cut=0.008, bevel=0.002, segs=2)
+        box((W + 0.004, D + 0.006, 0.008), (0, 0, H - 0.005), "olive_dark", cut=0.008, bevel=0.0015, segs=1,
+            hollow=0.004)
+        box((W - 0.012, D - 0.006, 0.002), (0, 0, H - 0.002), "foam_egg", cut=0.004, bevel=0.0006, segs=1)
         box((W - 0.016, 0.006, 0.05), (0, flap_y, H - 0.03), "olive_dark", cut=0.012, cuts=(1, 1, 0, 0),
             axis="y", bevel=0.002, segs=2)
     decal("util_label", (0, flap_y - 0.003, H - 0.026), F, UP, 0.062, depth=0.003)
@@ -372,26 +411,30 @@ def utility_pouch():
         cl.__exit__()
     # side compression straps
     for sx in (-1, 1):
-        box((0.004, D * 0.8, 0.014), (sx * (W / 2 + 0.002), 0, 0.05), "webbing", bevel=0.001, segs=1)
-    decal("marines_yellow", (W / 2, 0, 0.078), R, UP, 0.024, depth=0.003)
-    decal("qa_red", (-W / 2, 0.0, 0.078), L_, UP, 0.018, depth=0.003)
+        box((0.004, D * 0.8, 0.014), (sx * (W / 2 + 0.002), 0, 0.06), "webbing", bevel=0.001, segs=1)
+    decal("marines_yellow", (W / 2, 0, 0.032), R, UP, 0.02, depth=0.003)
+    decal("qa_red", (-W / 2, 0.0, 0.032), L_, UP, 0.016, depth=0.003)
     molle_back(W, D, H - 0.01, D / 2)
     return 2048
 
 
 def ammo_pouch():
-    """Double magazine pouch: two moulded cells side by side, each closed by its own lid with a
-    tongue, snap and pull tab - the magazines are inside, as they would be."""
+    """Double magazine pouch: two moulded cells side by side, each open at the top and closed by its
+    own lined lid with a tongue, snap and pull tab - the magazines stand inside."""
     W, D, H = 0.1, 0.056, 0.14
     for sx in (-1, 1):
         x = sx * 0.025
-        box((0.048, D, H - 0.012), (x, 0, (H - 0.012) / 2), "olive", cut=0.008, cuts=(0.6, 0.6, 0, 0), axis="y",
+        box((0.048, D, H - 0.047), (x, 0, (H - 0.047) / 2), "olive", cut=0.008, cuts=(0.6, 0.6, 0, 0), axis="y",
             bevel=0.004, segs=3)
+        box((0.048, D, 0.037), (x, 0, H - 0.012 - 0.0175), "olive", bevel=0.003, segs=2, hollow=0.004)
         # rib down the outer side of each cell
-        box((0.004, D * 0.7, 0.06), (sx * (W / 2 + 0.0005), 0, 0.05), "olive_dark", bevel=0.001, segs=1)
-        # lid and its tongue down the front
+        box((0.004, D * 0.7, 0.035), (sx * (W / 2 + 0.0005), 0, 0.0375), "olive_dark", bevel=0.001, segs=1)
+        # lid (a shallow lined shell) and its tongue down the front
         with lid(), cluster():
-            box((0.05, D + 0.006, 0.012), (x, 0, H - 0.006), "olive_dark", cut=0.004, bevel=0.003, segs=2)
+            box((0.05, D + 0.006, 0.004), (x, 0, H - 0.002), "olive_dark", cut=0.004, bevel=0.0015, segs=2)
+            box((0.05, D + 0.006, 0.009), (x, 0, H - 0.0085), "olive_dark", cut=0.004, bevel=0.0012, segs=1,
+                hollow=0.0035)
+            box((0.04, D - 0.004, 0.002), (x, 0, H - 0.005), "foam_egg", bevel=0.0005, segs=1)
             box((0.032, 0.005, 0.034), (x, -D / 2 - 0.003, H - 0.024), "olive_dark", cut=0.008,
                 cuts=(1, 1, 0, 0), axis="y", bevel=0.0015, segs=2)
             Fs = frame((x, -D / 2 - 0.0055, H - 0.03), F, UP)
@@ -404,8 +447,8 @@ def ammo_pouch():
     for sx in (-1, 1):
         x = sx * 0.025
         decal("ammo_cell", (x, -D / 2, 0.055), F, UP, 0.03, depth=0.003)
-    decal("marines_yellow", (W / 2 - 0.001, 0, 0.104), R, UP, 0.024, depth=0.003)
-    decal("qa_red", (-W / 2 + 0.001, 0, 0.104), L_, UP, 0.018, depth=0.003)
+    decal("marines_yellow", (W / 2 - 0.001, 0, 0.075), R, UP, 0.02, depth=0.003)
+    decal("qa_red", (-W / 2 + 0.001, 0, 0.075), L_, UP, 0.016, depth=0.003)
     # drain grommets in the floor
     for sx in (-1, 1):
         lcyl(frame((sx * 0.025, 0, 0.0005), DOWN, B), 0.004, 0.0015, look="steel", n=14, bevel=0.0004)
@@ -660,15 +703,9 @@ def flashlight(c, length=0.09):
     cyl(0.0072, 0.002, (x + length / 2 + 0.0005, y, z), "glass", axis="x", n=14, bevel=0.0004)
 
 
-def _case_fill_z(H, lid_h):
-    """Top of the foam in a UNSC case: on the seal under the lid."""
-    return H - lid_h + 0.0035
-
-
 def fill_medical_case(W, D, H, lid_h, cap, more=False):
-    inner = W - 2 * cap
     with contents():
-        zf = foam((inner - 0.012, D - 0.012, 0.004), (0, 0, _case_fill_z(H, lid_h) + 0.002))
+        zf = case_foam(W, D, H, lid_h, cap)
         for k, y in enumerate((-0.08, -0.048, -0.016)):
             biofoam((-0.09, y, zf + 0.007))
         for k in range(6):
@@ -685,22 +722,21 @@ def fill_medical_case(W, D, H, lid_h, cap, more=False):
 
 
 def fill_ifak():
-    D = 0.06
     with contents():
-        # flat on the front wall the lid closes over; nothing deeper than the lid itself
-        box((0.13, 0.002, 0.095), (0, -D / 2 - 0.001, 0.066), "foam", bevel=0.0008, segs=1)
-        wall = -D / 2 - 0.002
+        # on the back wall of the compartment behind the front lid
+        box((0.14, 0.004, 0.09), (0, -0.0115, 0.06), "foam", bevel=0.0012, segs=1)
+        wall = -0.0135
         for x in (-0.045, -0.005):
-            dressing((x, wall, 0.075), 0.034, 0.05, 0.004, flat=False)
-        injector((0.012, wall - 0.0028, 0.032), axis="x", length=0.06, r=0.0026, cap="red")
-        tourniquet((0.045, wall, 0.078), flat=False)
+            dressing((x, wall, 0.07), 0.034, 0.05, 0.012, flat=False)
+        injector((0.012, wall - 0.005, 0.03), axis="x", length=0.06, r=0.0045, cap="red")
+        tourniquet((0.045, wall, 0.075), flat=False)
 
 
 def fill_afak():
     W, D, C = 0.36, 0.27, 0.06
     with contents():
-        prism(rect(W - 0.05, D - 0.05, C - 0.02), 0.003, "foam", (0, 0, 0.04), bevel=0.0012, segs=1)
-        zf = 0.043
+        prism(inset(rect(W, D, C), 0.0085), 0.004, "foam", (0, 0, 0.02), bevel=0.0012, segs=1)
+        zf = 0.024
         field_generator((0, 0, zf))
         for x in (-0.13, -0.095, 0.095, 0.13):
             biofoam((x, 0.0, zf + 0.006), axis="y", length=0.06, r=0.011)
@@ -713,12 +749,12 @@ def fill_afak():
 def fill_narcbox():
     W, D = 0.30, 0.17
     with contents():
-        prism(rrect(W - 0.03, D - 0.03, 0.02, 4), 0.003, "foam", (0, 0, 0.044), bevel=0.0012, segs=1)
-        zf = 0.047
+        prism(inset(rrect(W, D, 0.022, 4), 0.0075), 0.004, "foam", (0, 0, 0.03), bevel=0.0012, segs=1)
+        zf = 0.034
         for k in range(6):
             injector((-0.09 + k * 0.018, -0.004, zf + 0.0035), length=0.1, cap="red" if k < 3 else "orange")
         for x, y in ((0.04, -0.035), (0.07, -0.035), (0.04, -0.005), (0.07, -0.005)):
-            vial((x, y, zf))
+            vial((x, y, zf), h=0.026)
         for x in (0.035, 0.08):
             pill_box((x, 0.045, zf))
 
@@ -726,26 +762,24 @@ def fill_narcbox():
 def fill_utility_pouch():
     W, D, H = 0.15, 0.06, 0.118
     with contents():
-        box((W - 0.02, D - 0.016, 0.002), (0, 0, H - 0.008), "foam", bevel=0.0006, segs=1)
-        z = H - 0.007
-        flashlight((-0.03, -0.006, z + 0.0005))
+        box((W - 0.012, D - 0.012, 0.003), (0, 0, H - 0.03), "foam", bevel=0.0006, segs=1)
+        z = H - 0.0285
+        flashlight((-0.03, -0.006, z + 0.0065))
         box((0.05, 0.018, 0.007), (0.042, -0.008, z + 0.0035), "steel", cut=0.004, bevel=0.0015, segs=1)
-        cyl(0.0055, 0.04, (0.042, 0.013, z + 0.0035), "olive_dark", axis="x", n=12, bevel=0.002, segs=1)
+        cyl(0.0055, 0.04, (0.042, 0.013, z + 0.0055), "olive_dark", axis="x", n=12, bevel=0.002, segs=1)
 
 
 def fill_ammo_pouch():
     D, H = 0.056, 0.14
     with contents():
         for sx in (-1, 1):
-            x = sx * 0.025
-            box((0.04, D - 0.012, 0.0015), (x, 0, H - 0.0118), "foam", bevel=0.0004, segs=1)
-            mag_top((x, 0.002, H - 0.011), h=0.0016)
+            mag_top((sx * 0.025, 0.002, H - 0.047), h=0.025)
 
 
 def fill_ammo_bag():
     W, D, H, lid_h, cap = 0.36, 0.18, 0.2, 0.042, 0.03
     with contents():
-        zf = foam((W - 2 * cap - 0.012, D - 0.012, 0.004), (0, 0, _case_fill_z(H, lid_h) + 0.002))
+        zf = case_foam(W, D, H, lid_h, cap)
         for k in range(5):
             for y in (-0.035, 0.035):
                 mag_top((-0.12 + k * 0.06, y, zf), h=0.02)
@@ -754,7 +788,7 @@ def fill_ammo_bag():
 def fill_engineer_bag():
     W, D, H, lid_h, cap = 0.42, 0.21, 0.21, 0.046, 0.034
     with contents():
-        zf = foam((W - 2 * cap - 0.012, D - 0.012, 0.004), (0, 0, _case_fill_z(H, lid_h) + 0.002))
+        zf = case_foam(W, D, H, lid_h, cap)
         wrench((-0.09, -0.065, zf))
         screwdriver((-0.085, -0.035, zf), "orange")
         screwdriver((-0.085, -0.01, zf), "red")
@@ -767,7 +801,7 @@ def fill_engineer_bag():
 def fill_cbrn_bag():
     W, D, H, lid_h, cap = 0.4, 0.23, 0.24, 0.05, 0.034
     with contents():
-        zf = foam((W - 2 * cap - 0.012, D - 0.012, 0.004), (0, 0, _case_fill_z(H, lid_h) + 0.002))
+        zf = case_foam(W, D, H, lid_h, cap)
         gas_mask((-0.085, 0.005, zf))
         for x in (0.035, 0.08, 0.125):
             filter_can((x, -0.06, zf))

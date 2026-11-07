@@ -47,9 +47,9 @@ def srgb(r, g, b):
 # smooth); spec/gloss: for _smdi (0-1); wear_gloss: gloss where worn; bevel: rounded-edge radius in
 # the normal map (m).
 def look(color, wear_color=None, wear=0.4, grime=0.5, mottle=0.03, grain=0.15, spec=0.12, gloss=0.3,
-         wear_gloss=0.5, bevel=0.0025, primer=None, pattern="paint", streaks=0.5):
+         wear_gloss=0.5, bevel=0.0025, primer=None, pattern="paint", streaks=0.5, rust=0.0):
     return dict(color=color, wear_color=wear_color or color, wear=wear, grime=grime, mottle=mottle,
-                grain=grain, spec=spec, gloss=gloss, wear_gloss=wear_gloss, bevel=bevel, primer=primer,
+                grain=grain, spec=spec, gloss=gloss, wear_gloss=wear_gloss, bevel=bevel, primer=primer, rust=rust,
                 pattern=pattern, streaks=streaks)
 
 
@@ -63,8 +63,10 @@ LOOKS = {
                   pattern="stipple", grain=0.25),
     "olive_dark": look(srgb(66, 70, 46), srgb(120, 120, 98), wear=0.45, grime=0.55, spec=0.1, gloss=0.26,
                        pattern="stipple", grain=0.25),
-    "olive_green": look(srgb(78, 96, 54), STEEL, wear=0.45, grime=0.5, spec=0.14, gloss=0.34, primer=PRIMER),
-    "olive_tan": look(srgb(104, 96, 66), STEEL, wear=0.5, grime=0.6, spec=0.1, gloss=0.25, primer=PRIMER),
+    "olive_green": look(srgb(62, 78, 42), STEEL, wear=0.45, grime=0.5, spec=0.22, gloss=0.44, primer=PRIMER,
+                        wear_gloss=0.65, rust=0.6),
+    "olive_tan": look(srgb(86, 78, 52), STEEL, wear=0.5, grime=0.6, spec=0.2, gloss=0.42, primer=PRIMER,
+                      wear_gloss=0.65, rust=0.6),
     "olive_tan_dark": look(srgb(80, 74, 50), STEEL, wear=0.55, grime=0.6, spec=0.1, gloss=0.25, primer=PRIMER),
     "poly_green": look(srgb(92, 112, 56), srgb(130, 146, 100), wear=0.25, grime=0.4, spec=0.16, gloss=0.38,
                        mottle=0.03, grain=0.2, pattern="stipple"),
@@ -75,13 +77,17 @@ LOOKS = {
                         mottle=0.03, pattern="stipple", grain=0.12),
     "shell_grey": look(srgb(150, 153, 154), srgb(200, 202, 204), wear=0.4, grime=0.5, spec=0.2, gloss=0.42,
                        mottle=0.04, pattern="stipple", grain=0.12),
-    "shell_dark": look(srgb(72, 75, 78), STEEL, wear=0.45, grime=0.5, spec=0.18, gloss=0.38, primer=srgb(96, 98, 98)),
+    "shell_dark": look(srgb(60, 63, 66), STEEL, wear=0.45, grime=0.5, spec=0.24, gloss=0.46, primer=srgb(96, 98, 98),
+                       wear_gloss=0.65, rust=0.4),
     # Halo Infinite UNSC cases: black polymer frame, painted body panels
-    "frame_black": look(srgb(36, 37, 38), srgb(92, 94, 94), wear=0.4, grime=0.45, spec=0.1, gloss=0.3,
+    "frame_black": look(srgb(36, 37, 38), srgb(92, 94, 94), wear=0.4, grime=0.45, spec=0.14, gloss=0.38,
                         pattern="stipple", grain=0.25),
-    "unsc_olive": look(srgb(84, 90, 66), STEEL, wear=0.5, grime=0.55, spec=0.12, gloss=0.3, primer=PRIMER),
-    "unsc_khaki": look(srgb(128, 118, 90), STEEL, wear=0.5, grime=0.55, spec=0.12, gloss=0.3, primer=PRIMER),
-    "unsc_grey": look(srgb(104, 106, 104), STEEL, wear=0.5, grime=0.55, spec=0.14, gloss=0.32, primer=PRIMER),
+    "unsc_olive": look(srgb(60, 66, 46), STEEL, wear=0.5, grime=0.55, spec=0.24, gloss=0.46, primer=PRIMER,
+                       wear_gloss=0.68, rust=0.7),
+    "unsc_khaki": look(srgb(98, 90, 64), STEEL, wear=0.5, grime=0.55, spec=0.24, gloss=0.46, primer=PRIMER,
+                       wear_gloss=0.68, rust=0.7),
+    "unsc_grey": look(srgb(76, 78, 78), STEEL, wear=0.5, grime=0.55, spec=0.26, gloss=0.48, primer=PRIMER,
+                      wear_gloss=0.68, rust=0.7),
     # what is packed inside the cases
     "foam": look(srgb(44, 46, 48), srgb(60, 62, 64), wear=0.1, grime=0.5, spec=0.03, gloss=0.08, pattern="stipple",
                  grain=0.6, streaks=0.0, bevel=0.002),
@@ -93,11 +99,15 @@ LOOKS = {
                        pattern="paint", grain=0.3, bevel=0.003),
     "pack_white": look(srgb(222, 220, 212), srgb(180, 178, 170), wear=0.15, grime=0.35, spec=0.15, gloss=0.4,
                        pattern="paint", grain=0.25, bevel=0.003),
+    "foam_egg": look(srgb(44, 46, 48), srgb(60, 62, 64), wear=0.05, grime=0.45, spec=0.03, gloss=0.08,
+                     pattern="eggcrate", grain=1.2, streaks=0.0, bevel=0.002),
     "glass_amber": look(srgb(150, 86, 30), srgb(180, 120, 60), wear=0.05, grime=0.2, spec=0.85, gloss=0.92,
                         pattern="smooth", grain=0.0, bevel=0.001),
     # EUP colours
-    "hazard_yellow": look(srgb(206, 168, 44), STEEL, wear=0.55, grime=0.55, spec=0.16, gloss=0.38, primer=PRIMER),
-    "hazmat_white": look(srgb(196, 196, 186), srgb(150, 150, 142), wear=0.35, grime=0.7, spec=0.2, gloss=0.42,
+    "hazard_yellow": look(srgb(180, 144, 34), STEEL, wear=0.55, grime=0.55, spec=0.24, gloss=0.46, primer=PRIMER,
+                          wear_gloss=0.65, rust=0.6),
+    "hazmat_white": look(srgb(172, 172, 162), STEEL, wear=0.4, grime=0.7, spec=0.26, gloss=0.5, primer=PRIMER,
+                         wear_gloss=0.65, rust=0.5,
                          pattern="stipple", grain=0.12),
     "orange": look(srgb(196, 92, 30), srgb(220, 160, 120), wear=0.3, grime=0.4, spec=0.25, gloss=0.5,
                    pattern="stipple", grain=0.1),
@@ -116,9 +126,9 @@ LOOKS = {
                    grain=0.5, bevel=0.0015, pattern="rubber"),
     "latch_grey": look(srgb(146, 149, 148), srgb(196, 198, 196), wear=0.2, grime=0.4, spec=0.18, gloss=0.4,
                        mottle=0.02, grain=0.1, pattern="stipple"),
-    "steel": look(srgb(96, 98, 100), srgb(180, 182, 184), wear=0.6, grime=0.4, spec=0.5, gloss=0.55,
+    "steel": look(srgb(96, 98, 100), srgb(180, 182, 184), wear=0.6, grime=0.4, spec=0.5, gloss=0.55, rust=0.45,
                   wear_gloss=0.75, grain=0.25, bevel=0.0012, pattern="brushed"),
-    "black_metal": look(srgb(28, 29, 30), STEEL, wear=0.55, grime=0.25, spec=0.35, gloss=0.5,
+    "black_metal": look(srgb(28, 29, 30), STEEL, wear=0.55, grime=0.25, spec=0.35, gloss=0.5, rust=0.5,
                         wear_gloss=0.7, grain=0.08, bevel=0.0012),
     "red": look(srgb(176, 30, 26), srgb(210, 120, 110), wear=0.2, grime=0.3, spec=0.4, gloss=0.65,
                 mottle=0.02, grain=0.05, pattern="stipple"),
@@ -262,8 +272,32 @@ def _bevel(bm, width, segs, edges=None):
                     segments=segs, profile=0.5, affect="EDGES", clamp_overlap=True)
 
 
+def inset(profile, d):
+    """A convex outline (counter-clockwise) moved inwards by d: each edge shifted along its inner
+    normal, corners where neighbouring shifted edges meet."""
+    n = len(profile)
+    lines = []
+    for i in range(n):
+        x0, y0 = profile[i]
+        x1, y1 = profile[(i + 1) % n]
+        ex, ey = x1 - x0, y1 - y0
+        ln = math.hypot(ex, ey) or 1.0
+        nx, ny = -ey / ln, ex / ln          # left normal = inwards for a counter-clockwise outline
+        lines.append(((x0 + nx * d, y0 + ny * d), (ex, ey)))
+    out = []
+    for i in range(n):
+        (p0, d0), (p1, d1) = lines[i - 1], lines[i]
+        den = d0[0] * d1[1] - d0[1] * d1[0]
+        if abs(den) < 1e-12:
+            out.append(p1)
+            continue
+        t = ((p1[0] - p0[0]) * d1[1] - (p1[1] - p0[1]) * d1[0]) / den
+        out.append((p0[0] + d0[0] * t, p0[1] + d0[1] * t))
+    return out
+
+
 def prism(profile, depth, look="olive", loc=(0, 0, 0), rot=(0, 0, 0), bevel=0.002, segs=2, name="part",
-          taper=0.0, matrix=None):
+          taper=0.0, matrix=None, hollow=0.0):
     """A 2D outline (local x, y; counter-clockwise) extruded along local z from 0 to depth, edges
     bevelled. taper shrinks the top outline by that much (a draft/chamfered top)."""
     if SHADOW[0] and GROUP[-1] == "contents":
@@ -279,6 +313,27 @@ def prism(profile, depth, look="olive", loc=(0, 0, 0), rot=(0, 0, 0), bevel=0.00
         if len(profile) > 12:
             profile = profile[::-(-len(profile) // 12)]
         bevel = 0
+    if hollow > 0.0:
+        # a wall of thickness `hollow` round the outline, open at both ends of the extrusion: a closed
+        # ring solid (outer walls, inner walls, the two rims)
+        bm = bmesh.new()
+        inner = inset(profile, hollow)
+        n = len(profile)
+        ob_ = [bm.verts.new((x, y, 0.0)) for x, y in profile]
+        ot = [bm.verts.new((x, y, depth)) for x, y in profile]
+        ib = [bm.verts.new((x, y, 0.0)) for x, y in inner]
+        it = [bm.verts.new((x, y, depth)) for x, y in inner]
+        for i in range(n):
+            j = (i + 1) % n
+            bm.faces.new((ob_[i], ob_[j], ot[j], ot[i]))
+            bm.faces.new((it[i], it[j], ib[j], ib[i]))
+            bm.faces.new((ot[i], ot[j], it[j], it[i]))
+            bm.faces.new((ib[i], ib[j], ob_[j], ob_[i]))
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+        _bevel(bm, min(bevel, hollow * 0.3), segs)
+        ob = _finish(bm, name, look, matrix if matrix is not None else _matrix(loc, rot))
+        ob["hollow"] = 1   # its box says nothing about what is inside it: the overlap check leaves it out
+        return ob
     bm = bmesh.new()
     n = len(profile)
     cx = sum(p[0] for p in profile) / n
@@ -333,7 +388,7 @@ def circle(r, n=20):
 
 
 def box(size, center, look="olive", cut=0.0, cuts=(1, 1, 1, 1), bevel=0.002, segs=2, name="box", axis="z",
-        taper=0.0):
+        taper=0.0, hollow=0.0):
     """Box of size (sx, sy, sz) centred at center. The outline (with optional cut corners) lies across
     `axis` and is extruded along it: axis z cuts the corners seen from above, y seen from the front,
     x seen from the side."""
@@ -341,14 +396,14 @@ def box(size, center, look="olive", cut=0.0, cuts=(1, 1, 1, 1), bevel=0.002, seg
     cx, cy, cz = center
     if axis == "z":
         return prism(rect(sx, sy, cut, cuts), sz, look, (cx, cy, cz - sz / 2), (0, 0, 0), bevel, segs, name,
-                     taper)
+                     taper, hollow=hollow)
     if axis == "y":
         # outline in x/z, extruded towards -y (the front): rotate local z onto -y
         return prism(rect(sx, sz, cut, cuts), sy, look, (cx, cy + sy / 2, cz), (90, 0, 0), bevel, segs, name,
-                     taper)
+                     taper, hollow=hollow)
     # axis x: outline in y/z, extruded along +x
     return prism(rect(sy, sz, cut, cuts), sx, look, (cx - sx / 2, cy, cz), (90, 0, 90), bevel, segs, name,
-                 taper)
+                 taper, hollow=hollow)
 
 
 def cyl(r, length, center, look="steel", axis="z", n=20, bevel=0.001, segs=1, name="cyl"):
@@ -500,6 +555,8 @@ def check_overlaps(small=0.06, slack=0.0005):
     close; look at those."""
     boxes = []
     for ob in PARTS:
+        if ob.get("hollow"):
+            continue
         pts = [ob.matrix_world @ Vector(c) for c in ob.bound_box]
         lo = [min(p[i] for p in pts) for i in range(3)]
         hi = [max(p[i] for p in pts) for i in range(3)]
@@ -517,6 +574,33 @@ def check_overlaps(small=0.06, slack=0.0005):
                     a.name, a["look"], b.name, b["look"],
                     tuple(round((max(alo[k], blo[k]) + min(ahi[k], bhi[k])) / 2, 3) for k in range(3))))
     return problems
+
+
+# --- Lid check -------------------------------------------------------------------------------------
+def check_lid_attached(touch=0.0015):
+    """Every part of the lid must hang on the lid: connected, box to box, to its largest part. A lid
+    part that is not would swing up with it and hang in the air (the AFAK's base reflectors did)."""
+    lid_parts = [ob for ob in PARTS if ob.data.attributes.get("lid") and ob.data.attributes["lid"].data[0].value > 0.5]
+    if not lid_parts:
+        return []
+
+    def bounds(ob):
+        pts = [ob.matrix_world @ v.co for v in ob.data.vertices]
+        return ([min(p[i] for p in pts) - touch for i in range(3)], [max(p[i] for p in pts) + touch for i in range(3)])
+
+    bb = {ob.name: bounds(ob) for ob in lid_parts}
+    size = {n: max(hi[i] - lo[i] for i in range(3)) for n, (lo, hi) in bb.items()}
+    root = max(size, key=size.get)
+    seen, todo = {root}, [root]
+    while todo:
+        a = todo.pop()
+        alo, ahi = bb[a]
+        for b, (blo, bhi) in bb.items():
+            if b not in seen and all(min(ahi[k], bhi[k]) >= max(alo[k], blo[k]) for k in range(3)):
+                seen.add(b)
+                todo.append(b)
+    return ["%s (%s) is in the lid but does not touch it" % (ob.name, ob["look"]) for ob in lid_parts
+            if ob.name not in seen]
 
 
 # --- Decal check -------------------------------------------------------------------------------------
@@ -757,11 +841,22 @@ def _build_material(name, lk, projectors, bake_img):
         col = mix(col, lk["wear_color"], ramp(wear_mask, 0.55, 0.85))
     else:
         col = mix(col, lk["wear_color"], wear_mask)
+    rust = None
+    if lk["rust"] > 0:
+        # rust where the paint is gone and in the seams that hold water, in two browns
+        rust_chip = math_("MULTIPLY", wear_mask, ramp(noise(30.0, 6.0, 0.65), 0.25, 0.55))
+        rust_seam = math_("MULTIPLY", cavity, ramp(noise(7.0, 4.0, 0.6), 0.5, 0.7))
+        rust = math_("MULTIPLY", math_("MAXIMUM", rust_chip, rust_seam), lk["rust"] * 1.7, clamp=True)
+        rust_col = mix(srgb(118, 58, 24), srgb(62, 34, 20), ramp(noise(60.0, 4.0, 0.6), 0.3, 0.7))
+        col = mix(col, rust_col, rust)
     col = mix(col, tuple(min(1.0, c * 1.25 + 0.02) for c in lk["color"][:3]) + (1.0,), scuff)
     grime_col = tuple(c * 0.35 for c in lk["color"][:3]) + (1.0,)
     col = mix(col, grime_col, cavity)
     col = mix(col, tuple(c * 0.25 for c in lk["color"][:3]) + (1.0,), contact)
     col = mix(col, srgb(74, 66, 50), streak)
+    if rust is not None:
+        # rust runs down from the damage with the rain
+        col = mix(col, srgb(96, 52, 26), math_("MULTIPLY", streak, lk["rust"] * 0.9, clamp=True))
     col = mix(col, srgb(150, 138, 110), dust)
 
     emit_co = node("ShaderNodeEmission")
@@ -772,6 +867,8 @@ def _build_material(name, lk, projectors, bake_img):
     gloss = math_("ADD", lk["gloss"], math_("MULTIPLY", wear_mask, lk["wear_gloss"] - lk["gloss"]))
     gloss = math_("SUBTRACT", gloss, math_("MULTIPLY", math_("ADD", math_("ADD", cavity, dust), math_("ADD", streak, scuff)),
                                            0.25), clamp=True)
+    if rust is not None:   # rust is dull
+        gloss = math_("SUBTRACT", gloss, math_("MULTIPLY", rust, 0.45), clamp=True)
     if spec_decal is not None:  # paint is a touch glossier than the surface under it
         gloss = math_("ADD", gloss, math_("MULTIPLY", spec_decal, 0.05), clamp=True)
     comb = node("ShaderNodeCombineXYZ")
@@ -840,6 +937,15 @@ def _pattern(node, L, noise, math_, kind):
         for d in ("X", "Y"):
             w = node("ShaderNodeTexWave", wave_type="BANDS", bands_direction=d)
             w.inputs["Scale"].default_value = 450.0
+            L.new(tc.outputs["Object"], w.inputs["Vector"])
+            outs.append(w.outputs["Fac"])
+        return math_("MULTIPLY", outs[0], outs[1])
+    if kind == "eggcrate":
+        # the bumps of egg-crate foam: a grid of soft domes, about 3 cm apart
+        outs = []
+        for d in ("X", "Y"):
+            w = node("ShaderNodeTexWave", wave_type="BANDS", bands_direction=d, wave_profile="SIN")
+            w.inputs["Scale"].default_value = 20.0
             L.new(tc.outputs["Object"], w.inputs["Vector"])
             outs.append(w.outputs["Fac"])
         return math_("MULTIPLY", outs[0], outs[1])

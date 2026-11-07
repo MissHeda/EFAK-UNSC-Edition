@@ -25,6 +25,7 @@
 
     if (_cargo isEqualTo [_item]) then {
         _prop animateSource ["lid", 0];
+        _prop say3D [format [QGVAR(%1_close), getText (configOf _prop >> "efku_sound")], 20, 0.96 + random 0.08];
 
         [{
             params ["_holder", "_prop"];

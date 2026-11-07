@@ -8,7 +8,8 @@
 param(
   [string]$Arma = 'C:\SteamLibrary\steamapps\common\Arma 3\arma3_x64.exe',
   [string]$Workshop = 'C:\SteamLibrary\steamapps\workshop\content\107410',
-  [string]$Python = 'python'
+  [string]$Python = 'python',
+  [string]$Mission = 'EFKU_Lids.Stratis'
 )
 $ErrorActionPreference = 'Stop'
 $Here = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -17,7 +18,7 @@ $S = Join-Path $Here 'out'
 $prof = Join-Path $S 'arma_profile'
 $shots = Join-Path $S 'shots'
 New-Item -ItemType Directory -Force $prof, $shots, (Join-Path $S 'mod\addons') | Out-Null
-Get-ChildItem $prof -Filter *.rpt -ErrorAction SilentlyContinue | Remove-Item -Force
+Get-ChildItem $prof -Filter *.rpt -ErrorAction SilentlyContinue | ForEach-Object { try { Remove-Item $_.FullName -Force -ErrorAction Stop } catch {} }
 Get-ChildItem $shots -Filter *.png -ErrorAction SilentlyContinue | Remove-Item -Force
 & $Python (Join-Path $Here 'make_pbo.py') (Join-Path $Here 'mission') (Join-Path $S 'mod\addons\efku_test.pbo') 'z\efku_test'
 
@@ -38,7 +39,7 @@ $mods = @("$Workshop\450814997", "$Workshop\463939057", "$Workshop\3809430149", 
   (Join-Path $Repo '.hemttout\build'), (Join-Path $S 'mod')) -join ';'
 $argv = @('-window', '-noPause', '-skipIntro', '-noSplash', '-showScriptErrors', '-x=1600', '-y=900',
   '-name=efkutest', "`"-profiles=$prof`"", "`"-mod=$mods`"",
-  "`"-init=playMission['','\z\efku_test\missions\EFKU_Lids.Stratis']`"")
+  "`"-init=playMission['','\z\efku_test\missions\$Mission']`"")
 $p = Start-Process $Arma -ArgumentList $argv -PassThru
 "PID $($p.Id)"
 
@@ -69,9 +70,10 @@ while ((Get-Date) -lt $deadline -and -not $p.HasExited) {
   for ($i = $seen; $i -lt $lines.Count; $i++) {
     $l = $lines[$i]
     $l
-    if ($l -match 'EFKUTEST SHOT ([A-Za-z_]+)') { Shot $Matches[1] }
+    if ($l -match 'EFKUTEST SHOT ([A-Za-z0-9_]+)') { Shot $Matches[1] }
     if ($l -match 'EFKUTEST DONE') { $deadline = Get-Date }
   }
   $seen = $lines.Count
 }
 if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force; "stopped $($p.Id)" }
+$p.WaitForExit(15000) | Out-Null

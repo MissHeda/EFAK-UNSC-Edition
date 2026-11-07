@@ -55,16 +55,17 @@ class EFAK_KitGroups {
 };
 
 // The animated stand-ins for kits on the ground, see efku_LidProp in the main addon.
-#define LID_PROP(FILE) \
+#define LID_PROP(FILE,SOUND) \
     class DOUBLES(efku_LidProp,FILE): efku_LidProp { \
         model = QPATHTOF(data\FILE.p3d); \
+        efku_sound = #SOUND; \
     }
 
 class CfgVehicles {
     class efku_LidProp;
-    LID_PROP(utility_pouch);
-    LID_PROP(ammo_pouch);
-    LID_PROP(ammo_bag);
-    LID_PROP(engineer_bag);
-    LID_PROP(cbrn_bag);
+    LID_PROP(utility_pouch,pouch);
+    LID_PROP(ammo_pouch,pouch);
+    LID_PROP(ammo_bag,case);
+    LID_PROP(engineer_bag,case);
+    LID_PROP(cbrn_bag,case);
 };

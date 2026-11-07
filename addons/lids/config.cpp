@@ -15,6 +15,18 @@ class CfgPatches {
     };
 };
 
+// The lids' sounds, made by tools/make_sounds.py: case, med (with the field generator's beeps) and
+// pouch, each opening and closing.
+#define LID_SOUND(NAME) class DOUBLES(ADDON,NAME) { name = ""; sound[] = {QPATHTOF(sounds\NAME.ogg), 1, 1}; titles[] = {}; }
+class CfgSounds {
+    LID_SOUND(case_open);
+    LID_SOUND(case_close);
+    LID_SOUND(med_open);
+    LID_SOUND(med_close);
+    LID_SOUND(pouch_open);
+    LID_SOUND(pouch_close);
+};
+
 class Extended_PreInit_EventHandlers {
     class ADDON {
         init = QUOTE(call COMPILE_FILE(XEH_preInit));

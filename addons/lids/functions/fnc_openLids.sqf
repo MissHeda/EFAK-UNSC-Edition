@@ -51,10 +51,10 @@ params ["", "_container", ["_second", objNull]];
         _ground = (_hits select 0) select 0;
     };
 
-    // In a holder a kit shows its front against the holder's own direction (measured in game). The
-    // kit models are built with their top along the model's y axis and their front along z (the
-    // way a holder shows items upright), so the prop points y up and z where the front faces.
-    private _front = _holder vectorModelToWorldVisual [-(sin _turn), -(cos _turn), 0];
+    // In a holder a kit faces the holder's own direction (measured in game). The kit models are built
+    // with their top along the model's y axis and their front along z (the way a holder shows items
+    // upright), so the prop points y up and z where the front faces.
+    private _front = _holder vectorModelToWorldVisual [sin _turn, cos _turn, 0];
     _front = vectorNormalized [_front select 0, _front select 1, 0];
 
     private _prop = _propClass createVehicleLocal [0, 0, 0];
@@ -63,6 +63,7 @@ params ["", "_container", ["_second", objNull]];
 
     _holder hideObject true;
     _prop animateSource ["lid", 1];
+    _prop say3D [format [QGVAR(%1_open), getText (_propConfig >> "efku_sound")], 20, 0.96 + random 0.08];
 
     GVAR(open) pushBack [_holder, _prop, _item];
 } forEach [_container, _second];
