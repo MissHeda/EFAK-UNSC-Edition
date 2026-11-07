@@ -32,7 +32,13 @@ KITS = {
     "mfak": ("MFAK", "MULTI-CASUALTY MEDICAL SUPPLY"),
     "mfakplus": ("MFAK+", "FIELD MEDIC RESUPPLY"),
     "narcbox": ("NARC", "CONTROLLED SUBSTANCES"),
+    "utility_pouch": ("UTIL", "M12 UTILITY POUCH"),
+    "ammo_pouch": ("AMMO", "DOUBLE MAGAZINE POUCH"),
+    "ammo_bag": ("AMMO", "AMMUNITION CRATE  600 RDS"),
+    "engineer_bag": ("ENG", "M88 FIELD REPAIR TOOL SET"),
+    "cbrn_bag": ("CBRN", "DECON & PROTECTION KIT"),
 }
+EUP = ("utility_pouch", "ammo_pouch", "ammo_bag", "engineer_bag", "cbrn_bag")
 
 
 def font(size, weight="Bold"):
@@ -199,7 +205,8 @@ def main():
     to_paa(gloss(512, 1024, 14.9, 23.05, 0.6, 23.05 * 1080 / 40, "UNSC // CONTENTS"),
            os.path.join(ui, "gloss_contents_ca.paa"))
     for kit in KITS:
-        to_paa(kit_background(kit), os.path.join(REPO, "addons", "kits", "ui", kit + "_bg_ca.paa"))
+        addon = "eup" if kit in EUP else "kits"
+        to_paa(kit_background(kit), os.path.join(REPO, "addons", addon, "ui", kit + "_bg_ca.paa"))
     to_paa(logo(), os.path.join(REPO, "logo_ca.paa"))
     os.replace(os.path.join(REPO, "logo_ca.paa"), os.path.join(REPO, "logo.paa"))
 

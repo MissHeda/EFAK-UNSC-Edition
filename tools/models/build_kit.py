@@ -35,18 +35,21 @@ if fast:
     U.render_views(ob, paths, kit, views, size=512, samples=24)
     sys.exit(0)
 
-paths = U.bake(ob, kit, size=size, samples=64)
-data = os.path.join(U.REPO, "addons", "kits", "data")
-ui = os.path.join(U.REPO, "addons", "kits", "ui")
+paths = U.bake(ob, kit, size=size, samples=128)
+addon = kits.ADDON[kit]
+data = os.path.join(U.REPO, "addons", addon, "data")
+ui = os.path.join(U.REPO, "addons", addon, "ui")
 os.makedirs(data, exist_ok=True)
 os.makedirs(ui, exist_ok=True)
-game_dir = "z\\efku\\addons\\kits\\data"
+game_dir = "z\\efku\\addons\\%s\\data" % addon
 
 nohq_dx = os.path.join(U.OUT, kit, "%s_nohq_dx.png" % kit)
 U.flip_green(paths["nohq"], nohq_dx)
 U.to_paa(paths["co"], os.path.join(data, kit + "_co.paa"))
 U.to_paa(nohq_dx, os.path.join(data, kit + "_nohq.paa"))
-U.to_paa(paths["smdi"], os.path.join(data, kit + "_smdi.paa"))
+# specular and ambient shadow carry no fine detail: half size is plenty
+U.to_paa(U.downscale(paths["smdi"], size // 2), os.path.join(data, kit + "_smdi.paa"))
+U.to_paa(U.downscale(paths["as"], size // 2), os.path.join(data, kit + "_as.paa"))
 with open(os.path.join(data, kit + ".rvmat"), "w", newline="\n") as f:
     f.write(U.RVMAT % {"dir": game_dir, "kit": kit})
 

@@ -1,8 +1,9 @@
 # EFAK: UNSC Edition
 
-A look-only add-on for [Enhanced First Aid Kits](https://steamcommunity.com/sharedfiles/filedetails/?id=3809430149):
-every kit gets a new model in the style of the UNSC, new inventory pictures, and the kit window turns into
-a cyan HUD readout on dark glass.
+A look-only add-on for [Enhanced First Aid Kits](https://steamcommunity.com/sharedfiles/filedetails/?id=3809430149)
+and [Enhanced Utility Pouches](https://steamcommunity.com/sharedfiles/filedetails/?id=3812667721): every kit
+and pouch gets a new model in the style of the UNSC, new inventory pictures, and the kit window turns into
+a cyan HUD readout on dark glass. Works with EFAK, EUP or both - whichever is loaded gets the new look.
 
 | Kit | Becomes |
 |---|---|
@@ -11,8 +12,13 @@ a cyan HUD readout on dark glass.
 | MFAK | MFAK - UNSC supply crate with padded lid and corner posts |
 | MFAK+ | MFAK+ - tall UNSC locker tin with fold handles |
 | Narc Box | Narc case - moulded launcher-ammo style hard case with yellow stencil |
+| Utility Pouch | M12 utility pouch - webbing pouch with moulded lid and buckled straps |
+| Ammo Pouch | double magazine pouch with two mags and rounds showing |
+| Ammo Bag | steel ammunition crate with folding handle and yellow HE band |
+| Engineer Bag | olive tool case with orange bumpers, vents and hazard stripes |
+| CBRN Bag | white sealed CBRN container with seal gauge and purge valve |
 
-Needs EFAK (1.4.0 or later for the window colours; older versions still get the models). Changes nothing
+Needs EFAK or EUP (EFAK 1.4.0 or later for the window colours; older versions still get the models). Changes nothing
 but the look: names, contents, weights and settings stay EFAK's, so EFAK updates keep working.
 
 ## Building
@@ -22,7 +28,7 @@ specular maps, LODs, shadow and geometry LODs, and the inventory picture:
 
 ```
 python tools/models/make_decals.py
-blender -b -P tools/models/build_kit.py -- ifak      # afak, mfak, mfakplus, narcbox
+blender -b -P tools/models/build_kit.py -- ifak      # any name from BUILDERS in kits.py
 python tools/make_ui.py                              # window glass, kit backgrounds, logo
 hemtt build
 ```

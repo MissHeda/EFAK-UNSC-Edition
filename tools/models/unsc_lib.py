@@ -39,47 +39,73 @@ def srgb(r, g, b):
 
 
 # --- Looks ---------------------------------------------------------------------------------------
-# color: base; wear_color: what shows on chipped edges; wear: how much edges chip (0-1);
-# grime: dirt in cavities (0-1); mottle: low-frequency colour variation; grain: surface bump;
-# spec/gloss: for _smdi (0-1); wear_gloss: gloss where worn; bevel: rounded-edge radius in the
-# normal map (m).
+# color: base; wear_color: what chipped edges show at their core (bare metal, raw plastic);
+# primer: the layer between paint and core, if the look is paint over metal; wear: how much edges
+# chip (0-1); grime: dirt in cavities (0-1); streaks: run-down dirt on walls (0-1); mottle:
+# low-frequency colour variation; pattern + grain: surface relief in the normal map (paint = orange
+# peel, stipple = cast polymer, brushed = brushed metal along x, rubber = pebbled, weave = webbing,
+# smooth); spec/gloss: for _smdi (0-1); wear_gloss: gloss where worn; bevel: rounded-edge radius in
+# the normal map (m).
 def look(color, wear_color=None, wear=0.4, grime=0.5, mottle=0.03, grain=0.15, spec=0.12, gloss=0.3,
-         wear_gloss=0.5, bevel=0.0025):
+         wear_gloss=0.5, bevel=0.0025, primer=None, pattern="paint", streaks=0.5):
     return dict(color=color, wear_color=wear_color or color, wear=wear, grime=grime, mottle=mottle,
-                grain=grain, spec=spec, gloss=gloss, wear_gloss=wear_gloss, bevel=bevel)
+                grain=grain, spec=spec, gloss=gloss, wear_gloss=wear_gloss, bevel=bevel, primer=primer,
+                pattern=pattern, streaks=streaks)
 
+
+STEEL = srgb(150, 152, 154)
+PRIMER = srgb(118, 112, 96)
 
 LOOKS = {
-    # UNSC olive drab polymer and paint
-    "olive": look(srgb(92, 97, 64), srgb(150, 146, 120), wear=0.45, grime=0.55, spec=0.1, gloss=0.28),
-    "olive_dark": look(srgb(66, 70, 46), srgb(130, 128, 104), wear=0.45, grime=0.55, spec=0.1, gloss=0.26),
-    "olive_green": look(srgb(78, 96, 54), srgb(120, 124, 112), wear=0.4, grime=0.5, spec=0.14, gloss=0.34),
-    "olive_tan": look(srgb(104, 96, 66), srgb(160, 150, 120), wear=0.5, grime=0.6, spec=0.1, gloss=0.25),
-    "olive_tan_dark": look(srgb(80, 74, 50), srgb(150, 140, 112), wear=0.55, grime=0.6, spec=0.1, gloss=0.25),
+    # UNSC olive drab: paint over metal (chips show primer, then steel) or moulded polymer
+    "olive": look(srgb(92, 97, 64), srgb(140, 138, 116), wear=0.45, grime=0.55, spec=0.1, gloss=0.28,
+                  pattern="stipple", grain=0.25),
+    "olive_dark": look(srgb(66, 70, 46), srgb(120, 120, 98), wear=0.45, grime=0.55, spec=0.1, gloss=0.26,
+                       pattern="stipple", grain=0.25),
+    "olive_green": look(srgb(78, 96, 54), STEEL, wear=0.45, grime=0.5, spec=0.14, gloss=0.34, primer=PRIMER),
+    "olive_tan": look(srgb(104, 96, 66), STEEL, wear=0.5, grime=0.6, spec=0.1, gloss=0.25, primer=PRIMER),
+    "olive_tan_dark": look(srgb(80, 74, 50), STEEL, wear=0.55, grime=0.6, spec=0.1, gloss=0.25, primer=PRIMER),
     "poly_green": look(srgb(92, 112, 56), srgb(130, 146, 100), wear=0.25, grime=0.4, spec=0.16, gloss=0.38,
-                       mottle=0.03, grain=0.1),
+                       mottle=0.03, grain=0.2, pattern="stipple"),
+    "lid_pad": look(srgb(102, 94, 64), srgb(130, 122, 92), wear=0.25, grime=0.55, spec=0.05, gloss=0.15,
+                    pattern="weave", grain=0.35, streaks=0.3),
     # health pack: light grey shell, darker lower half
     "shell_white": look(srgb(192, 195, 193), srgb(120, 122, 124), wear=0.35, grime=0.45, spec=0.22, gloss=0.45,
-                        mottle=0.03),
+                        mottle=0.03, pattern="stipple", grain=0.12),
     "shell_grey": look(srgb(150, 153, 154), srgb(200, 202, 204), wear=0.4, grime=0.5, spec=0.2, gloss=0.42,
-                       mottle=0.04),
-    "shell_dark": look(srgb(72, 75, 78), srgb(150, 152, 155), wear=0.45, grime=0.5, spec=0.18, gloss=0.38),
+                       mottle=0.04, pattern="stipple", grain=0.12),
+    "shell_dark": look(srgb(72, 75, 78), STEEL, wear=0.45, grime=0.5, spec=0.18, gloss=0.38, primer=srgb(96, 98, 98)),
+    # EUP colours
+    "hazard_yellow": look(srgb(206, 168, 44), STEEL, wear=0.55, grime=0.55, spec=0.16, gloss=0.38, primer=PRIMER),
+    "hazmat_white": look(srgb(196, 196, 186), srgb(150, 150, 142), wear=0.35, grime=0.7, spec=0.2, gloss=0.42,
+                         pattern="stipple", grain=0.12),
+    "orange": look(srgb(196, 92, 30), srgb(220, 160, 120), wear=0.3, grime=0.4, spec=0.25, gloss=0.5,
+                   pattern="stipple", grain=0.1),
+    "webbing": look(srgb(70, 72, 50), srgb(96, 96, 74), wear=0.1, grime=0.45, spec=0.03, gloss=0.08,
+                    pattern="weave", grain=0.6, bevel=0.0015, streaks=0.2),
+    "brass": look(srgb(176, 136, 66), srgb(220, 190, 120), wear=0.3, grime=0.35, spec=0.6, gloss=0.6,
+                  wear_gloss=0.75, pattern="smooth", bevel=0.0008),
+    "glass": look(srgb(30, 38, 40), srgb(60, 70, 72), wear=0.05, grime=0.2, spec=0.9, gloss=0.95,
+                  pattern="smooth", grain=0.0, bevel=0.0006),
+    "dial": look(srgb(220, 218, 206), srgb(220, 218, 206), wear=0.0, grime=0.3, spec=0.5, gloss=0.8,
+                 pattern="smooth", grain=0.0, bevel=0.0005),
     # small parts
-    "dark_poly": look(srgb(40, 42, 40), srgb(90, 92, 88), wear=0.3, grime=0.3, spec=0.08, gloss=0.25),
+    "dark_poly": look(srgb(40, 42, 40), srgb(90, 92, 88), wear=0.3, grime=0.3, spec=0.08, gloss=0.25,
+                      pattern="stipple", grain=0.2),
     "rubber": look(srgb(30, 31, 31), srgb(52, 52, 50), wear=0.15, grime=0.3, spec=0.04, gloss=0.12,
-                   grain=0.6, bevel=0.0015),
+                   grain=0.5, bevel=0.0015, pattern="rubber"),
     "latch_grey": look(srgb(146, 149, 148), srgb(196, 198, 196), wear=0.2, grime=0.4, spec=0.18, gloss=0.4,
-                       mottle=0.02, grain=0.05),
-    "steel": look(srgb(88, 90, 92), srgb(170, 172, 174), wear=0.6, grime=0.4, spec=0.45, gloss=0.55,
-                  wear_gloss=0.75, grain=0.05, bevel=0.0012),
-    "black_metal": look(srgb(28, 29, 30), srgb(120, 122, 124), wear=0.55, grime=0.25, spec=0.35, gloss=0.5,
-                        wear_gloss=0.7, grain=0.05, bevel=0.0012),
+                       mottle=0.02, grain=0.1, pattern="stipple"),
+    "steel": look(srgb(96, 98, 100), srgb(180, 182, 184), wear=0.6, grime=0.4, spec=0.5, gloss=0.55,
+                  wear_gloss=0.75, grain=0.25, bevel=0.0012, pattern="brushed"),
+    "black_metal": look(srgb(28, 29, 30), STEEL, wear=0.55, grime=0.25, spec=0.35, gloss=0.5,
+                        wear_gloss=0.7, grain=0.08, bevel=0.0012),
     "red": look(srgb(176, 30, 26), srgb(210, 120, 110), wear=0.2, grime=0.3, spec=0.4, gloss=0.65,
-                mottle=0.02, grain=0.02),
+                mottle=0.02, grain=0.05, pattern="stipple"),
     "red_reflector": look(srgb(206, 36, 30), srgb(230, 120, 110), wear=0.1, grime=0.2, spec=0.7, gloss=0.85,
-                          mottle=0.01, grain=0.0, bevel=0.001),
+                          mottle=0.01, grain=0.0, bevel=0.001, pattern="smooth"),
     "green_lens": look(srgb(90, 230, 120), srgb(150, 255, 170), wear=0.0, grime=0.1, spec=0.8, gloss=0.9,
-                       mottle=0.0, grain=0.0, bevel=0.0008),
+                       mottle=0.0, grain=0.0, bevel=0.0008, pattern="smooth"),
 }
 
 
@@ -104,6 +130,8 @@ def reset():
     except KeyError:
         pass
     scene.unit_settings.scale_length = 1.0
+    import random
+    random.seed(7)
     return scene
 
 
@@ -112,10 +140,15 @@ PROJECTORS = []     # decals: dicts made by decal()
 
 
 def _finish(bm, name, mat, matrix):
+    import random
     bm.normal_update()
     me = bpy.data.meshes.new(name)
     bm.to_mesh(me)
     bm.free()
+    # one random number per part, so no two parts have quite the same shade
+    attr = me.attributes.new("part_rand", "FLOAT", "POINT")
+    r = random.random()
+    attr.data.foreach_set("value", [r] * len(me.vertices))
     ob = bpy.data.objects.new(name, me)
     bpy.context.scene.collection.objects.link(ob)
     ob.matrix_world = matrix
@@ -141,7 +174,7 @@ def _bevel(bm, width, segs, edges=None):
 
 
 def prism(profile, depth, look="olive", loc=(0, 0, 0), rot=(0, 0, 0), bevel=0.002, segs=2, name="part",
-          taper=0.0):
+          taper=0.0, matrix=None):
     """A 2D outline (local x, y; counter-clockwise) extruded along local z from 0 to depth, edges
     bevelled. taper shrinks the top outline by that much (a draft/chamfered top)."""
     bm = bmesh.new()
@@ -164,7 +197,7 @@ def prism(profile, depth, look="olive", loc=(0, 0, 0), rot=(0, 0, 0), bevel=0.00
         bm.faces.new((bot[i], bot[j], top[j], top[i]))
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     _bevel(bm, bevel, segs)
-    return _finish(bm, name, look, _matrix(loc, rot))
+    return _finish(bm, name, look, matrix if matrix is not None else _matrix(loc, rot))
 
 
 def rect(w, h, cut=0.0, cuts=(1, 1, 1, 1)):
@@ -221,6 +254,120 @@ def cyl(r, length, center, look="steel", axis="z", n=20, bevel=0.001, segs=1, na
     rot = {"z": (0, 0, 0), "y": (90, 0, 0), "x": (0, 90, 0)}[axis]
     off = {"z": (0, 0, -length / 2), "y": (0, length / 2, 0), "x": (-length / 2, 0, 0)}[axis]
     return prism(circle(r, n), length, look, (cx + off[0], cy + off[1], cz + off[2]), rot, bevel, segs, name)
+
+
+# --- Details, placed on a surface -------------------------------------------------------------------
+def frame(center, normal, up=(0, 0, 1)):
+    """A placement on a surface: local z along normal (out of the surface), local y towards up."""
+    z = Vector(normal).normalized()
+    u = Vector(up)
+    if abs(u.normalized().dot(z)) > 0.99:
+        u = Vector((0, 1, 0)) if abs(z.y) < 0.9 else Vector((1, 0, 0))
+    y = (u - z * u.dot(z)).normalized()
+    x = y.cross(z)
+    m = Matrix((x, y, z)).transposed().to_4x4()
+    m.translation = Vector(center)
+    return m
+
+
+def lbox(F, size, at=(0, 0, 0), look="steel", cut=0.0, cuts=(1, 1, 1, 1), bevel=0.001, segs=1, taper=0.0):
+    """Box in a frame: size (along x, along y, height out of the surface), `at` is the centre of its
+    foot (z = 0 sits on the surface)."""
+    sx, sy, sz = size
+    m = F @ Matrix.Translation(Vector(at))
+    return prism(rect(sx, sy, cut, cuts), sz, look, bevel=bevel, segs=segs, taper=taper, matrix=m)
+
+
+def lcyl(F, r, h, at=(0, 0, 0), look="steel", n=16, bevel=0.0006, segs=1, axis="z"):
+    """Cylinder in a frame. axis z stands out of the surface (foot at `at`); x lies along the surface,
+    centred on `at`."""
+    m = F @ Matrix.Translation(Vector(at))
+    if axis == "x":
+        m = m @ Matrix.Rotation(math.radians(90), 4, "Y") @ Matrix.Translation((0, 0, -h / 2))
+    return prism(circle(r, n), h, look, bevel=bevel, segs=segs, matrix=m)
+
+
+def bolt(center, normal, r=0.0035, look="steel", up=(0, 0, 1)):
+    """Hex-head bolt on a washer."""
+    F = frame(center, normal, up)
+    lcyl(F, r * 1.45, r * 0.28, look=look, n=16, bevel=r * 0.08)
+    prism(circle(r, 6), r * 0.75, look, bevel=r * 0.12, segs=1,
+          matrix=F @ Matrix.Translation((0, 0, r * 0.26)))
+
+
+def screw(center, normal, r=0.0028, look="black_metal", up=(0, 0, 1)):
+    """Flush pan-head screw with a slot."""
+    F = frame(center, normal, up)
+    lcyl(F, r, r * 0.45, look=look, n=14, bevel=r * 0.3, segs=2)
+    lbox(F, (r * 1.5, r * 0.28, r * 0.14), (0, 0, r * 0.42), look, bevel=0)
+
+
+def rivet(center, normal, r=0.0022, look="steel"):
+    F = frame(center, normal)
+    lcyl(F, r, r * 0.6, look=look, n=10, bevel=r * 0.5, segs=2)
+
+
+def rivets(p0, p1, normal, n, r=0.0022, look="steel"):
+    for k in range(n):
+        t = k / (n - 1) if n > 1 else 0.5
+        rivet(tuple(a + (b - a) * t for a, b in zip(p0, p1)), normal, r, look)
+
+
+def toggle_latch(center, normal, up=(0, 0, 1), w=0.032, h=0.05, look="black_metal"):
+    """Over-centre toggle latch: base plate on the body, lever, wire hook, keeper on the lid.
+    center is where the seam is; the latch hangs below it and grips above it."""
+    F = frame(center, normal, up)
+    lbox(F, (w, h * 0.42, 0.003), (0, -h * 0.36, 0), look, cut=0.003, bevel=0.0008)
+    for sx in (-1, 1):
+        lbox(F, (0.003, h * 0.22, 0.008), (sx * w * 0.36, -h * 0.3, 0), look, bevel=0.0006)
+    lcyl(F, 0.0022, w * 0.78, (0, -h * 0.3, 0.007), "steel", n=10, axis="x")
+    lbox(F, (w * 0.72, h * 0.62, 0.004), (0, -h * 0.12, 0.007), look, cut=0.004, cuts=(1, 1, 0, 0),
+         bevel=0.0012, segs=2)
+    lbox(F, (w * 0.5, h * 0.12, 0.002), (0, -h * 0.36, 0.011), look, bevel=0.0005)
+    for sx in (-1, 1):
+        lbox(F, (0.0018, h * 0.42, 0.0018), (sx * w * 0.26, h * 0.12, 0.0075), "steel", bevel=0)
+    lbox(F, (w * 0.56, 0.0022, 0.0022), (0, h * 0.33, 0.0065), "steel", bevel=0)
+    lbox(F, (w * 0.8, h * 0.16, 0.0055), (0, h * 0.36, 0), look, cut=0.002, bevel=0.0008)
+
+
+def vents(center, normal, up, n, w, gap, fin=0.004, depth=0.003, look="dark_poly"):
+    """A row of n louvre fins, w long, stacked along up with `gap` between, in a frame."""
+    F = frame(center, normal, up)
+    hgt = n * gap
+    lbox(F, (w + 0.008, hgt + 0.006, 0.0015), (0, 0, 0), look, bevel=0.0006)
+    for k in range(n):
+        y = -hgt / 2 + gap * (k + 0.5)
+        lbox(F, (w, fin, depth), (0, y, 0.0012), look, bevel=0.0007, taper=0.0008)
+
+
+def hinge(p0, p1, r=0.005, knuckles=5, look="black_metal"):
+    """Piano-style hinge: knuckles along p0-p1 with small gaps, and a pin showing at the ends."""
+    a, b = Vector(p0), Vector(p1)
+    axis = (b - a)
+    ln = axis.length
+    d = axis.normalized()
+    q = d.to_track_quat("Z", "Y")
+    seg = ln / knuckles
+    for k in range(knuckles):
+        c = a + d * (seg * (k + 0.5))
+        m = Matrix.Translation(c) @ q.to_matrix().to_4x4() @ Matrix.Translation((0, 0, -seg * 0.46))
+        prism(circle(r, 14), seg * 0.92, look, bevel=r * 0.15, segs=1, matrix=m)
+    for e, s_ in ((a, -1), (b, 1)):
+        m = Matrix.Translation(e + d * s_ * 0.001) @ q.to_matrix().to_4x4() @ Matrix.Translation((0, 0, -0.0015))
+        prism(circle(r * 0.45, 10), 0.003, "steel", bevel=0.0003, segs=1, matrix=m)
+
+
+def plate(center, normal, up, w, h, look="steel", image=None, rivet_look="steel"):
+    """Riveted data plate, optionally carrying a decal."""
+    F = frame(center, normal, up)
+    lbox(F, (w, h, 0.0012), (0, 0, 0), look, cut=min(w, h) * 0.08, bevel=0.0004)
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            lcyl(F, 0.0014, 0.0008, (sx * (w / 2 - 0.004), sy * (h / 2 - 0.004), 0.0012), rivet_look, n=8,
+                 bevel=0.0005)
+    if image:
+        nz = Vector(normal).normalized()
+        decal(image, tuple(Vector(center) + nz * 0.0012), tuple(nz), up, w * 0.86, depth=0.0015)
 
 
 def decal(image, center, normal, up, width, height=None, depth=0.01, looks=None):
@@ -304,14 +451,14 @@ def _build_material(name, lk, projectors, bake_img):
 
     # edge mask: where a wide bevel normal turns away from the true normal
     bev = node("ShaderNodeBevel", samples=16)
-    bev.inputs["Radius"].default_value = 0.004
+    bev.inputs["Radius"].default_value = 0.006
     dot = node("ShaderNodeVectorMath", operation="DOT_PRODUCT")
     L.new(bev.outputs["Normal"], dot.inputs[0])
     L.new(geo.outputs["Normal"], dot.inputs[1])
-    edge = ramp(math_("SUBTRACT", 1.0, dot.outputs["Value"]), 0.01, 0.12)
+    edge = ramp(math_("SUBTRACT", 1.0, dot.outputs["Value"]), 0.004, 0.07)
     # chips: edges broken up by noise
     chip_noise = noise(48.0, 8.0, 0.7)
-    chips = ramp(math_("MULTIPLY", edge, ramp(chip_noise, 0.35, 0.75)), 0.25, 0.55)
+    chips = ramp(math_("MULTIPLY", edge, ramp(chip_noise, 0.3, 0.7)), 0.15, 0.42)
     wear_mask = math_("MULTIPLY", chips, lk["wear"], clamp=True)
     # scratches: fine streaks
     scr = node("ShaderNodeTexWave", wave_type="BANDS", bands_direction="DIAGONAL")
@@ -321,17 +468,35 @@ def _build_material(name, lk, projectors, bake_img):
     tc = node("ShaderNodeTexCoord")
     L.new(tc.outputs["Object"], scr.inputs["Vector"])
     scratch = math_("MULTIPLY", ramp(scr.outputs["Fac"], 0.93, 0.99), ramp(noise(6.0), 0.5, 0.65))
-    wear_mask = math_("MAXIMUM", wear_mask, math_("MULTIPLY", scratch, lk["wear"] * 0.6), clamp=True)
+    wear_mask = math_("MAXIMUM", wear_mask, math_("MULTIPLY", scratch, lk["wear"] * 0.8), clamp=True)
+    # scuffs: dull, slightly lighter patches where things rub, anywhere on the surface
+    scuff = math_("MULTIPLY", ramp(noise(14.0, 6.0, 0.7), 0.58, 0.75), lk["wear"] * 0.35, clamp=True)
 
     # cavity grime from ambient occlusion
     ao = node("ShaderNodeAmbientOcclusion", samples=16, only_local=True)
     ao.inputs["Distance"].default_value = 0.03
-    cavity = math_("MULTIPLY", ramp(ao.outputs["AO"], 0.9, 0.3), lk["grime"] * 0.7, clamp=True)
+    cavity = math_("MULTIPLY", ramp(ao.outputs["AO"], 0.9, 0.3), lk["grime"] * 0.6, clamp=True)
+    # contact shadow: tight occlusion where parts meet
+    ao2 = node("ShaderNodeAmbientOcclusion", samples=16, only_local=True)
+    ao2.inputs["Distance"].default_value = 0.006
+    contact = math_("MULTIPLY", ramp(ao2.outputs["AO"], 0.95, 0.4), 0.55, clamp=True)
     # dust: settles on upward faces and low on the sides
     up = node("ShaderNodeSeparateXYZ")
     L.new(geo.outputs["Normal"], up.inputs[0])
     dust = math_("MULTIPLY", ramp(up.outputs["Z"], 0.4, 0.95), ramp(noise(9.0, 5.0, 0.65), 0.45, 0.8))
-    dust = math_("MULTIPLY", dust, 0.2 * lk["grime"], clamp=True)
+    dust = math_("MULTIPLY", dust, 0.3 * lk["grime"], clamp=True)
+    # run-down streaks on walls: noise stretched along z
+    tcs = node("ShaderNodeTexCoord")
+    mp = node("ShaderNodeMapping")
+    mp.inputs["Scale"].default_value = (70.0, 70.0, 4.0)
+    L.new(tcs.outputs["Object"], mp.inputs["Vector"])
+    sn = node("ShaderNodeTexNoise", noise_dimensions="3D")
+    sn.inputs["Scale"].default_value = 1.0
+    sn.inputs["Detail"].default_value = 3.0
+    L.new(mp.outputs["Vector"], sn.inputs["Vector"])
+    wall = ramp(math_("ABSOLUTE", up.outputs["Z"]), 0.6, 0.2)
+    streak = math_("MULTIPLY", math_("MULTIPLY", ramp(sn.outputs["Fac"], 0.52, 0.7), wall),
+                   lk["streaks"] * lk["grime"] * 0.55, clamp=True)
 
     # colour
     base = lk["color"]
@@ -344,6 +509,16 @@ def _build_material(name, lk, projectors, bake_img):
         L.new(mottle, comb.inputs[s])
     L.new(comb.outputs[0], bright.inputs[7])
     col = bright.outputs[2]
+    # every part a touch different, as real parts from different batches are
+    pr = node("ShaderNodeAttribute", attribute_type="GEOMETRY", attribute_name="part_rand")
+    shade = node("ShaderNodeMix", data_type="RGBA", blend_type="MULTIPLY", clamp_factor=True)
+    shade.inputs[0].default_value = 1.0
+    L.new(col, shade.inputs[6])
+    sc = node("ShaderNodeCombineXYZ")
+    for s_, k_ in (("X", 0.07), ("Y", 0.06), ("Z", 0.08)):
+        L.new(math_("ADD", 1.0, math_("MULTIPLY", math_("SUBTRACT", pr.outputs["Fac"], 0.5), k_)), sc.inputs[s_])
+    L.new(sc.outputs[0], shade.inputs[7])
+    col = shade.outputs[2]
     # sun fading on top faces, a little lighter
     col = mix(col, tuple(min(1.0, c * 1.1) for c in base[:3]) + (1.0,), math_("MULTIPLY", ramp(up.outputs["Z"], 0.5, 1.0), 0.25))
 
@@ -367,9 +542,17 @@ def _build_material(name, lk, projectors, bake_img):
         col = mix(col, tex.outputs["Color"], a)
         spec_decal = a if spec_decal is None else math_("MAXIMUM", spec_decal, a)
 
-    col = mix(col, lk["wear_color"], wear_mask)
+    if lk["primer"] is not None:
+        # paint chips to primer, deeper chips to bare metal
+        col = mix(col, lk["primer"], wear_mask)
+        col = mix(col, lk["wear_color"], ramp(wear_mask, 0.55, 0.85))
+    else:
+        col = mix(col, lk["wear_color"], wear_mask)
+    col = mix(col, tuple(min(1.0, c * 1.25 + 0.02) for c in lk["color"][:3]) + (1.0,), scuff)
     grime_col = tuple(c * 0.35 for c in lk["color"][:3]) + (1.0,)
     col = mix(col, grime_col, cavity)
+    col = mix(col, tuple(c * 0.25 for c in lk["color"][:3]) + (1.0,), contact)
+    col = mix(col, srgb(74, 66, 50), streak)
     col = mix(col, srgb(150, 138, 110), dust)
 
     emit_co = node("ShaderNodeEmission")
@@ -378,7 +561,8 @@ def _build_material(name, lk, projectors, bake_img):
     # smdi: R 1, G specular, B gloss
     spec = math_("ADD", lk["spec"], math_("MULTIPLY", wear_mask, max(0.0, lk["spec"] * 1.5 - lk["spec"])))
     gloss = math_("ADD", lk["gloss"], math_("MULTIPLY", wear_mask, lk["wear_gloss"] - lk["gloss"]))
-    gloss = math_("SUBTRACT", gloss, math_("MULTIPLY", math_("ADD", cavity, dust), 0.25), clamp=True)
+    gloss = math_("SUBTRACT", gloss, math_("MULTIPLY", math_("ADD", math_("ADD", cavity, dust), math_("ADD", streak, scuff)),
+                                           0.25), clamp=True)
     if spec_decal is not None:  # paint is a touch glossier than the surface under it
         gloss = math_("ADD", gloss, math_("MULTIPLY", spec_decal, 0.05), clamp=True)
     comb = node("ShaderNodeCombineXYZ")
@@ -394,7 +578,7 @@ def _build_material(name, lk, projectors, bake_img):
     bump = node("ShaderNodeBump")
     bump.inputs["Strength"].default_value = lk["grain"]
     bump.inputs["Distance"].default_value = 0.0004
-    L.new(noise(900.0, 2.0, 0.5), bump.inputs["Height"])
+    L.new(_pattern(node, L, noise, math_, lk["pattern"]), bump.inputs["Height"])
     L.new(nb.outputs["Normal"], bump.inputs["Normal"])
     bsdf = node("ShaderNodeBsdfPrincipled")
     L.new(bump.outputs["Normal"], bsdf.inputs["Normal"])
@@ -406,6 +590,41 @@ def _build_material(name, lk, projectors, bake_img):
     mat["emit_sm"] = emit_sm.name
     mat["bsdf"] = bsdf.name
     return mat
+
+
+def _pattern(node, L, noise, math_, kind):
+    """Height for the surface relief of a look."""
+    tc = node("ShaderNodeTexCoord")
+    if kind == "stipple":
+        v = node("ShaderNodeTexVoronoi", feature="F1")
+        v.inputs["Scale"].default_value = 1400.0
+        L.new(tc.outputs["Object"], v.inputs["Vector"])
+        return math_("ADD", math_("MULTIPLY", v.outputs["Distance"], 0.7), math_("MULTIPLY", noise(300.0, 2.0), 0.3))
+    if kind == "rubber":
+        v = node("ShaderNodeTexVoronoi", feature="F1")
+        v.inputs["Scale"].default_value = 500.0
+        L.new(tc.outputs["Object"], v.inputs["Vector"])
+        return math_("SUBTRACT", 1.0, v.outputs["Distance"])
+    if kind == "brushed":
+        mp = node("ShaderNodeMapping")
+        mp.inputs["Scale"].default_value = (8.0, 2500.0, 2500.0)
+        L.new(tc.outputs["Object"], mp.inputs["Vector"])
+        n = node("ShaderNodeTexNoise", noise_dimensions="3D")
+        n.inputs["Scale"].default_value = 1.0
+        n.inputs["Detail"].default_value = 4.0
+        L.new(mp.outputs["Vector"], n.inputs["Vector"])
+        return n.outputs["Fac"]
+    if kind == "weave":
+        outs = []
+        for d in ("X", "Y"):
+            w = node("ShaderNodeTexWave", wave_type="BANDS", bands_direction=d)
+            w.inputs["Scale"].default_value = 450.0
+            L.new(tc.outputs["Object"], w.inputs["Vector"])
+            outs.append(w.outputs["Fac"])
+        return math_("MULTIPLY", outs[0], outs[1])
+    if kind == "smooth":
+        return math_("MULTIPLY", noise(200.0, 1.0), 0.1)
+    return noise(900.0, 2.0, 0.5)  # paint: orange peel
 
 
 def _route(mat, which):
@@ -488,7 +707,11 @@ def bake(ob, kit, size=2048, samples=64):
     ob.select_set(True)
     bpy.context.view_layer.objects.active = ob
     paths = {}
-    for kind, route, btype in (("co", "emit_co", "EMIT"), ("smdi", "emit_sm", "EMIT"), ("nohq", "bsdf", "NORMAL")):
+    if scene.world is None:
+        scene.world = bpy.data.worlds.new("bake_world")
+    scene.world.light_settings.distance = 0.08
+    for kind, route, btype in (("co", "emit_co", "EMIT"), ("smdi", "emit_sm", "EMIT"), ("nohq", "bsdf", "NORMAL"),
+                               ("as", "bsdf", "AO")):
         target = bpy.data.images.new("bake_%s_%s" % (kit, kind), size, size, alpha=False)
         target.colorspace_settings.name = "sRGB" if kind == "co" else "Non-Color"
         for m in mats.values():
@@ -497,6 +720,8 @@ def bake(ob, kit, size=2048, samples=64):
         if btype == "NORMAL":
             scene.render.bake.normal_space = "TANGENT"
             bpy.ops.object.bake(type="NORMAL")
+        elif btype == "AO":
+            bpy.ops.object.bake(type="AO")
         else:
             bpy.ops.object.bake(type="EMIT")
         path = os.path.join(OUT, kit, "%s_%s.png" % (kit, kind))
@@ -681,11 +906,22 @@ VertexShaderID="Super";
 class Stage1 { texture="%(dir)s\\%(kit)s_nohq.paa"; uvSource="tex"; class uvTransform { aside[]={1,0,0}; up[]={0,1,0}; dir[]={0,0,0}; pos[]={0,0,0}; }; };
 class Stage2 { texture="#(argb,8,8,3)color(0.5,0.5,0.5,1,DT)"; uvSource="tex"; class uvTransform { aside[]={1,0,0}; up[]={0,1,0}; dir[]={0,0,0}; pos[]={0,0,0}; }; };
 class Stage3 { texture="#(argb,8,8,3)color(0,0,0,0,MC)"; uvSource="tex"; class uvTransform { aside[]={1,0,0}; up[]={0,1,0}; dir[]={0,0,0}; pos[]={0,0,0}; }; };
-class Stage4 { texture="#(argb,8,8,3)color(1,1,1,1,AS)"; uvSource="tex"; class uvTransform { aside[]={1,0,0}; up[]={0,1,0}; dir[]={0,0,0}; pos[]={0,0,0}; }; };
+class Stage4 { texture="%(dir)s\%(kit)s_as.paa"; uvSource="tex"; class uvTransform { aside[]={1,0,0}; up[]={0,1,0}; dir[]={0,0,0}; pos[]={0,0,0}; }; };
 class Stage5 { texture="%(dir)s\\%(kit)s_smdi.paa"; uvSource="tex"; class uvTransform { aside[]={1,0,0}; up[]={0,1,0}; dir[]={0,0,0}; pos[]={0,0,0}; }; };
 class Stage6 { texture="#(ai,64,64,1)fresnel(1.3,0.6)"; uvSource="none"; };
 class Stage7 { texture="a3\\data_f\\env_land_co.paa"; useWorldEnvMap="true"; uvSource="none"; };
 """
+
+
+def downscale(png, size):
+    im = bpy.data.images.load(png)
+    if im.size[0] > size:
+        im.scale(size, size)
+    out = png.replace(".png", "_%d.png" % size)
+    im.filepath_raw = out
+    im.file_format = "PNG"
+    im.save()
+    return out
 
 
 def to_paa(png, paa):
