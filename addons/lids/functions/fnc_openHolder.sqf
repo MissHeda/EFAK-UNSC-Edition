@@ -9,7 +9,8 @@
  * Arguments:
  * 0: Holder <OBJECT>
  * 1: Only this kit class, "" for every kit in the holder <STRING> (default: "")
- * 2: Who opened it ("kit": the kit window) <STRING> (default: "kit")
+ * 2: Who opens it: "kit" (the kit window), "inventory", or another player's, see fnc_requestOpen
+ *    <STRING> (default: "kit"). A holder someone already has open just counts them in.
  * 3: Open at once, without the swing and sound <BOOL> (default: false)
  *
  * Return Value:
@@ -25,7 +26,12 @@ params ["_holder", ["_only", ""], ["_source", "kit"], ["_instant", false]];
 
 if (isNull _holder) exitWith {false};
 if !(_holder isKindOf "WeaponHolder" || {_holder isKindOf "WeaponHolderSimulated"}) exitWith {false};
-if ((GVAR(open) findIf {(_x select 0) isEqualTo _holder}) != -1) exitWith {false};
+// Open already: count this one in, so it stays open until everyone who opened it has closed it.
+private _known = GVAR(open) findIf {(_x select 0) isEqualTo _holder};
+if (_known != -1) exitWith {
+    ((GVAR(open) select _known) select 4) pushBackUnique _source;
+    true
+};
 
 private _pieces = [_holder] call FUNC(holderPieces);
 private _slots = [_holder] call FUNC(holderSlots);
@@ -108,6 +114,9 @@ private _props = [];
 
 _holder hideObject true;
 
-GVAR(open) pushBack [_holder, _props, _copy, [_holder] call FUNC(holderPieces), _source, _only, _kits apply {_x select 0}];
+GVAR(open) pushBack [_holder, _props, _copy, [_holder] call FUNC(holderPieces), [_source], _only, _kits apply {_x select 0}];
+
+// The kits' casters go now, not on the next tick: the props cast the same shadow from here on.
+[false] call FUNC(shadows);
 
 true

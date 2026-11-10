@@ -30,7 +30,11 @@ deleteVehicle _copy;
 
 if (!_latest) exitWith {};
 _holder setVariable [QGVAR(closing), nil];
+_holder setVariable [QGVAR(closingIndices), nil];
 
 if ((GVAR(open) findIf {(_x select 0) isEqualTo _holder}) == -1) then {
     _holder hideObject false;
 };
+
+// The casters come back in the same frame as the kits, so the shadow never blinks.
+[false] call FUNC(shadows);

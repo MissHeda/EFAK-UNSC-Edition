@@ -19,7 +19,7 @@
 
 // The kit window: the kit it shows, and where that kit is.
 private _want = [];
-if (GVAR(enabled) && {!isNull (uiNamespace getVariable ["efak_gui_display", displayNull])}) then {
+if (GVAR(mode) > 0 && {!isNull (uiNamespace getVariable ["efak_gui_display", displayNull])}) then {
     private _owner = missionNamespace getVariable ["efak_gui_owner", objNull];
     private _kit = missionNamespace getVariable ["efak_gui_kitClass", ""];
 
@@ -29,12 +29,12 @@ if (GVAR(enabled) && {!isNull (uiNamespace getVariable ["efak_gui_display", disp
 };
 
 if (_want isNotEqualTo GVAR(kitWindow)) then {
-    ["kit"] call FUNC(closeLids);
+    ["kit"] call FUNC(requestClose);
     GVAR(kitWindow) = _want;
 };
 
-if (_want isNotEqualTo [] && {(GVAR(open) findIf {(_x select 0) isEqualTo (_want select 0)}) == -1}) then {
-    [_want select 0, _want select 1, "kit"] call FUNC(openHolder);
+if (_want isNotEqualTo [] && {(GVAR(open) findIf {(_x select 0) isEqualTo (_want select 0) && {"kit" in (_x select 4)}}) == -1}) then {
+    [_want select 0, _want select 1, "kit"] call FUNC(requestOpen);
 };
 
 // Holders that changed while open.
@@ -46,7 +46,9 @@ if (_want isNotEqualTo [] && {(GVAR(open) findIf {(_x select 0) isEqualTo (_want
         GVAR(open) deleteAt (GVAR(open) findIf {(_x select 0) isEqualTo _holder && {(_x select 1) isEqualTo _props}});
         {deleteVehicle (_x select 0)} forEach _props;
         [_holder, [], _copy] call FUNC(restoreHolder);
-        [_holder, _only, _by, true] call FUNC(openHolder);
+        if ([_holder, _only, _by select 0, true] call FUNC(openHolder)) then {
+            ((GVAR(open) select -1) select 4) append (_by - [_by select 0]);
+        };
     };
 } forEach +GVAR(open);
 

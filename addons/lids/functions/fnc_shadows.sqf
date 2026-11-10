@@ -89,6 +89,7 @@ private _gone = [];
     private _now = [getPosWorldVisual _holder, vectorDirVisual _holder, vectorUpVisual _holder];
     private _i = GVAR(open) findIf {(_x select 0) isEqualTo _holder};
     private _opened = if (_i == -1) then {[]} else {(GVAR(open) select _i) param [6, []]};
+    _opened = _opened + (_holder getVariable [QGVAR(closingIndices), []]);
 
     if (_now isNotEqualTo _at) then {
         private _slots = [_holder] call FUNC(holderSlots);

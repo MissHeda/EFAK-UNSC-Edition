@@ -8,3 +8,6 @@
 
 // How far from the camera kits on the ground get their shadow casters (metres).
 #define SHADOW_RANGE 80
+
+// Players further away than this do not open the lids another player opens (metres).
+#define REMOTE_RANGE 150

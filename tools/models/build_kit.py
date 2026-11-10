@@ -58,6 +58,7 @@ if kit in kits.EXPORT_ROT:
 shadow_tris = U.mesh_tris(U.lod_mesh(shadow_ob, 1.0), use_comp=True)
 print("shadow parts:", len({t[0][4] for t in shadow_tris}), "triangles:", len(shadow_tris))
 open_edges = U.shadow_open_edges(shadow_tris)
+shadow_tris = U.inset_shadow(shadow_tris)
 if open_edges:
     raise SystemExit("shadow LOD of %s has %d open edges" % (kit, open_edges))
 if "--shadow-only" in argv:

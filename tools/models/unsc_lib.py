@@ -1518,10 +1518,23 @@ def write_p3d(path, ob, tex, mat, shadow=None):
     print("wrote", path)
 
 
+def inset_shadow(shadow):
+    """The shadow LOD pulled 8 mm inside the kit's surface (a quarter on thin sides), so a shadow never
+    shades the kit it belongs to (acne on the shut kit). Used for both the kit's own shadow and its
+    caster, so the two are the very same shape and the shadow does not change when a lid opens."""
+    xs = [p[0][0] for t in shadow for p in t]
+    ys = [p[0][1] for t in shadow for p in t]
+    zs = [p[0][2] for t in shadow for p in t]
+    c = ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2, (min(zs) + max(zs)) / 2)
+    size = (max(xs) - min(xs), max(ys) - min(ys), max(zs) - min(zs))
+    k = [(d - min(0.016, d * 0.25)) / d if d > 0.01 else 1.0 for d in size]
+    return [[(tuple(c[i] + (p[0][i] - c[i]) * k[i] for i in range(3)),) + tuple(p[1:]) for p in t] for t in shadow]
+
+
 def write_shadow_p3d(path, shadow):
     """A shadow caster for a kit lying in a ground holder, where the game draws no shadow for it: the
-    kit's own shadow LOD (lid shut) and nothing to see - one tiny face deep inside the closed case,
-    so the model is not culled as empty."""
+    kit's own shadow LOD (lid shut, see inset_shadow) and nothing to see - one tiny face deep inside
+    the closed case, so the model is not culled as empty."""
     xs = [p[0][0] for t in shadow for p in t]
     ys = [p[0][1] for t in shadow for p in t]
     zs = [p[0][2] for t in shadow for p in t]
@@ -1530,11 +1543,6 @@ def write_shadow_p3d(path, shadow):
     e = 0.0005
     tri = [((c[0], c[1], c[2]), n, (0.0, 0.0)), ((c[0] + e, c[1], c[2]), n, (0.0, 0.0)),
            ((c[0], c[1] + e, c[2]), n, (0.0, 0.0))]
-    # pulled 8 mm inside the kit's surface (4 mm on thin sides), so the caster does not shade the kit
-    # it sits in - the ground shadow hardly changes
-    size = (max(xs) - min(xs), max(ys) - min(ys), max(zs) - min(zs))
-    k = [(d - min(0.016, d * 0.25)) / d if d > 0.01 else 1.0 for d in size]
-    shadow = [[(tuple(c[i] + (p[0][i] - c[i]) * k[i] for i in range(3)),) + tuple(p[1:]) for p in t] for t in shadow]
     lods = []
     data, npt, nf = lod_bytes(1.0, [tri], "#(argb,8,8,3)color(0,0,0,0)", "")
     lods.append(data)

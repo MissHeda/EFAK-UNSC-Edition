@@ -19,16 +19,33 @@ GVAR(tick) = 0;
 GVAR(kitWindow) = [];
 
 [
-    QGVAR(enabled),
-    "CHECKBOX",
-    ["Open kit lids", "A kit lying on the ground stays shut.
-When you open its kit window, its lid
-swings open while you look inside, and
-shuts again when you close the window.
+    QGVAR(mode),
+    "LIST",
+    ["Open kit lids", "When a kit lying on the ground swings
+its lid open.
 
-Only you see it."],
+Never: kits on the ground stay shut.
+
+Kit window: when you open its kit
+window, and shut again when you close it.
+
+Inventory and kit window: also when you
+look into a pile with kits in it."],
     "EFAK: UNSC Edition",
-    true
+    [[0, 1, 2], ["Never", "Kit window", "Inventory and kit window"], 1],
+    1
+] call CBA_fnc_addSetting;
+
+[
+    QGVAR(sync),
+    "CHECKBOX",
+    ["Others see it", "Other players nearby see the lids you
+open swing open and shut too.
+
+Off: only you see them."],
+    "EFAK: UNSC Edition",
+    true,
+    1
 ] call CBA_fnc_addSetting;
 
 ADDON = true;
