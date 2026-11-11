@@ -93,7 +93,9 @@ U.unwrap(ob, margin=0.003)
 
 if fast:
     paths = U.bake(ob, kit, size=512, samples=8)
-    U.render_views(ob, paths, kit, views, size=512, samples=24)
+    if "open" in views:
+        U.swing_lid(ob)
+    U.render_views(ob, paths, kit, views, size=768, samples=24)
     sys.exit(0)
 
 paths = U.bake(ob, kit, size=size, samples=128)

@@ -1186,7 +1186,8 @@ def bake(ob, kit, size=2048, samples=64):
         lift = Vector((0.0, 0.0, 0.6))
         moved = []
         for p in PROJECTORS:
-            loc, nrm, idx, dist = tree.ray_cast(p["center"] + p["normal"] * 0.02, -p["normal"], 0.05)
+            # from just in front of the decal, so a piece packed close under a lid print is not hit instead
+            loc, nrm, idx, dist = tree.ray_cast(p["center"] + p["normal"] * 0.004, -p["normal"], 0.012)
             if idx is not None and lid_v[ob.data.polygons[idx].vertices[0]]:
                 p["center"] = p["center"] + lift
                 moved.append(p)
@@ -1632,6 +1633,39 @@ def preview_material(paths, name):
     return mat
 
 
+def swing_lid(ob, degrees=100.0):
+    """For review pictures: turns the lid (and its latches) open about the hinge, whichever way is up.
+    Call again with the negative angle to shut it."""
+    if not LID_AXIS:
+        return
+    me = ob.data
+    lid_attr = me.attributes.get("lid")
+    if lid_attr is None:
+        return
+    p0 = ob.matrix_world @ Vector(LID_AXIS[0])
+    p1 = ob.matrix_world @ Vector(LID_AXIS[1])
+    axis = (p1 - p0).normalized()
+    inv = ob.matrix_world.inverted()
+    idx = [i for i, d in enumerate(lid_attr.data) if d.value >= 0.5]
+    if not idx:
+        return
+    best = None
+    for sign in (1, -1):
+        rot = Matrix.Rotation(math.radians(abs(degrees)) * sign * (1 if degrees > 0 else -1), 4, axis)
+        zs = []
+        for i in idx[:: max(1, len(idx) // 200)]:
+            w = ob.matrix_world @ me.vertices[i].co
+            zs.append((p0 + rot @ (w - p0)).z)
+        z = sum(zs) / len(zs)
+        if best is None or z > best[0]:
+            best = (z, rot)
+    rot = best[1]
+    for i in idx:
+        w = ob.matrix_world @ me.vertices[i].co
+        me.vertices[i].co = inv @ (p0 + rot @ (w - p0))
+    me.update()
+
+
 def render_views(ob, paths, kit, views=("icon",), size=1024, samples=128):
     scene = bpy.context.scene
     mat = preview_material(paths, "preview_" + kit)
@@ -1676,7 +1710,8 @@ def render_views(ob, paths, kit, views=("icon",), size=1024, samples=128):
     scene.collection.objects.link(co)
     scene.camera = co
     dirs = {"icon": (-0.62, -0.78, 0.55), "front": (0.0, -1.0, 0.15), "back": (0.4, 1.0, 0.4),
-            "side": (1.0, -0.15, 0.2), "top": (0.0, -0.3, 1.0), "low": (-0.7, -0.7, 0.08)}
+            "side": (1.0, -0.15, 0.2), "top": (0.0, -0.3, 1.0), "low": (-0.7, -0.7, 0.08),
+            "open": (-0.35, -0.75, 0.75)}
     out = {}
     for v in views:
         d = Vector(dirs[v]).normalized()

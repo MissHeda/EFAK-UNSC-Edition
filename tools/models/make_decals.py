@@ -428,3 +428,108 @@ im = canvas(256, 64)
 d = ImageDraw.Draw(im)
 text(d, (128, 32), "F-21HB", font(52, "Bold"), (150, 150, 146, 255), anchor="mm")
 save(im, "code_grey", wear=0.35)
+
+
+# ================================================================================================
+# Labels on what is packed inside the kits (interiors.py). Small prints, read up close with the
+# lid open; most are white or olive pack labels with a cross or band and a lot number.
+# ================================================================================================
+OLIVE_INK = (40, 42, 30, 255)
+PACK_CREAM = (238, 236, 226, 255)
+
+
+def pack_label(name, w, h, title, lines, ink=OLIVE_INK, band=RED, cross=True, bg=None, wear=0.08):
+    """A printed pack face: a coloured band down the left with a cross, the title and small lines."""
+    im = canvas(w, h)
+    d = ImageDraw.Draw(im)
+    if bg:
+        rect(d, (0, 0, w, h), fill=bg)
+    bw = int(h * 0.42)
+    rect(d, (0, 0, bw, h), fill=band)
+    if cross:
+        cw = bw * 0.5
+        cx, cy = bw / 2, h / 2
+        rect(d, (cx - cw / 6, cy - cw / 2, cx + cw / 6, cy + cw / 2), fill=PACK_CREAM)
+        rect(d, (cx - cw / 2, cy - cw / 6, cx + cw / 2, cy + cw / 6), fill=PACK_CREAM)
+    x = bw + h * 0.12
+    room = w - x - h * 0.1
+    fs = max(10, int(h * 0.3))
+    while fs > 10 and d.textlength(title, font=font(fs, "Bold")) / SS > room:
+        fs -= 1
+    text(d, (x, h * 0.06), title, font(fs, "Bold"), ink)
+    ls = max(7, int(h * 0.15))
+    y = h * 0.06 + fs * 1.2
+    for ln in lines:
+        text(d, (x, y), ln, font(ls, "SemiBold"), ink)
+        y += ls * 1.3
+    rect(d, (x, min(h - h * 0.08, y + h * 0.04), w - h * 0.1, min(h - h * 0.06, y + h * 0.06)), fill=ink)
+    save(im, name, wear=wear)
+
+
+pack_label("lbl_dressing", 220, 96, "FIELD DRESSING", ["STERILE · 10 x 18 cm", "UNSC MED CORPS", "LOT 2552-0117"],
+           ink=PACK_CREAM)
+pack_label("lbl_gauze", 220, 96, "HEMOSTATIC GAUZE", ["Z-FOLD · 7.5 cm x 3.7 m", "UNSC MED CORPS", "LOT 2552-0211"])
+pack_label("lbl_chest_seal", 200, 96, "CHEST SEAL", ["VENTED · 2 PER PACK", "UNSC MED CORPS"])
+pack_label("lbl_gloves", 180, 96, "NITRILE GLOVES", ["SIZE L · 2 PAIR", "EXAM GRADE"], band=(60, 110, 170, 255),
+           cross=False)
+pack_label("lbl_suture", 200, 96, "SUTURE KIT", ["3-0 NYLON · 1 NEEDLE", "STERILE"])
+pack_label("lbl_pills", 180, 96, "ANALGESIC", ["TABLETS 500 mg · 20", "UNSC MED CORPS"])
+pack_label("lbl_saline", 220, 110, "SALINE 0.9 %", ["500 ml · IV · SINGLE USE", "UNSC MED CORPS", "LOT 2552-0088"],
+           band=(60, 110, 170, 255), cross=False)
+pack_label("lbl_blanket", 200, 96, "SURVIVAL BLANKET", ["FOIL · 210 x 160 cm", "UNSC MED CORPS"], ink=BLACK,
+           band=(50, 50, 48, 255), cross=False)
+pack_label("lbl_decon", 220, 96, "DECON KIT", ["SKIN · 3 SPONGE PACKS", "UNSC CBRN DEFENSE"], ink=PACK_CREAM,
+           band=YELLOW, cross=False)
+pack_label("lbl_detector", 180, 96, "DETECTOR PAPER", ["CHEMICAL AGENT · 25 SHEETS", "UNSC CBRN DEFENSE"],
+           band=YELLOW, cross=False)
+pack_label("lbl_carton", 220, 110, "7.62 x 51 mm", ["M118 FMJ-AP · 200 RDS", "UNSC ARMORY", "LOT 2552-0404"],
+           ink=PACK_CREAM, band=YELLOW, cross=False)
+pack_label("lbl_demo", 220, 96, "C-12", ["SHAPED CHARGE · 1.2 kg", "DANGER · HIGH EXPLOSIVE"], ink=PACK_CREAM,
+           band=YELLOW, cross=False)
+
+# Bands round cylinders: a strip of print that wraps the front of a canister, vial or injector
+def band_label(name, w, h, title, sub, bg=PACK_CREAM, ink=OLIVE_INK, stripe=RED):
+    im = canvas(w, h)
+    d = ImageDraw.Draw(im)
+    rect(d, (0, 0, w, h), fill=bg)
+    rect(d, (0, 0, w, int(h * 0.14)), fill=stripe)
+    text(d, (w / 2, h * 0.46), title, font(int(h * 0.36), "Bold"), ink, anchor="mm")
+    if sub:
+        text(d, (w / 2, h * 0.8), sub, font(int(h * 0.2), "SemiBold"), ink, anchor="mm")
+    save(im, name, wear=0.06)
+
+
+band_label("lbl_biofoam", 220, 100, "BIOFOAM", "UNSC MED CORPS · 1 USE")
+band_label("lbl_morphine", 160, 72, "MORPHINE", "10 mg/ml")
+band_label("lbl_epi", 160, 72, "EPINEPHRINE", "1 mg/ml", stripe=(60, 110, 170, 255))
+band_label("lbl_atropine", 180, 64, "ATROPINE", "2 mg AUTO-INJ", stripe=YELLOW)
+band_label("lbl_filter", 200, 80, "NBC FILTER", "C-SERIES · 24 h", bg=(70, 74, 56, 255), ink=PACK_CREAM,
+           stripe=YELLOW)
+band_label("lbl_splint", 220, 80, "MOLDABLE SPLINT", "36 in · ROLLED", bg=(226, 118, 34, 255), ink=BLACK,
+           stripe=BLACK)
+band_label("lbl_tape", 200, 80, "RIGGER TAPE", "50 mm · 10 m", bg=(50, 50, 48, 255), ink=PACK_CREAM,
+           stripe=(226, 118, 34, 255))
+
+# Tourniquet time tag and the firing device's face
+im = canvas(160, 64)
+d = ImageDraw.Draw(im)
+rect(d, (0, 0, 160, 64), fill=PACK_CREAM)
+text(d, (8, 6), "TIME:", font(26, "Bold"), BLACK)
+rect(d, (74, 44, 150, 47), fill=BLACK)
+text(d, (8, 40), "TQ", font(16, "SemiBold"), RED)
+save(im, "lbl_tq_tag", wear=0.05)
+
+im = canvas(200, 120)
+d = ImageDraw.Draw(im)
+text(d, (100, 24), "FIRING DEVICE", font(26, "Bold"), BLACK, anchor="mm")
+text(d, (100, 54), "M-ARM / FIRE", font(18, "SemiBold"), BLACK, anchor="mm")
+rect(d, (20, 78, 180, 82), fill=BLACK)
+text(d, (100, 100), "DANGER", font(22, "Bold"), RED, anchor="mm")
+save(im, "lbl_initiator", wear=0.1)
+
+im = canvas(200, 90)
+d = ImageDraw.Draw(im)
+rect(d, (0, 0, 200, 90), fill=(236, 234, 226, 255))
+text(d, (100, 26), "MA5 60 RD", font(30, "Bold"), BLACK, anchor="mm")
+text(d, (100, 60), "7.62 x 51 M118", font(20, "SemiBold"), BLACK, anchor="mm")
+save(im, "lbl_mag", wear=0.2)
