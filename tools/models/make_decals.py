@@ -418,9 +418,11 @@ save(im, "med_sticker", wear=0.2)
 # Ammo cell label for the magazine pouch
 im = canvas(160, 128)
 d = ImageDraw.Draw(im)
-text(d, (80, 40), "7.62", font(60, "Bold"), YELLOW, anchor="mm")
-rect(d, (14, 76, 146, 80), fill=YELLOW)
-text(d, (80, 102), "60 RDS FMJ-AP", font(20, "SemiBold"), YELLOW, anchor="mm")
+# what the cell holds: three MA5 magazines of M118 7.62x51 full metal jacket armour piercing
+text(d, (80, 30), "7.62x51", font(42, "Bold"), YELLOW, anchor="mm")
+rect(d, (14, 58, 146, 62), fill=YELLOW)
+text(d, (80, 80), "M118 FMJ-AP", font(20, "SemiBold"), YELLOW, anchor="mm")
+text(d, (80, 106), "MA5 MAG x3", font(20, "SemiBold"), YELLOW, anchor="mm")
 save(im, "ammo_cell", wear=0.3)
 
 # Grey stencil code, as on the ends of UNSC cases

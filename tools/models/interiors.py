@@ -20,7 +20,21 @@ def pocket_foam(x0, y0, x1, y1, z, h, pockets, look="foam", clip=None, margin=MA
     ya and yb (both edges given, the narrowest wins)."""
     rects = []
     for (x, y, w, d) in pockets:
+        # a piece must lie inside its tray, and inside what is left of the tray where it is trimmed
+        lim0, lim1 = x0, x1
+        if clip is not None:
+            ca = clip(y - d / 2, y + d / 2)
+            lim0, lim1 = max(lim0, ca[0]), min(lim1, ca[1])
+        if x - w / 2 < lim0 - 0.0005 or x + w / 2 > lim1 + 0.0005 or y - d / 2 < y0 - 0.0005 or y + d / 2 > y1 + 0.0005:
+            raise SystemExit("POCKET outside its tray: (%.3f, %.3f) %.3f x %.3f, tray x %.3f..%.3f y %.3f..%.3f"
+                             % (x, y, w, d, lim0, lim1, y0, y1))
         rects.append((x - w / 2 - margin, y - d / 2 - margin, x + w / 2 + margin, y + d / 2 + margin))
+    # and no two pieces in each other's cut
+    for i, (ax, ay, aw, ad) in enumerate(pockets):
+        for (bx, by, bw, bd) in pockets[i + 1:]:
+            if abs(ax - bx) < (aw + bw) / 2 - 0.0005 and abs(ay - by) < (ad + bd) / 2 - 0.0005:
+                raise SystemExit("POCKETS overlap: (%.3f, %.3f) %.3f x %.3f and (%.3f, %.3f) %.3f x %.3f"
+                                 % (ax, ay, aw, ad, bx, by, bw, bd))
     ys = sorted({y0, y1} | {r[1] for r in rects} | {r[3] for r in rects})
     ys = [y for y in ys if y0 <= y <= y1]
     with cluster():
@@ -84,8 +98,8 @@ def print_on(image, center, normal, up, width, look=None, depth=0.004):
 #   magazine  OPTRE's MA5 series magazine and BR magazine
 _REAL = {
     "biofoam": ("optre/biofoam.p3d", (-90, 0, 0), 0.36, 900),
-    "medigel": ("unsci/medigel_tube.p3d", (90, 0, 0), 1.0, 700),
-    "injector": ("unsci/injector.p3d", (0, 0, 0), 0.55, 700),
+    "medigel": ("unsci/medigel_tube.p3d", (-90, 0, 0), 1.0, 700, -90),
+    "injector": ("unsci/injector.p3d", (0, 0, 0), 0.55, 700, -90),
     "ammo_pack": ("optre/ma5ammo.p3d", (-90, 0, 0), 0.36, 500),
     "ma5_mag": ("optre/ma5_mag.p3d", (0, 0, 0), 0.5, 500),
     "br_mag": ("optre/br_mag.p3d", (90, 0, 0), 0.5, 500),
@@ -94,10 +108,12 @@ _REAL = {
 
 def _turn(name, axis, stand=False):
     """The rotation for a piece lying along x or y (its long side), or standing on end."""
-    file, rot, scale, faces = _REAL[name]
+    file, rot, scale, faces = _REAL[name][:4]
+    # which way to turn a piece onto the other axis: the way its print then reads from the front
+    quarter = _REAL[name][4] if len(_REAL[name]) > 4 else 90
     w, d, h = imported_size(file, rot, scale, faces)
     long_y = d >= w
-    rz = 0 if (axis == "y") == long_y else 90
+    rz = 0 if (axis == "y") == long_y else quarter
     return file, (rot[0], rot[1], rot[2] + rz), scale, faces
 
 
@@ -116,7 +132,7 @@ def real_pocket(name, c, axis="y"):
 
 
 def real_height(name):
-    file, rot, scale, faces = _REAL[name]
+    file, rot, scale, faces = _REAL[name][:4]
     return imported_size(file, rot, scale, faces)[2]
 
 
@@ -143,7 +159,7 @@ _DRUG = {"red": "unsci_injector_epinephrine_co", "orange": "unsci_injector_morph
 def injector(c, axis="y", cap="red", upright=False, **kw):
     """UNSC auto-injector; `cap` picks the drug band (red epinephrine, orange morphine, blue stimulant).
     upright: standing on its long edge, flat face to the front (the IFAK's wall)."""
-    file, rot, scale, faces = _REAL["injector"]
+    file, rot, scale, faces = _REAL["injector"][:4]
     tex = {"unsci_injector_stimulant_co": _DRUG.get(cap, _DRUG["blue"])}
     if upright:
         imported(file, c, rot=(90, 90, 0), scale=scale * 0.62, max_faces=faces, spec=0.25, gloss=0.45, textures=tex)
@@ -319,10 +335,14 @@ def chemlight(c, look="green_lens", length=0.1):
 
 
 @clustered
-def multitool(c):
+def multitool(c, length=0.09):
+    """A folded multitool: two steel handles side by side, the pivot bolts at one end."""
     x, y, z = c
-    box((0.09, 0.02, 0.012), (x, y, z + 0.006), "black_metal", cut=0.003, bevel=0.0015, segs=1)
-    box((0.09, 0.004, 0.0124), (x, y, z + 0.0062), "steel", bevel=0.0006, segs=1)
+    for sy in (-1, 1):
+        box((length, 0.009, 0.012), (x, y + sy * 0.0052, z + 0.006), "black_metal", cut=0.002, bevel=0.001, segs=1)
+    box((length * 0.7, 0.0015, 0.0125), (x - length * 0.1, y, z + 0.00625), "steel", bevel=0.0004, segs=1)
+    for sy in (-1, 1):
+        cyl(0.0028, 0.0014, (x + length / 2 - 0.006, y + sy * 0.0052, z + 0.0125), "steel", n=10, bevel=0.0004)
 
 
 @clustered
@@ -526,24 +546,24 @@ def fill_mfak(more=False):
             items.append(fn)
             pockets.append(pocket)
 
-        for y in (-0.09, -0.03):
+        for y in (-0.082, -0.026):
             put(lambda zf, y=y: biofoam((-0.105, y, zf), axis="x"), biofoam_pocket((-0.105, y, 0), axis="x"))
         put(lambda zf: medigel_tube((0.105, -0.035, zf), axis="x"), medigel_pocket((0.105, -0.035, 0), axis="x"))
-        put(lambda zf: saline_bag((0.096, -0.088, zf), 0.08, 0.044), (0.1, -0.088, 0.096, 0.044))
+        put(lambda zf: saline_bag((0.096, -0.084, zf), 0.08, 0.044), (0.1, -0.084, 0.096, 0.05))
         for k, x in enumerate((0.0, 0.026, 0.052)):
-            put(lambda zf, x=x, k=k: injector((x, 0.035, zf), axis="y", cap="red" if k < 2 else "orange"),
-                injector_pocket((x, 0.035, 0), axis="y"))
-        put(lambda zf: shears((-0.105, 0.025, zf)), (-0.105, 0.025, 0.14, 0.03))
-        put(lambda zf: gauze_roll((-0.13, 0.065, zf)), (-0.13, 0.065, 0.07, 0.028))
-        put(lambda zf: tourniquet((-0.05, 0.06, zf)), (-0.05, 0.06, 0.078, 0.034))
-        put(lambda zf: dressing((-0.13, 0.1, zf), 0.05, 0.03, 0.012), (-0.13, 0.1, 0.05, 0.03))
-        put(lambda zf: suture_kit((-0.065, 0.1, zf)), (-0.065, 0.1, 0.05, 0.036))
+            put(lambda zf, x=x, k=k: injector((x, 0.042, zf), axis="y", cap="red" if k < 2 else "orange"),
+                injector_pocket((x, 0.042, 0), axis="y"))
+        put(lambda zf: shears((-0.105, 0.019, zf)), (-0.105, 0.019, 0.14, 0.03))
+        put(lambda zf: gauze_roll((-0.13, 0.06, zf)), (-0.13, 0.06, 0.07, 0.028))
+        put(lambda zf: tourniquet((-0.052, 0.053, zf)), (-0.052, 0.053, 0.078, 0.034))
+        put(lambda zf: dressing((-0.132, 0.094, zf), 0.045, 0.026, 0.012), (-0.132, 0.094, 0.05, 0.031))
+        put(lambda zf: suture_kit((-0.066, 0.0925, zf)), (-0.066, 0.0925, 0.055, 0.036))
         put(lambda zf: pill_box((0.11, 0.095, zf)), (0.11, 0.095, 0.04, 0.026))
         for y in (0.01, 0.032, 0.054):
             put(lambda zf, y=y: vial((0.105, y, zf)), vial_pocket((0.105, y, 0)))
-        put(lambda zf: glove_pack((0.16, 0.035, zf), 0.04, 0.06), (0.16, 0.035, 0.04, 0.06))
+        put(lambda zf: glove_pack((0.155, 0.03, zf), 0.036, 0.056), (0.155, 0.03, 0.04, 0.06))
         if more:
-            put(lambda zf: blanket((0.16, 0.095, zf - 0.004), ), (0.16, 0.095, 0.045, 0.045))
+            put(lambda zf: blanket((0.153, 0.086, zf - 0.004), ), (0.153, 0.086, 0.045, 0.045))
         zf = case_tray(W, D, H, lid_h, cap, pockets, h=0.016)
         for it in items:
             it(zf)
@@ -608,10 +628,10 @@ def fill_narcbox():
         inj = [-0.085 + k * 0.026 for k in range(4)]
         for x in inj:
             pockets.append(injector_pocket((x, -0.008, 0), axis="y"))
-        vials = [(x, y) for x in (0.035, 0.08) for y in (-0.052, -0.034, -0.016, 0.002)]
+        vials = [(x, y) for x in (0.03, 0.07) for y in (-0.052, -0.034, -0.016, 0.002)]
         for x, y in vials:
             pockets.append(vial_pocket((x, y, 0), h=0.026))
-        for x in (0.035, 0.08):
+        for x in (0.03, 0.074):
             pockets.append((x, 0.04, 0.04, 0.026))
         pockets.append((-0.045, 0.062, 0.1, 0.012))
         # the corner bumpers (r 0.024 at x 0.124, y 0.05) reach into the tray
@@ -624,31 +644,37 @@ def fill_narcbox():
             injector((x, -0.008, zf), axis="y", cap="orange" if k < 2 else "red")
         for x, y in vials:
             vial((x, y, zf), h=0.026)
-        for x in (0.035, 0.08):
+        for x in (0.03, 0.074):
             pill_box((x, 0.04, zf))
         with cluster():
             box((0.1, 0.012, 0.004), (-0.045, 0.062, zf + 0.002), "hazard_yellow", bevel=0.0008, segs=1)
 
 
 def fill_utility_pouch():
-    """Utility pouch: a cut insert with a flashlight, a multitool, two chemlights and a notebook."""
+    """Utility pouch: what a Marine keeps to hand - a flashlight, a multitool, two chemlights and a
+    hank of cord, each in its cut in the insert, all inside the pouch's walls."""
     W, D, H = 0.15, 0.06, 0.118
     with contents():
         box((W - 0.012, D - 0.012, 0.003), (0, 0, H - 0.03), "foam", bevel=0.0006, segs=1)
         z = H - 0.0285
-        pockets = [(-0.03, -0.012, 0.1, 0.017), (0.045, -0.012, 0.04, 0.02), (-0.025, 0.014, 0.1, 0.01),
-                   (0.045, 0.014, 0.04, 0.01)]
-        pocket_foam(-W / 2 + 0.006, -D / 2 + 0.006, W / 2 - 0.006, D / 2 - 0.006, z, 0.01, pockets, margin=0.0015)
-        flashlight((-0.03, -0.012, z + 0.0065))
-        multitool((0.045, -0.012, z))
-        chemlight((-0.025, 0.014, z), "green_lens", 0.1)
-        chemlight((0.045, 0.014, z), "hazard_yellow", 0.04)
+        # the insert is 0.138 x 0.048; every piece and its cut stay inside it
+        pockets = [(-0.018, -0.012, 0.092, 0.018),    # flashlight, head to the right
+                   (0.047, -0.012, 0.034, 0.02),      # multitool
+                   (-0.015, 0.006, 0.1, 0.0095),      # chemlight
+                   (-0.015, 0.0175, 0.1, 0.0095),     # chemlight
+                   (0.052, 0.012, 0.024, 0.024)]      # cord
+        pocket_foam(-W / 2 + 0.006, -D / 2 + 0.006, W / 2 - 0.006, D / 2 - 0.006, z, 0.01, pockets, margin=0.0012)
+        flashlight((-0.022, -0.012, z + 0.0085), length=0.08)
+        multitool((0.047, -0.012, z), length=0.034)
+        chemlight((-0.015, 0.006, z), "green_lens", 0.1)
+        chemlight((-0.015, 0.0175, z), "orange", 0.1)
+        cable_coil((0.052, 0.012, z), r=0.012)
 
 
 def fill_ammo_pouch():
     """Ammo pouch: three MA5 magazines standing in each cell, feed end up."""
     D, H = 0.056, 0.14
-    file, rot, scale, faces = _REAL["ma5_mag"]
+    file, rot, scale, faces = _REAL["ma5_mag"][:4]
     with contents():
         for sx in (-1, 1):
             for y in (-0.013, 0.0, 0.013):
@@ -660,7 +686,7 @@ def fill_ammo_bag():
     """Ammo crate, packed the way the UNSC Marines draw it: MA5 magazines standing on edge in slots
     on the left, BR magazines behind them, sealed M118 7.62x51 packs on the right."""
     W, D, H, lid_h, cap = 0.36, 0.18, 0.2, 0.042, 0.03
-    file, rot, scale, faces = _REAL["ma5_mag"]
+    file, rot, scale, faces = _REAL["ma5_mag"][:4]
     with contents():
         pockets = []
         mags = [-0.125 + k * 0.026 for k in range(6)]
@@ -683,44 +709,50 @@ def fill_ammo_bag():
 
 
 def fill_engineer_bag():
-    """Engineer case: tools in cut foam, charges, the initiator, det cord, tape."""
+    """Engineer case: tools in cut foam, charges, the firing device, det cord, tape - nothing in
+    another piece's cut."""
     W, D, H, lid_h, cap = 0.42, 0.21, 0.21, 0.046, 0.034
     with contents():
-        pockets = [(-0.09, -0.07, 0.15, 0.032), (-0.085, -0.04, 0.12, 0.018), (-0.085, -0.018, 0.12, 0.018),
-                   (-0.03, 0.0, 0.12, 0.02), (0.12, -0.04, 0.06, 0.09),
-                   (-0.11, 0.05, 0.09, 0.05), (-0.01, 0.05, 0.09, 0.05), (0.12, 0.05, 0.06, 0.06),
-                   (0.065, -0.07, 0.06, 0.04), (0.14, -0.075, 0.06, 0.028)]
+        pockets = [(-0.09, -0.07, 0.15, 0.032),        # wrench
+                   (-0.1, -0.04, 0.12, 0.018),         # screwdriver
+                   (-0.1, -0.018, 0.12, 0.018),        # screwdriver
+                   (-0.095, 0.006, 0.125, 0.03),       # pliers
+                   (0.125, -0.035, 0.06, 0.09),        # multimeter
+                   (-0.11, 0.055, 0.09, 0.05),         # charge
+                   (-0.01, 0.055, 0.09, 0.05),         # charge
+                   (0.125, 0.052, 0.062, 0.062),       # tape
+                   (0.045, -0.062, 0.06, 0.04),        # firing device
+                   (0.05, -0.01, 0.03, 0.03)]          # det cord
         zf = case_tray(W, D, H, lid_h, cap, pockets, h=0.014)
         wrench((-0.09, -0.07, zf))
-        screwdriver((-0.085, -0.04, zf), "orange")
-        screwdriver((-0.085, -0.018, zf), "red")
-        pliers((-0.03, 0.0, zf))
-        multimeter((0.12, -0.04, zf))
+        screwdriver((-0.1, -0.04, zf), "orange")
+        screwdriver((-0.1, -0.018, zf), "red")
+        pliers((-0.0925, 0.006, zf))
+        multimeter((0.125, -0.035, zf))
         for x in (-0.11, -0.01):
-            demo_block((x, 0.05, zf))
-        tape_roll((0.12, 0.05, zf))
-        initiator((0.065, -0.07, zf))
-        cable_coil((0.14, -0.075, zf), r=0.014)
+            demo_block((x, 0.055, zf))
+        tape_roll((0.125, 0.052, zf))
+        initiator((0.045, -0.062, zf))
+        cable_coil((0.05, -0.01, zf), r=0.014)
 
 
 def fill_cbrn_bag():
-    """CBRN case: the mask in its own cut, filters, auto-injectors, decon kit, detector paper."""
+    """CBRN case: the mask in its own cut, filters, auto-injectors, decon kit, detector paper - all
+    inside the tray (0.319 x 0.213)."""
     W, D, H, lid_h, cap = 0.4, 0.23, 0.24, 0.05, 0.034
     with contents():
-        pockets = [(-0.075, 0.0, 0.17, 0.08)]
+        pockets = [(-0.068, 0.045, 0.176, 0.08)]                       # mask with its filter
         for x in (0.035, 0.08, 0.125):
-            pockets.append((x, -0.065, 0.038, 0.038))
+            pockets.append((x, -0.065, 0.038, 0.038))                  # filters
         for y in (0.02, 0.05, 0.08):
-            pockets.append(injector_pocket((0.085, y, 0), axis="x"))
-        pockets.append((-0.1, -0.085, 0.09, 0.07))
-        pockets.append((-0.01, -0.085, 0.05, 0.08))
-        pockets.append((-0.1, 0.085, 0.045, 0.032))
+            pockets.append(injector_pocket((0.09, y, 0), axis="x"))    # auto-injectors
+        pockets.append((-0.105, -0.06, 0.09, 0.07))                    # decon kit
+        pockets.append((-0.022, -0.058, 0.05, 0.08))                   # detector paper
         zf = case_tray(W, D, H, lid_h, cap, pockets, h=0.016)
-        gas_mask((-0.085, 0.005, zf))
+        gas_mask((-0.085, 0.045, zf))
         for x in (0.035, 0.08, 0.125):
             filter_can((x, -0.065, zf))
         for y in (0.02, 0.05, 0.08):
-            injector((0.085, y, zf), axis="x", cap="orange")
-        decon_kit((-0.1, -0.085, zf))
-        detector_paper((-0.01, -0.085, zf))
-        dressing((-0.1, 0.085, zf), 0.045, 0.032, 0.01, look="pack_white")
+            injector((0.09, y, zf), axis="x", cap="orange")
+        decon_kit((-0.105, -0.06, zf))
+        detector_paper((-0.022, -0.058, zf))

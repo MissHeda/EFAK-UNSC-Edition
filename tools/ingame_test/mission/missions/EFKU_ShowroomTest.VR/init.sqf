@@ -142,7 +142,7 @@ if (!hasInterface) exitWith {};
         sleep 1;
         ["", true] call efku_lids_fnc_closeLids;
         sleep 0.5;
-    } forEach [[0, "ifak"], [1, "afak"], [2, "mfak"], [6, "pouch"], [7, "ammobag"]];
+    } forEach [[1, "afak"], [2, "mfak"], [4, "narc"], [5, "util"], [6, "pouch"], [8, "engineer"], [9, "cbrn"]];
     diag_log format ["EFKUTEST CASTERS %1", count efku_lids_casters];
     diag_log "EFKUTEST DONE";
 };
