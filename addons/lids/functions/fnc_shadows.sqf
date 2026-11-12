@@ -58,7 +58,10 @@ if (_scan) then {
 
             private _config = configFile >> "CfgVehicles" >> _propClass;
             private _model = getText (_config >> "model");
-            _model = (_model select [0, count _model - 4]) + "_shadow.p3d";
+            // the prop is <kit>_open.p3d, the caster <kit>_shadow.p3d
+            _model = _model select [0, count _model - 4];
+            if ((_model select [count _model - 5]) == "_open") then {_model = _model select [0, count _model - 5]};
+            _model = _model + "_shadow.p3d";
 
             private _caster = createSimpleObject [_model, [0, 0, 0], true];
             _casters pushBack [_caster, _forEachIndex, _config];

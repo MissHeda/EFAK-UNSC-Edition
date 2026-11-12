@@ -14,10 +14,18 @@ from unsc_lib import (box, cyl, prism, rect, rrect, circle, inset, contents, lid
 MARGIN = 0.004      # foam left round each piece (the cut is a touch bigger than the piece)
 
 
-def pocket_foam(x0, y0, x1, y1, z, h, pockets, look="foam", clip=None, margin=MARGIN):
+def pocket_foam(x0, y0, x1, y1, z, h, pockets, look="foam", clip=None, margin=MARGIN, wall=False):
     """The pocket layer: foam from z up by h over the rectangle x0..x1 / y0..y1, cut round every
     pocket (x, y, w, d) in `pockets`. clip(ya, yb) -> (xa, xb) narrows a band of the layer between
-    ya and yb (both edges given, the narrowest wins)."""
+    ya and yb (both edges given, the narrowest wins).
+    wall=True stands the layer against a wall facing -y instead: x stays, the rectangle's second
+    axis is the height (z), and `z` is the wall's y - the foam comes out of it towards -y by h."""
+    def block(dx, dy, cx, cy):
+        if wall:
+            box((dx, h, dy), (cx, z - h / 2, cy), look, bevel=0.001, segs=1)
+        else:
+            box((dx, dy, h), (cx, cy, z + h / 2), look, bevel=0.0012, segs=1)
+
     rects = []
     for (x, y, w, d) in pockets:
         # a piece must lie inside its tray, and inside what is left of the tray where it is trimmed
@@ -50,10 +58,10 @@ def pocket_foam(x0, y0, x1, y1, z, h, pockets, look="foam", clip=None, margin=MA
             x = xa
             for hx0, hx1 in holes:
                 if hx0 - x > 0.0015:
-                    box((hx0 - x, yb - ya, h), ((x + hx0) / 2, ym, z + h / 2), look, bevel=0.0012, segs=1)
+                    block(hx0 - x, yb - ya, (x + hx0) / 2, ym)
                 x = max(x, hx1)
             if xb - x > 0.0015:
-                box((xb - x, yb - ya, h), ((x + xb) / 2, ym, z + h / 2), look, bevel=0.0012, segs=1)
+                block(xb - x, yb - ya, (x + xb) / 2, ym)
 
 
 def octagon_clip(W, D, C, ins):
@@ -162,7 +170,7 @@ def injector(c, axis="y", cap="red", upright=False, **kw):
     file, rot, scale, faces = _REAL["injector"][:4]
     tex = {"unsci_injector_stimulant_co": _DRUG.get(cap, _DRUG["blue"])}
     if upright:
-        imported(file, c, rot=(90, 90, 0), scale=scale * 0.62, max_faces=faces, spec=0.25, gloss=0.45, textures=tex)
+        imported(file, c, rot=(90, -90, 0), scale=scale * 0.5, max_faces=faces, spec=0.25, gloss=0.45, textures=tex)
     else:
         real("injector", c, axis, spec=0.25, gloss=0.45, textures=tex)
 
@@ -199,7 +207,7 @@ def dressing(c, w=0.06, d=0.04, h=0.012, look="pack_olive", flat=True):
         box((w, h, d), (x, y - h / 2, z), look, bevel=0.0015, segs=1)
         box((w + 0.005, 0.0012, d + 0.005), (x, y - h * 0.45, z), look, bevel=0.0004, segs=1)
         box((w * 0.9, 0.0012, 0.003), (x, y - h - 0.0004, z + d * 0.36), "red", bevel=0.0003, segs=1)
-        print_on(image, (x, y - h, z - d * 0.08), (0, -1, 0), (0, 0, 1), w * 0.78, look=look)
+        print_on(image, (x, y - h, z - d * 0.06), (0, -1, 0), (0, 0, 1), w * 0.92, look=look)
 
 
 @clustered
@@ -397,27 +405,51 @@ def ammo_box(c):
 
 @clustered
 def wrench(c, length=0.12):
+    """Combination wrench: an I-beam shank, an open jaw (two prongs) at one end and a ring at the
+    other, the size stamped in the web."""
     x, y, z = c
-    box((length, 0.014, 0.006), (x, y, z + 0.003), "steel", bevel=0.0015, segs=1)
-    box((0.026, 0.03, 0.007), (x - length / 2, y, z + 0.0035), "steel", cut=0.006, bevel=0.0015, segs=1)
-    box((0.024, 0.026, 0.007), (x + length / 2, y, z + 0.0035), "steel", bevel=0.0015, segs=1)
+    box((length - 0.03, 0.011, 0.005), (x, y, z + 0.0025), "steel", bevel=0.0012, segs=1)
+    box((length - 0.05, 0.004, 0.0062), (x, y, z + 0.0031), "black_metal", bevel=0.0004, segs=1)
+    # open jaw
+    jx = x - length / 2 + 0.006
+    box((0.012, 0.026, 0.006), (jx + 0.008, y, z + 0.003), "steel", cut=0.004, bevel=0.0012, segs=1)
+    for sy in (-1, 1):
+        box((0.016, 0.008, 0.006), (jx - 0.004, y + sy * 0.009, z + 0.003), "steel", cut=0.002, bevel=0.001,
+            segs=1)
+    # ring end
+    rx = x + length / 2 - 0.012
+    prism(circle(0.013, 14), 0.007, "steel", (rx, y, z), bevel=0.001, segs=1, hollow=0.005)
+    print_on("lbl_wrench", (x, y, z + 0.0062), (0, 0, 1), (0, 1, 0), 0.03, look="black_metal", depth=0.002)
 
 
 @clustered
 def screwdriver(c, look="orange"):
+    """Screwdriver: a fluted handle with a black end cap and grip rings, a steel ferrule, the shaft and
+    its flattened tip."""
     x, y, z = c
-    cyl(0.008, 0.05, (x - 0.03, y, z + 0.008), look, axis="x", n=8, bevel=0.002, segs=1)
-    cyl(0.0022, 0.06, (x + 0.025, y, z + 0.008), "steel", axis="x", n=8, bevel=0.0004)
+    hz = z + 0.008
+    cyl(0.008, 0.046, (x - 0.03, y, hz), look, axis="x", n=6, bevel=0.0015, segs=1)
+    cyl(0.0084, 0.006, (x - 0.055, y, hz), "black_metal", axis="x", n=12, bevel=0.0012)
+    for k in (-0.04, -0.03, -0.02):
+        cyl(0.0083, 0.002, (x + k, y, hz), "black_metal", axis="x", n=12, bevel=0.0003)
+    cyl(0.0048, 0.008, (x - 0.004, y, hz), "steel", axis="x", n=10, bevel=0.0008)
+    cyl(0.0022, 0.056, (x + 0.028, y, hz), "steel", axis="x", n=8, bevel=0.0004)
+    box((0.008, 0.0054, 0.0012), (x + 0.058, y, hz), "steel", bevel=0.0003, segs=1)
 
 
 @clustered
 def pliers(c):
+    """Combination pliers: two tapered jaws, the pivot bolt, dipped red grips."""
     x, y, z = c
-    box((0.05, 0.016, 0.008), (x - 0.03, y, z + 0.004), "steel", cut=0.004, bevel=0.0012, segs=1)
-    cyl(0.004, 0.009, (x - 0.003, y, z + 0.0045), "black_metal", n=10, bevel=0.0006)
     for sy in (-1, 1):
-        box((0.06, 0.011, 0.009), (x + 0.03, y + sy * 0.009, z + 0.0045), "red", cut=0.003, bevel=0.0025,
+        box((0.036, 0.0065, 0.008), (x - 0.036, y + sy * 0.0036, z + 0.004), "steel", cut=0.002,
+            cuts=(1, 0, 0, 1) if sy > 0 else (0, 1, 1, 0), bevel=0.0008, segs=1)
+        box((0.016, 0.009, 0.008), (x - 0.012, y + sy * 0.004, z + 0.004), "steel", bevel=0.001, segs=1)
+        box((0.062, 0.0085, 0.0085), (x + 0.03, y + sy * 0.0095, z + 0.00425), "red", cut=0.003, bevel=0.002,
             segs=2)
+        box((0.008, 0.0095, 0.0092), (x + 0.004, y + sy * 0.0095, z + 0.0046), "black_metal", bevel=0.001, segs=1)
+    cyl(0.0042, 0.0092, (x - 0.012, y, z + 0.0046), "black_metal", n=10, bevel=0.0006)
+    cyl(0.002, 0.0096, (x - 0.012, y, z + 0.0048), "steel", n=8, bevel=0.0003)
 
 
 @clustered
@@ -430,23 +462,49 @@ def tape_roll(c):
 
 @clustered
 def initiator(c):
-    """A firing device: a yellow box with a safety bail and a red button."""
+    """A firing device: a yellow box, its red button under a flip guard, an arming key, the cable
+    socket on the end and its print."""
     x, y, z = c
-    box((0.06, 0.04, 0.028), (x, y, z + 0.014), "hazard_yellow", cut=0.004, bevel=0.0012, segs=1)
-    cyl(0.009, 0.004, (x + 0.012, y, z + 0.03), "red", n=14, bevel=0.0008)
-    box((0.02, 0.006, 0.012), (x - 0.014, y, z + 0.034), "steel", bevel=0.0012, segs=1)
-    print_on("lbl_initiator", (x, y - 0.013, z + 0.028), (0, 0, 1), (0, 1, 0), 0.034, look="hazard_yellow")
+    box((0.06, 0.04, 0.028), (x, y, z + 0.014), "hazard_yellow", cut=0.004, bevel=0.002, segs=2)
+    box((0.062, 0.042, 0.004), (x, y, z + 0.006), "rubber", cut=0.004, bevel=0.001, segs=1)
+    cyl(0.008, 0.004, (x + 0.014, y + 0.006, z + 0.03), "red", n=14, bevel=0.0008)
+    cyl(0.0105, 0.002, (x + 0.014, y + 0.006, z + 0.029), "black_metal", n=14, bevel=0.0005)
+    # flip guard standing open behind the button
+    box((0.024, 0.002, 0.014), (x + 0.014, y + 0.0185, z + 0.035), "glass", bevel=0.0005, segs=1)
+    # arming key in its lock
+    cyl(0.005, 0.003, (x - 0.014, y + 0.006, z + 0.0295), "steel", n=12, bevel=0.0006)
+    box((0.003, 0.012, 0.01), (x - 0.014, y + 0.006, z + 0.036), "steel", bevel=0.0008, segs=1)
+    # cable socket on the end
+    cyl(0.005, 0.006, (x - 0.032, y, z + 0.016), "black_metal", axis="x", n=12, bevel=0.0008)
+    print_on("lbl_initiator", (x, y - 0.011, z + 0.028), (0, 0, 1), (0, 1, 0), 0.036, look="hazard_yellow")
 
 
 @clustered
 def multimeter(c):
+    """A field multimeter in its rubber holster: display, range dial with a pointer, three probe
+    sockets, two buttons, the print round the dial."""
     x, y, z = c
-    box((0.06, 0.09, 0.02), (x, y, z + 0.01), "hazard_yellow", bevel=0.0016, segs=1)
-    box((0.044, 0.026, 0.002), (x, y + 0.025, z + 0.0205), "glass", bevel=0.0005, segs=1)
-    cyl(0.012, 0.004, (x, y - 0.012, z + 0.021), "dark_poly", n=16, bevel=0.0008)
+    box((0.06, 0.09, 0.02), (x, y, z + 0.01), "hazard_yellow", bevel=0.003, segs=2)
+    # holster corners
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            box((0.012, 0.016, 0.022), (x + sx * 0.0255, y + sy * 0.038, z + 0.011), "rubber", bevel=0.003, segs=2)
+    # display with its bezel
+    box((0.048, 0.03, 0.0015), (x, y + 0.025, z + 0.0203), "black_metal", bevel=0.0005, segs=1)
+    box((0.042, 0.024, 0.0012), (x, y + 0.025, z + 0.0212), "glass", bevel=0.0004, segs=1)
+    print_on("lbl_meter_display", (x, y + 0.025, z + 0.0218), (0, 0, 1), (0, 1, 0), 0.036, look="glass", depth=0.002)
+    # dial and pointer
+    cyl(0.013, 0.005, (x, y - 0.012, z + 0.0225), "dark_poly", n=18, bevel=0.0012)
+    box((0.003, 0.02, 0.003), (x, y - 0.012, z + 0.0262), "dark_poly", bevel=0.0008, segs=1)
+    box((0.0012, 0.006, 0.0006), (x, y - 0.004, z + 0.028), "pack_white", bevel=0.0002, segs=1)
+    print_on("lbl_meter_dial", (x, y - 0.012, z + 0.02), (0, 0, 1), (0, 1, 0), 0.05, look="hazard_yellow",
+             depth=0.002)
+    # sockets and buttons
+    for k, lk in ((-1, "dark_poly"), (0, "red"), (1, "dark_poly")):
+        cyl(0.0032, 0.003, (x + k * 0.016, y - 0.036, z + 0.0212), lk, n=10, bevel=0.0006)
+        cyl(0.0016, 0.0032, (x + k * 0.016, y - 0.036, z + 0.0214), "black_metal", n=8, bevel=0.0003)
     for k in (-1, 1):
-        cyl(0.003, 0.004, (x + k * 0.018, y - 0.035, z + 0.021), "red" if k > 0 else "dark_poly", n=10,
-            bevel=0.0006)
+        box((0.008, 0.005, 0.002), (x + k * 0.018, y + 0.005, z + 0.021), "dark_poly", bevel=0.0006, segs=1)
 
 
 @clustered
@@ -454,6 +512,9 @@ def demo_block(c):
     """A demolition charge: olive block, yellow tape, a detonator well."""
     x, y, z = c
     box((0.09, 0.05, 0.024), (x, y, z + 0.012), "olive", bevel=0.0012, segs=1)
+    # the wrapper's seam, and a second band at the other end
+    box((0.0906, 0.0506, 0.0008), (x, y, z + 0.012), "olive_dark", bevel=0.0002, segs=1)
+    box((0.006, 0.052, 0.025), (x - 0.038, y, z + 0.0125), "black_metal", bevel=0.0008, segs=1)
     box((0.012, 0.052, 0.025), (x + 0.025, y, z + 0.0125), "hazard_yellow", bevel=0.001, segs=1)
     cyl(0.006, 0.004, (x - 0.025, y, z + 0.025), "black_metal", n=12, bevel=0.0008)
     print_on("lbl_demo", (x - 0.003, y, z + 0.024), (0, 0, 1), (0, 1, 0), 0.04, look="olive")
@@ -574,18 +635,22 @@ def fill_mfakplus():
 
 
 def fill_ifak():
-    """IFAK: the compartment behind the front lid - dressings, an injector and a tourniquet standing
-    against the back wall, held by two elastic bands."""
+    """IFAK: a cut foam insert on the compartment's back wall - two labelled field dressings, a
+    tourniquet and two auto-injectors, each in its own cut. (The case lies on its back in the game,
+    so the wall is the floor of an open box.)"""
     with contents():
         box((0.14, 0.004, 0.09), (0, -0.0115, 0.06), "foam", bevel=0.0012, segs=1)
         wall = -0.0135
-        for x in (-0.045, -0.005):
-            dressing((x, wall, 0.07), 0.034, 0.05, 0.012, flat=False)
-        injector((0.0, wall - 0.0045, 0.02), cap="red", upright=True)
-        tourniquet((0.045, wall, 0.075), flat=False)
-        with cluster():
-            for z in (0.052, 0.088):
-                box((0.136, 0.0015, 0.012), (0, wall - 0.0145, z), "webbing", bevel=0.0004, segs=1)
+        # pockets as (x, height, width, tall); the insert is 0.132 wide and reaches from z 0.012 to 0.108
+        pockets = [(-0.042, 0.074, 0.04, 0.056), (0.002, 0.074, 0.04, 0.056),     # dressings
+                   (0.045, 0.072, 0.032, 0.062),                                   # tourniquet
+                   (-0.031, 0.026, 0.06, 0.014), (0.033, 0.026, 0.06, 0.014)]      # auto-injectors
+        pocket_foam(-0.066, 0.012, 0.066, 0.108, wall, 0.007, pockets, margin=0.0015, wall=True)
+        for x in (-0.042, 0.002):
+            dressing((x, wall, 0.074), 0.034, 0.05, 0.01, flat=False)
+        tourniquet((0.045, wall, 0.072), flat=False)
+        for k, x in enumerate((-0.031, 0.033)):
+            injector((x, wall - 0.0045, 0.02), cap="red" if k == 0 else "orange", upright=True)
 
 
 def fill_afak():
@@ -721,7 +786,7 @@ def fill_engineer_bag():
                    (-0.11, 0.055, 0.09, 0.05),         # charge
                    (-0.01, 0.055, 0.09, 0.05),         # charge
                    (0.125, 0.052, 0.062, 0.062),       # tape
-                   (0.045, -0.062, 0.06, 0.04),        # firing device
+                   (0.041, -0.062, 0.07, 0.04),        # firing device with its cable socket
                    (0.05, -0.01, 0.03, 0.03)]          # det cord
         zf = case_tray(W, D, H, lid_h, cap, pockets, h=0.014)
         wrench((-0.09, -0.07, zf))

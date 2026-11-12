@@ -587,3 +587,32 @@ rect(d, (30, 44, 170, 47), fill=BLACK)
 text(d, (100, 86), "PULL TAB", font(40, "Bold"), AMBER, anchor="mm")
 poly(d, [(80, 120), (120, 120), (100, 150)], AMBER)
 save(im, "lbl_ammo_body", wear=0.1)
+
+
+# Engineer's tools
+im = canvas(160, 40)
+dd = ImageDraw.Draw(im)
+text(dd, (80, 20), "19 mm  CR-V", font(24, "Bold"), (190, 190, 186, 255), anchor="mm")
+save(im, "lbl_wrench", wear=0.15)
+
+im = canvas(200, 110)
+dd = ImageDraw.Draw(im)
+GREEN = (120, 220, 150, 255)
+text(dd, (104, 50), "12.60", font(64, "Bold", condensed=False), GREEN, anchor="mm")
+text(dd, (176, 24), "V", font(26, "Bold"), GREEN, anchor="mm")
+text(dd, (22, 92), "DC", font(18, "SemiBold"), GREEN, anchor="mm")
+text(dd, (150, 92), "AUTO", font(18, "SemiBold"), GREEN, anchor="mm")
+save(im, "lbl_meter_display")
+
+im = canvas(240, 240)
+dd = ImageDraw.Draw(im)
+import math as _m
+labels = ["OFF", "V~", "V=", "mV", "Ohm", "A", "mA", "uA"]
+for k, lab in enumerate(labels):
+    ang = _m.radians(90 - k * 360 / len(labels))
+    cx, cy = 120 + 96 * _m.cos(ang), 120 - 96 * _m.sin(ang)
+    text(dd, (cx, cy), lab, font(20, "Bold"), BLACK, anchor="mm")
+    x0, y0 = 120 + 70 * _m.cos(ang), 120 - 70 * _m.sin(ang)
+    x1, y1 = 120 + 80 * _m.cos(ang), 120 - 80 * _m.sin(ang)
+    dd.line([(x0 * SS, y0 * SS), (x1 * SS, y1 * SS)], fill=BLACK, width=3 * SS)
+save(im, "lbl_meter_dial", wear=0.08)

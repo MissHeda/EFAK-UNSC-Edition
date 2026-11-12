@@ -28,6 +28,7 @@ import kits  # noqa: E402
 from mathutils import Matrix, Vector  # noqa: E402
 
 argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+BS = chr(92)
 kit = argv[0]
 fast = "--fast" in argv
 views = ["icon"]
@@ -91,6 +92,18 @@ if overlaps and not fast:
     raise SystemExit("small parts of %s run into each other, see OVERLAP lines above" % kit)
 U.unwrap(ob, margin=0.003)
 
+if "--p3d-only" in argv:
+    # the models again from the same parts and the same unwrap, the baked textures as they are -
+    # for changes to the LODs only (anything that moves a part needs the full build)
+    addon = kits.ADDON[kit]
+    data = os.path.join(U.REPO, "addons", addon, "data")
+    game_dir = "z" + BS + "efku" + BS + "addons" + BS + addon + BS + "data"
+    tex, mat = game_dir + BS + kit + "_co.paa", game_dir + BS + kit + ".rvmat"
+    U.write_p3d(os.path.join(data, kit + ".p3d"), ob, tex, mat, shadow=shadow_tris)
+    U.write_p3d(os.path.join(data, kit + "_open.p3d"), ob, tex, mat, shadow=shadow_tris, lods_spec=U.LODS_OPEN)
+    U.write_shadow_p3d(os.path.join(data, kit + "_shadow.p3d"), shadow_tris)
+    sys.exit(0)
+
 if fast:
     paths = U.bake(ob, kit, size=512, samples=8)
     if "open" in views:
@@ -119,6 +132,8 @@ with open(os.path.join(data, kit + ".rvmat"), "w", newline="\n") as f:
 
 U.write_p3d(os.path.join(data, kit + ".p3d"), ob, game_dir + "\\%s_co.paa" % kit, game_dir + "\\%s.rvmat" % kit,
             shadow=shadow_tris)
+U.write_p3d(os.path.join(data, kit + "_open.p3d"), ob, game_dir + BS + kit + "_co.paa",
+            game_dir + BS + kit + ".rvmat", shadow=shadow_tris, lods_spec=U.LODS_OPEN)
 U.write_shadow_p3d(os.path.join(data, kit + "_shadow.p3d"), shadow_tris)
 
 # pictures show the kit the way it lies in the game

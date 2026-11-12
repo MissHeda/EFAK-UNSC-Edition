@@ -1319,7 +1319,7 @@ def unwrap(ob, margin=0.004):
 
 # How much finer the texture is on the faces that carry a decal than on the rest (linear): logos and
 # lettering stay sharp up close, plain paint and wear do not need it.
-DECAL_TEXEL = 2.0
+DECAL_TEXEL = 2.4
 
 
 def _grow_decal_islands(ob, factor):
@@ -1351,7 +1351,12 @@ def _grow_decal_islands(ob, factor):
         if uv0 == uv1:
             parent[find(f0.index)] = find(f1.index)
     marked = set()
+    # parts from other mods carry their own prints all over: they count as printed
+    imported_slots = {i for i, m in enumerate(me.materials) if m is not None and m.name.startswith("imp_")}
     for f in bm.faces:
+        if f.material_index in imported_slots:
+            marked.add(find(f.index))
+            continue
         c = f.calc_center_median()
         for p in PROJECTORS:
             n = p["normal"]
@@ -1698,10 +1703,18 @@ def shadow_open_edges(tris):
 # LOD 1, 2 and 4: (leave out parts smaller than this in metres, merge flat faces within this many degrees)
 # (drop parts smaller than, dissolve flat faces within degrees, keep the contents) per LOD 1, 2, 4, 8,
 # 16: the contents only matter up close, where someone has the lid open; far away a kit is its case.
-LODS = ((0.0, 0.0, True), (0.012, 1.0, True), (0.03, 2.0, False), (0.06, 4.0, False), (0.12, 8.0, False))
+# Arma picks a LOD by how many faces fit the model's size on screen, and these models are small: at one
+# to four metres it is already drawing the LAST LOD. So there are two models of every kit:
+#   the kit itself (in an inventory holder, always shut): what is packed inside is in no LOD at all,
+#     and the last LOD still has everything a player sees from standing height;
+#   the kit's open twin (<kit>_open.p3d, the prop efku_lids swings open): the contents, the cut foam
+#     and the lid lining in every LOD, only their smallest parts go.
+# (drop parts smaller than, dissolve flat faces within degrees, keep the contents) per LOD.
+LODS = ((0.0, 0.0, False), (0.006, 1.0, False), (0.012, 2.0, False), (0.02, 3.0, False), (0.035, 5.0, False))
+LODS_OPEN = ((0.0, 0.0, True), (0.004, 1.0, True), (0.008, 2.0, True), (0.012, 3.0, True), (0.016, 4.0, True))
 
 
-def write_p3d(path, ob, tex, mat, shadow=None):
+def write_p3d(path, ob, tex, mat, shadow=None, lods_spec=None):
     """shadow: triangles for the shadow LOD (see build_kit.py); a convex hull if left out, which only
     suits shapes without hollows."""
     lods = []
@@ -1709,7 +1722,7 @@ def write_p3d(path, ob, tex, mat, shadow=None):
     # a small kit must not lose its body: no part above a third of the kit's size is ever dropped
     bb = [ob.matrix_world @ v.co for v in ob.data.vertices]
     span = max(max(p[i] for p in bb) - min(p[i] for p in bb) for i in range(3))
-    for i, (drop, dissolve, keep) in enumerate(LODS):
+    for i, (drop, dissolve, keep) in enumerate(lods_spec or LODS):
         me = lod_mesh(ob, drop=min(drop, span / 3), dissolve=dissolve, inner=keep)
         data, npt, nf = lod_bytes(float(2 ** i), mesh_tris(me), tex, mat, selections=group_names())
         print("LOD", 2 ** i, "points", npt, "faces", nf)

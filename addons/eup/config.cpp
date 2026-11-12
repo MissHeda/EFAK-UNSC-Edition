@@ -57,7 +57,7 @@ class EFAK_KitGroups {
 // The animated stand-ins for kits on the ground, see efku_LidProp in the main addon.
 #define LID_PROP(FILE,SOUND) \
     class DOUBLES(efku_LidProp,FILE): efku_LidProp { \
-        model = QPATHTOF(data\FILE.p3d); \
+        model = QPATHTOF(data\DOUBLES(FILE,open).p3d); \
         efku_sound = #SOUND; \
     }
 

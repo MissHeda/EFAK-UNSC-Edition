@@ -191,7 +191,7 @@ def ifak():
         prism(rect(ln * 0.8, D + 0.004), 0.004, "dark_poly", (cx, 0, cz), (0, ang, 0), bevel=0.0012, segs=1)
     decal("egb_white", (0.044, 0.01, H), UP, F, 0.012, depth=0.003)
     molle_back(W, D, H, D / 2)
-    return 2048
+    return 4096
 
 
 def afak():
@@ -263,7 +263,7 @@ def afak():
     decal("afak_label", (0, -0.095, top), UP, B, 0.12, depth=0.003)
     decal("serial_white", (0, 0.098, top), UP, B, 0.08, depth=0.003)
     feet((-0.12, 0.12), (-0.08, 0.08))
-    return 2048
+    return 4096
 
 
 def mfak():
@@ -366,7 +366,7 @@ def narcbox():
         lcyl(Fv, 0.007, 0.006, (0, 0, 0.002), "dark_poly", n=20, bevel=0.0015, segs=2)
     decal("hazard", (W / 2, 0, 0.027), R, UP, 0.07, depth=0.004)
     feet((-0.075, 0.075), (-0.042, 0.042), size=0.018)
-    return 2048
+    return 4096
 
 
 # ===================================================================================================
