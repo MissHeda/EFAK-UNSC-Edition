@@ -7,7 +7,7 @@ foam blocks that tile the tray round the pockets. A piece sunk into its pocket r
 without any boolean work. Pockets are rectangles in the kit's x/y; `clip` trims the layer to a tray
 that is not a rectangle (the AFAK's octagon, the Narc box's rounded corners).
 """
-from unsc_lib import box, cyl, prism, rect, rrect, inset, contents, lid, cluster, clustered, frame, lbox, lcyl, decal
+from unsc_lib import box, cyl, prism, rect, rrect, circle, inset, contents, lid, cluster, clustered, frame, lbox, lcyl, decal
 
 
 MARGIN = 0.004      # foam left round each piece (the cut is a touch bigger than the piece)
@@ -75,57 +75,197 @@ def print_on(image, center, normal, up, width, look=None, depth=0.004):
 
 
 # --- pieces ----------------------------------------------------------------------------------------
-@clustered
-def biofoam(c, axis="x", length=0.07, r=0.012):
-    """Biofoam canister: white body, red band, grey cap, red nozzle."""
-    x, y, z = c
-    d = (1, 0, 0) if axis == "x" else (0, 1, 0)
-    cyl(r, length, (x, y, z), "biofoam", axis=axis, n=18, bevel=0.002, segs=2)
-    off = length * 0.22
-    cyl(r + 0.0006, 0.008, (x - d[0] * off, y - d[1] * off, z), "red", axis=axis, n=18, bevel=0.0006)
-    end = length / 2 + 0.006
-    cyl(r * 0.7, 0.012, (x + d[0] * end, y + d[1] * end, z), "dark_poly", axis=axis, n=14, bevel=0.0015)
-    tip = length / 2 + 0.014
-    cyl(r * 0.25, 0.008, (x + d[0] * tip, y + d[1] * tip, z), "red", axis=axis, n=10, bevel=0.0005)
-    # grip rings at the back, the print on the body facing up
-    for k in (0.30, 0.38):
-        cyl(r + 0.0008, 0.003, (x - d[0] * length * k, y - d[1] * length * k, z), "dark_poly", axis=axis, n=18,
-            bevel=0.0005)
-    print_on("lbl_biofoam", (x, y, z + r), (0, 0, 1), (0, 1, 0) if axis == "x" else (-1, 0, 0),
-             length * 0.5, look="biofoam", depth=r * 0.6)
+def _dims(a, g, s3, along_a, along_g, along_s):
+    """Box size in world axes from sizes along three axis-aligned unit vectors."""
+    return tuple(along_a * abs(a[i]) + along_g * abs(g[i]) + along_s * abs(s3[i]) for i in range(3))
 
 
-def biofoam_pocket(c, axis="x", length=0.07, r=0.012):
-    """The pocket biofoam() needs: the body with its cap and nozzle."""
-    x, y, z = c
-    total = length + 0.032
-    return (x + (0.01 if axis == "x" else 0), y + (0.01 if axis == "y" else 0),
-            total if axis == "x" else 2 * r, 2 * r if axis == "x" else total)
+def _add(*vs):
+    return tuple(sum(v[i] for v in vs) for i in range(3))
+
+
+def _mul(v, k):
+    return (v[0] * k, v[1] * k, v[2] * k)
 
 
 @clustered
-def injector(c, axis="y", length=0.1, r=0.0055, cap="red"):
-    """Auto-injector: olive body, a window band, a coloured safety cap."""
+def biofoam(c, axis="x", length=0.11, r=0.018, grip=None):
+    """The biofoam canister as Halo shows it: a dark olive steel cylinder, knurled rings, a conical
+    nozzle with a red safety cap at +axis, a carry grip with a trigger, a white data label. `grip`
+    is the way the grip points (a unit vector across the axis); it lies flat to the side when the
+    canister is packed under a lid. The label faces up."""
     x, y, z = c
-    d = (1, 0, 0) if axis == "x" else (0, 1, 0)
-    cyl(r, length, (x, y, z), "injector", axis=axis, n=14, bevel=0.0012)
-    cyl(r + 0.0004, length * 0.12, (x + d[0] * length * 0.15, y + d[1] * length * 0.15, z), "glass", axis=axis,
-        n=14, bevel=0.0004)
-    e = length / 2 + 0.009
-    cyl(r + 0.0006, 0.018, (x + d[0] * e, y + d[1] * e, z), cap, axis=axis, n=14, bevel=0.0015, segs=2)
-    # a white print band round the middle of the body
-    bl = length * 0.34
-    bx, by = x - d[0] * length * 0.1, y - d[1] * length * 0.1
-    cyl(r + 0.0003, bl, (bx, by, z), "pack_white", axis=axis, n=14, bevel=0.0003)
-    print_on("lbl_atropine" if cap == "orange" else "lbl_epi", (bx, by, z + r), (0, 0, 1),
-             (0, 1, 0) if axis == "x" else (-1, 0, 0), bl * 0.9, look="pack_white", depth=r * 0.7)
+    a = d_(axis)
+    if grip is None:
+        grip = (0, 0, 1)
+    g = grip
+    s3 = (a[1] * g[2] - a[2] * g[1], a[2] * g[0] - a[0] * g[2], a[0] * g[1] - a[1] * g[0])
+    rot = (0, 90, 0) if axis == "x" else (-90, 0, 0)
+    cyl(r, length, (x, y, z), "canister", axis=axis, n=24, bevel=0.003, segs=3)
+    for k in (-0.46, 0.46):
+        cyl(r + 0.0012, 0.006, _add((x, y, z), _mul(a, length * k)), "black_metal", axis=axis, n=24, bevel=0.0008)
+    nz = length / 2
+    cyl(r * 0.8, 0.012, _add((x, y, z), _mul(a, nz + 0.006)), "steel", axis=axis, n=20, bevel=0.0015)
+    prism(circle(r * 0.62, 20), 0.04, "canister", _add((x, y, z), _mul(a, nz + 0.012)), rot, bevel=0.0012, segs=1,
+          taper=r * 0.42)
+    cyl(r * 0.24, 0.01, _add((x, y, z), _mul(a, nz + 0.055)), "red", axis=axis, n=12, bevel=0.0015, segs=2)
+    # the grip: two posts off the body, a rubber bar across them, the trigger lever at the front post
+    base = _add((x, y, z), _mul(g, r))
+    for k in (-0.36, -0.1):
+        box(_dims(a, g, s3, 0.009, 0.007, 0.012), _add(base, _mul(a, length * k), _mul(g, 0.0035)), "black_metal",
+            bevel=0.0015, segs=1)
+    box(_dims(a, g, s3, length * 0.34, 0.007, 0.014), _add(base, _mul(a, -length * 0.23), _mul(g, 0.0105)), "rubber",
+        bevel=0.0025, segs=2)
+    box(_dims(a, g, s3, 0.016, 0.009, 0.005), _add(base, _mul(a, length * 0.06), _mul(g, 0.0045)), "red",
+        bevel=0.0012, segs=1)
+    # label: on top when the grip lies to the side, else on the side away from the grip
+    n = (0, 0, 1) if abs(g[2]) < 0.5 else s3
+    up = (n[1] * a[2] - n[2] * a[1], n[2] * a[0] - n[0] * a[2], n[0] * a[1] - n[1] * a[0])
+    print_on("lbl_biofoam", _add((x, y, z), _mul(n, r * 0.98), _mul(a, -0.004)), n, up, length * 0.5,
+             look="canister", depth=r * 0.5)
 
 
-def injector_pocket(c, axis="y", length=0.1, r=0.0055):
+def biofoam_pocket(c, axis="x", length=0.11, r=0.018, grip=None):
+    """The pocket biofoam() needs: body, nozzle, and the grip to its side."""
     x, y, z = c
-    total = length + 0.018
-    return (x + (0.009 if axis == "x" else 0), y + (0.009 if axis == "y" else 0),
-            total if axis == "x" else 2 * r + 0.0012, 2 * r + 0.0012 if axis == "x" else total)
+    a = d_(axis)
+    if grip is None:
+        grip = (0, 0, 1)
+    along = length + 0.065
+    cx, cy = x + a[0] * (0.0325 + 0.002), y + a[1] * (0.0325 + 0.002)
+    across = 2 * r + 0.004
+    side = abs(grip[0]) + abs(grip[1])     # grip lying flat: the pocket grows that way by its height
+    if side:
+        across += 0.016
+        cx += grip[0] * 0.008
+        cy += grip[1] * 0.008
+    return (cx, cy, along if axis == "x" else across, across if axis == "x" else along)
+
+
+def d_(axis):
+    return (1, 0, 0) if axis == "x" else (0, 1, 0)
+
+
+@clustered
+def medigel_tube(c, axis="y"):
+    """A medigel tube: a flattened blue tube, round at the cap, crimped flat at the far end, a grey
+    screw cap. Lies flat, the cap at +axis."""
+    x, y, z = c
+    d = d_(axis)
+    L, W_, T = 0.1, 0.032, 0.018
+    # the tube: a tapered box, thick at the cap end, flat at the crimp
+    for k in range(5):
+        f = k / 4
+        t = T * (1 - 0.8 * f) + 0.003
+        w = W_ * (1 - 0.1 * f)
+        seg = L / 5
+        at = -L / 2 + seg * (k + 0.5)
+        box((seg + 0.001, w, t) if axis == "x" else (w, seg + 0.001, t),
+            (x - d[0] * at, y - d[1] * at, z + t / 2), "medigel", bevel=min(0.003, t * 0.45), segs=2)
+    # crimped seal at the far end
+    box((0.004, W_ + 0.002, 0.0016) if axis == "x" else (W_ + 0.002, 0.004, 0.0016),
+        (x - d[0] * (L / 2 + 0.001), y - d[1] * (L / 2 + 0.001), z + 0.0016), "steel", bevel=0.0004, segs=1)
+    # neck and ribbed cap
+    cyl(0.006, 0.006, (x + d[0] * (L / 2 + 0.003), y + d[1] * (L / 2 + 0.003), z + T / 2), "steel", axis=axis,
+        n=12, bevel=0.0008)
+    cyl(0.0085, 0.014, (x + d[0] * (L / 2 + 0.013), y + d[1] * (L / 2 + 0.013), z + T / 2), "steel", axis=axis,
+        n=14, bevel=0.0015, segs=2)
+    print_on("lbl_medigel", (x - d[0] * 0.012, y - d[1] * 0.012, z + T * 0.8), (0, 0, 1),
+             (d[0], d[1], 0), L * 0.6, look="medigel", depth=0.012)
+
+
+def medigel_pocket(c, axis="y"):
+    x, y, z = c
+    d = d_(axis)
+    return (x + d[0] * 0.01, y + d[1] * 0.01, 0.125 if axis == "x" else 0.036, 0.036 if axis == "x" else 0.125)
+
+
+@clustered
+def injector(c, axis="y", length=0.12, r=0.0055, cap="red", upright=False):
+    """A UNSC auto-injector: a flat dark olive pen with rounded edges, a dose window, a white square
+    cap at the needle end, the drug named on a band whose colour tells the drug. `cap` is kept for
+    the callers: red = epinephrine, orange = atropine."""
+    x, y, z = c
+    d = d_(axis)
+    w, t = 0.024, 0.016
+    if upright:
+        # standing on its long edge against a wall at -y (the IFAK): flat face to the front
+        box((length, t, w), (x, y, z), "injector", cut=0.004, bevel=0.004, segs=3)
+        box((0.022, t + 0.001, w + 0.001), (x + length / 2 - 0.01, y, z), "pack_white", cut=0.003, bevel=0.002,
+            segs=2)
+        box((0.02, 0.0012, 0.009), (x - 0.01, y - t / 2 - 0.0005, z), "glass", bevel=0.0003, segs=1)
+        box((0.01, t + 0.0012, w + 0.0012), (x + 0.012, y, z), cap, bevel=0.001, segs=1)
+        print_on("lbl_injector", (x - 0.034, y - t / 2, z), (0, -1, 0), (0, 0, 1), 0.04, look="injector")
+        return
+    box((length, w, t) if axis == "x" else (w, length, t), (x, y, z + t / 2), "injector", cut=0.004,
+        bevel=0.004, segs=3)
+    # white cap at the needle end, the window and the UNSC mark on top
+    box((0.022, w + 0.001, t + 0.001) if axis == "x" else (w + 0.001, 0.022, t + 0.001),
+        (x + d[0] * (length / 2 - 0.01), y + d[1] * (length / 2 - 0.01), z + t / 2), "pack_white", cut=0.003,
+        bevel=0.002, segs=2)
+    box((0.02, 0.009, 0.0012) if axis == "x" else (0.009, 0.02, 0.0012),
+        (x - d[0] * 0.01, y - d[1] * 0.01, z + t + 0.0005), "glass", bevel=0.0003, segs=1)
+    band = cap
+    box((0.01, w + 0.0012, t + 0.0012) if axis == "x" else (w + 0.0012, 0.01, t + 0.0012),
+        (x + d[0] * 0.012, y + d[1] * 0.012, z + t / 2), band, bevel=0.001, segs=1)
+    print_on("lbl_injector", (x - d[0] * 0.034, y - d[1] * 0.034, z + t), (0, 0, 1), (d[0], d[1], 0), 0.04,
+             look="injector")
+
+
+def injector_pocket(c, axis="y", length=0.12, r=0.0055):
+    x, y, z = c
+    return (x, y, length + 0.002 if axis == "x" else 0.026, 0.026 if axis == "x" else length + 0.002)
+
+
+@clustered
+def ammo_pack(c, w=0.066, length=0.14, t=0.03, axis="y", standing=False):
+    """A sealed ammo pack like the UNSC ones in Halo: a foil pouch, the top third dark red with two
+    hanging slots and the round's name, the body grey-olive with the count and a pull tab. Lies flat
+    with the red end at +axis, or stands on its bottom edge (red end up) when `standing`."""
+    x, y, z = c
+    if standing:
+        # body and red top standing in a pouch cell, slots cut into the top, the tab on the face
+        body = length * 0.64
+        box((w, t, body), (x, y, z + body / 2), "pack_grey", bevel=0.004, segs=3)
+        box((w, t * 0.9, length - body), (x, y, z + body + (length - body) / 2), "pack_red", bevel=0.004,
+            segs=3)
+        for sx in (-1, 1):
+            box((0.012, t, 0.006), (x + sx * w * 0.25, y, z + length - 0.012), "dark_poly", bevel=0.0006, segs=1)
+        print_on("lbl_ammo_top", (x, y - t * 0.45, z + body + (length - body) * 0.45), (0, -1, 0), (0, 0, 1),
+                 w * 0.8, look="pack_red", depth=0.006)
+        print_on("lbl_ammo_body", (x, y - t / 2, z + body * 0.5), (0, -1, 0), (0, 0, 1), w * 0.8,
+                 look="pack_grey", depth=0.006)
+        return
+    d = d_(axis)
+    body = length * 0.64
+    top = length - body
+    # the pillow of the pouch: body, then the red top, both on a flat crimped seal
+    box((w, body, t) if axis == "x" else (w, body, t) if axis == "y" else None,
+        (x - d[0] * top / 2, y - d[1] * top / 2, z + t / 2), "pack_grey", bevel=0.005, segs=3) if axis == "y" else \
+        box((body, w, t), (x - d[0] * top / 2, y - d[1] * top / 2, z + t / 2), "pack_grey", bevel=0.005, segs=3)
+    if axis == "y":
+        box((w, top, t * 0.85), (x, y + d[1] * body / 2, z + t * 0.425), "pack_red", bevel=0.005, segs=3)
+        box((w + 0.006, length + 0.006, 0.0012), (x, y, z + 0.0012), "pack_grey", bevel=0.0004, segs=1)
+        for sx in (-1, 1):
+            box((0.012, 0.006, t * 0.85 + 0.001), (x + sx * w * 0.25, y + length / 2 - 0.012, z + t * 0.425),
+                "dark_poly", bevel=0.0006, segs=1)
+        print_on("lbl_ammo_top", (x, y + body / 2 + top * 0.42, z + t * 0.85), (0, 0, 1), (0, 1, 0), w * 0.8,
+                 look="pack_red")
+        print_on("lbl_ammo_body", (x, y - top / 2, z + t), (0, 0, 1), (0, 1, 0), w * 0.8, look="pack_grey")
+    else:
+        box((top, w, t * 0.85), (x + body / 2, y, z + t * 0.425), "pack_red", bevel=0.005, segs=3)
+        box((length + 0.006, w + 0.006, 0.0012), (x, y, z + 0.0012), "pack_grey", bevel=0.0004, segs=1)
+        for sy in (-1, 1):
+            box((0.006, 0.012, t * 0.85 + 0.001), (x + length / 2 - 0.012, y + sy * w * 0.25, z + t * 0.425),
+                "dark_poly", bevel=0.0006, segs=1)
+        print_on("lbl_ammo_top", (x + body / 2 + top * 0.42, y, z + t * 0.85), (0, 0, 1), (1, 0, 0), w * 0.8,
+                 look="pack_red")
+        print_on("lbl_ammo_body", (x - top / 2, y, z + t), (0, 0, 1), (1, 0, 0), w * 0.8, look="pack_grey")
+
+
+def ammo_pack_pocket(c, w=0.066, length=0.14, axis="y"):
+    x, y, z = c
+    return (x, y, w + 0.004 if axis == "y" else length + 0.004, length + 0.004 if axis == "y" else w + 0.004)
 
 
 @clustered
@@ -501,52 +641,51 @@ def case_tray(W, D, H, lid_h, cap, pockets, h=0.016, clip=None):
 
 
 def fill_mfak(more=False):
-    """MFAK (and MFAK+ with more=True): the big medical case. Biofoam and injectors in a row, gauze,
-    dressings, a saline bag, shears, a splint, flat packs under the lid's straps."""
+    """MFAK (and MFAK+ with more=True): the big medical case. Two biofoam canisters along the left,
+    medigel and saline on the right, injectors in a row, shears, gauze, tourniquet, dressings, vials
+    and gloves each in their cut, flat packs under the lid's straps."""
     W, D, H, lid_h, cap = (0.44, 0.24, 0.36, 0.05, 0.034) if more else (0.46, 0.25, 0.25, 0.048, 0.034)
     with contents():
         pockets = []
         items = []
-        bx = -0.145
-        for k, y in enumerate((-0.078, -0.046, -0.014)):
-            items.append(lambda zf, y=y: biofoam((bx, y, zf + 0.012)))
-            pockets.append(biofoam_pocket((bx, y, 0)))
-        for k in range(5):
-            x = -0.03 + k * 0.016
-            items.append(lambda zf, x=x, k=k: injector((x, -0.052, zf + 0.0055), cap="red" if k % 2 == 0 else "orange"))
-            pockets.append(injector_pocket((x, -0.052, 0)))
-        items.append(lambda zf: saline_bag((0.1, -0.05, zf)))
-        pockets.append((0.104, -0.05, 0.096, 0.05))
-        items.append(lambda zf: shears((0.03, 0.028, zf)))
-        pockets.append((0.03, 0.028, 0.14, 0.03))
-        items.append(lambda zf: splint((-0.14, 0.04, zf)))
-        pockets.append((-0.14, 0.04, 0.1, 0.044))
-        items.append(lambda zf: gauze_roll((-0.065, 0.025, zf)))
-        pockets.append((-0.065, 0.025, 0.07, 0.028))
-        items.append(lambda zf: tourniquet((0.13, 0.03, zf)))
-        pockets.append((0.13, 0.03, 0.078, 0.034))
-        for k, x in enumerate((-0.13, -0.065)):
-            items.append(lambda zf, x=x: dressing((x, 0.085, zf), 0.055, 0.04, 0.012))
-            pockets.append((x, 0.085, 0.055, 0.04))
-        items.append(lambda zf: suture_kit((0.0, 0.085, zf)))
-        pockets.append((0.0, 0.085, 0.05, 0.036))
-        items.append(lambda zf: pill_box((0.055, 0.085, zf)))
-        pockets.append((0.055, 0.085, 0.04, 0.026))
-        for x in (0.088, 0.106):
-            items.append(lambda zf, x=x: vial((x, 0.08, zf)))
-            pockets.append((x, 0.08, 0.0135, 0.0135))
-        items.append(lambda zf: glove_pack((0.15, 0.08, zf), 0.04, 0.05))
-        pockets.append((0.15, 0.08, 0.04, 0.05))
+        for y, gy in ((-0.088, -1), (-0.038, 1)):
+            items.append(lambda zf, y=y, gy=gy: biofoam((-0.105, y, zf + 0.012), axis="x", grip=(0, gy, 0)))
+            pockets.append(biofoam_pocket((-0.105, y, 0), axis="x", grip=(0, gy, 0)))
+        items.append(lambda zf: medigel_tube((0.1, -0.035, zf), axis="x"))
+        pockets.append(medigel_pocket((0.1, -0.035, 0), axis="x"))
+        items.append(lambda zf: saline_bag((0.096, -0.085, zf), 0.08, 0.044))
+        pockets.append((0.1, -0.085, 0.096, 0.044))
+        for k, y in enumerate((-0.005, 0.023, 0.051)):
+            items.append(lambda zf, y=y, k=k: injector((0.055, y, zf), axis="x", length=0.1,
+                                                       cap="red" if k < 2 else "orange"))
+            pockets.append(injector_pocket((0.055, y, 0), axis="x", length=0.1))
+        items.append(lambda zf: shears((-0.08, 0.03, zf)))
+        pockets.append((-0.08, 0.03, 0.14, 0.03))
+        items.append(lambda zf: gauze_roll((-0.1, 0.07, zf)))
+        pockets.append((-0.1, 0.07, 0.07, 0.028))
+        items.append(lambda zf: tourniquet((-0.025, 0.07, zf)))
+        pockets.append((-0.025, 0.07, 0.078, 0.034))
+        items.append(lambda zf: dressing((0.045, 0.095, zf), 0.05, 0.036, 0.012))
+        pockets.append((0.045, 0.095, 0.05, 0.036))
+        items.append(lambda zf: suture_kit((0.1, 0.095, zf)))
+        pockets.append((0.1, 0.095, 0.05, 0.036))
+        items.append(lambda zf: pill_box((0.15, 0.095, zf)))
+        pockets.append((0.15, 0.095, 0.04, 0.026))
+        for y in (0.0, 0.025):
+            items.append(lambda zf, y=y: vial((0.165, y, zf)))
+            pockets.append((0.165, y, 0.0135, 0.0135))
+        items.append(lambda zf: glove_pack((-0.16, 0.095, zf), 0.04, 0.03))
+        pockets.append((-0.16, 0.095, 0.04, 0.03))
         if more:
-            items.append(lambda zf: blanket((0.1, -0.095, zf)))
-            pockets.append((0.1, -0.095, 0.07, 0.045))
-        zf = case_tray(W, D, H, lid_h, cap, pockets)
+            items.append(lambda zf: blanket((0.145, 0.065, zf)))
+            pockets.append((0.145, 0.065, 0.07, 0.045))
+        zf = case_tray(W, D, H, lid_h, cap, pockets, h=0.016)
         for it in items:
             it(zf)
     lid_straps(W, D, H + 0.002 - 0.016, [
-        (-W * 0.3, -0.045, 0.07, 0.07, 0.004, "pack_olive"),
-        (W * 0.3, -0.045, 0.06, 0.04, 0.01, "pack_white"),
-    ], card=(0.0, 0.055, 0.1))
+        (-W * 0.3, 0.05, 0.07, 0.07, 0.004, "pack_olive"),
+        (W * 0.3, 0.05, 0.06, 0.04, 0.006, "pack_white"),
+    ], card=(0.0, -0.05, 0.1))
 
 
 def fill_mfakplus():
@@ -561,7 +700,8 @@ def fill_ifak():
         wall = -0.0135
         for x in (-0.045, -0.005):
             dressing((x, wall, 0.07), 0.034, 0.05, 0.012, flat=False)
-        injector((0.012, wall - 0.005, 0.03), axis="x", length=0.06, r=0.0045, cap="red")
+        # the injector lies along the bottom of the compartment, flat side to the wall
+        injector((0.012, wall - 0.0085, 0.027), axis="x", length=0.07, cap="red", upright=True)
         tourniquet((0.045, wall, 0.075), flat=False)
         with cluster():
             for z in (0.052, 0.088):
@@ -569,34 +709,32 @@ def fill_ifak():
 
 
 def fill_afak():
-    """AFAK: the sterile field generator in the middle of an octagonal tray, biofoam and injectors
-    either side, dressings and a chest seal across the front."""
+    """AFAK: the sterile field generator in the middle of an octagonal tray, a biofoam canister along
+    each side, medigel and injectors behind, dressings and a chest seal across the front."""
     W, D, C = 0.36, 0.27, 0.06
     with contents():
         prism(inset(rect(W, D, C), 0.0085), 0.004, "foam", (0, 0, 0.02), bevel=0.0012, segs=1)
         zf = 0.024
         pockets = [(0, 0, 0.07, 0.07)]
-        for x in (-0.13, -0.095, 0.095, 0.13):
-            pockets.append(biofoam_pocket((x, 0.0, 0), axis="y", length=0.06, r=0.011))
+        for sx in (-1, 1):
+            pockets.append(biofoam_pocket((sx * 0.115, -0.03, 0), axis="y", length=0.09, r=0.016, grip=(sx, 0, 0)))
+        pockets.append(medigel_pocket((-0.055, 0.095, 0), axis="x"))
+        for x in (0.048, 0.076):
+            pockets.append(injector_pocket((x, 0.06, 0), axis="y", length=0.1))
         for x in (-0.04, 0.04):
             pockets.append((x, -0.056, 0.05, 0.03))
-        for y in (0.062, 0.084):
-            pockets.append(injector_pocket((0.0, y, 0), axis="x", length=0.1))
         pockets.append((0.0, -0.1, 0.06, 0.044))
-        pockets.append((-0.1, -0.085, 0.04, 0.026))
-        pockets.append((0.1, -0.085, 0.04, 0.026))
         pocket_foam(-W / 2 + 0.012, -D / 2 + 0.012, W / 2 - 0.012, D / 2 - 0.012, zf, 0.012, pockets,
                     clip=octagon_clip(W, D, C, 0.024))
         field_generator((0, 0, zf))
-        for x in (-0.13, -0.095, 0.095, 0.13):
-            biofoam((x, 0.0, zf + 0.011), axis="y", length=0.06, r=0.011)
+        for sx in (-1, 1):
+            biofoam((sx * 0.115, -0.03, zf + 0.012), axis="y", length=0.09, r=0.016, grip=(sx, 0, 0))
+        medigel_tube((-0.055, 0.095, zf), axis="x")
+        for k, x in enumerate((0.048, 0.076)):
+            injector((x, 0.06, zf), axis="y", length=0.1, cap="red" if k == 0 else "orange")
         for x in (-0.04, 0.04):
             dressing((x, -0.056, zf), 0.05, 0.03, 0.01)
-        for y in (0.062, 0.084):
-            injector((0.0, y, zf + 0.0055), axis="x", length=0.1, cap="red")
         chest_seal((0.0, -0.1, zf))
-        pill_box((-0.1, -0.085, zf))
-        pill_box((0.1, -0.085, zf))
 
 
 def fill_narcbox():
@@ -606,8 +744,8 @@ def fill_narcbox():
         prism(inset(rrect(W, D, 0.022, 4), 0.0075), 0.004, "foam", (0, 0, 0.03), bevel=0.0012, segs=1)
         zf = 0.034
         pockets = []
-        for k in range(6):
-            pockets.append(injector_pocket((-0.09 + k * 0.018, -0.004, 0), length=0.1))
+        for k in range(4):
+            pockets.append(injector_pocket((-0.1 + k * 0.03, -0.004, 0), length=0.1))
         vials = [(0.04 + i * 0.022, -0.04 + j * 0.022) for i in range(4) for j in range(2)]
         for x, y in vials:
             pockets.append((x, y, 0.0135, 0.0135))
@@ -620,8 +758,8 @@ def fill_narcbox():
             x = 0.097 if y > 0.024 else W / 2 - 0.015
             return (-x, x)
         pocket_foam(-W / 2 + 0.015, -D / 2 + 0.015, W / 2 - 0.015, D / 2 - 0.015, zf, 0.012, pockets, clip=clip)
-        for k in range(6):
-            injector((-0.09 + k * 0.018, -0.004, zf + 0.0055), length=0.1, cap="red" if k < 3 else "orange")
+        for k in range(4):
+            injector((-0.1 + k * 0.03, -0.004, zf), length=0.1, cap="red" if k < 2 else "orange")
         for x, y in vials:
             vial((x, y, zf), h=0.026)
         for x in (0.045, 0.09):
@@ -646,22 +784,22 @@ def fill_utility_pouch():
 
 
 def fill_ammo_pouch():
+    """Ammo pouch: an ammo pack standing in each cell, its red top showing above the rim."""
     D, H = 0.056, 0.14
     with contents():
         for sx in (-1, 1):
-            mag_top((sx * 0.025, 0.002, H - 0.047), h=0.025)
+            ammo_pack((sx * 0.025, 0.0, H - 0.047 - 0.075), w=0.042, length=0.115, t=0.03, standing=True)
 
 
 def fill_ammo_bag():
-    """Ammo crate: four MA5 magazines lying in cut foam across the whole tray, nothing else - the
-    crate is a magazine crate. The lot card under the lid."""
+    """Ammo crate: eight sealed ammo packs in two rows, each in its cut, the lot card under the lid."""
     W, D, H, lid_h, cap = 0.36, 0.18, 0.2, 0.042, 0.03
     with contents():
-        xs = [-0.105, -0.035, 0.035, 0.105]
-        pockets = [(x, -0.004, 0.062, 0.146) for x in xs]
+        spots = [(x, y) for y in (-0.04, 0.04) for x in (-0.105, -0.035, 0.035, 0.105)]
+        pockets = [ammo_pack_pocket((x, y, 0), w=0.062, length=0.072, axis="x") for x, y in spots]
         zf = case_tray(W, D, H, lid_h, cap, pockets, h=0.018)
-        for x in xs:
-            mag_flat((x, -0.004, zf - 0.006))
+        for x, y in spots:
+            ammo_pack((x, y, zf - 0.006), w=0.062, length=0.072, t=0.028, axis="x")
     lid_straps(W, D, H + 0.002 - 0.016, [], card=(0.0, 0.0, 0.1))
 
 
@@ -698,7 +836,7 @@ def fill_cbrn_bag():
         pockets = [(-0.075, 0.0, 0.17, 0.08)]
         for x in (0.035, 0.08, 0.125):
             pockets.append((x, -0.065, 0.038, 0.038))
-        for y in (0.03, 0.055, 0.08):
+        for y in (0.025, 0.055, 0.085):
             pockets.append(injector_pocket((0.08, y, 0), axis="x", length=0.1))
         pockets.append((-0.1, -0.085, 0.09, 0.07))
         pockets.append((-0.01, -0.085, 0.05, 0.08))
@@ -707,12 +845,12 @@ def fill_cbrn_bag():
         gas_mask((-0.085, 0.005, zf))
         for x in (0.035, 0.08, 0.125):
             filter_can((x, -0.065, zf))
-        for y in (0.03, 0.055, 0.08):
-            injector((0.08, y, zf + 0.0055), axis="x", length=0.1, cap="red")
+        for y in (0.025, 0.055, 0.085):
+            injector((0.08, y, zf), axis="x", length=0.1, cap="orange")
         decon_kit((-0.1, -0.085, zf))
         detector_paper((-0.01, -0.085, zf))
         dressing((-0.1, 0.085, zf), 0.045, 0.032, 0.01, look="pack_white")
     lid_straps(W, D, H + 0.002 - 0.016, [
         (-W * 0.3, -0.04, 0.07, 0.07, 0.004, "pack_white"),
-        (W * 0.3, -0.04, 0.06, 0.04, 0.008, "pack_olive"),
+        (W * 0.3, -0.04, 0.06, 0.04, 0.006, "pack_olive"),
     ], card=(0.0, 0.055, 0.1))

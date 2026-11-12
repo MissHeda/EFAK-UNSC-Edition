@@ -93,6 +93,17 @@ LOOKS = {
                  grain=0.6, streaks=0.0, bevel=0.002),
     "biofoam": look(srgb(214, 214, 206), srgb(160, 160, 152), wear=0.25, grime=0.35, spec=0.3, gloss=0.55,
                     pattern="smooth", bevel=0.0015),
+    # the Halo biofoam canister: dark olive steel, worn to bare metal on the edges
+    "canister": look(srgb(62, 70, 48), srgb(150, 148, 130), wear=0.35, grime=0.45, spec=0.3, gloss=0.5,
+                     pattern="paint", grain=0.2, bevel=0.0015, rust=0.15),
+    # medigel: a soft blue tube, glossy print
+    "medigel": look(srgb(40, 104, 176), srgb(90, 140, 190), wear=0.1, grime=0.2, spec=0.3, gloss=0.6,
+                    pattern="smooth", bevel=0.002),
+    # ammo pack: the dark red top and the grey-olive body of the sealed foil pack
+    "pack_red": look(srgb(118, 30, 26), srgb(150, 60, 50), wear=0.12, grime=0.3, spec=0.2, gloss=0.45,
+                     pattern="smooth", bevel=0.002),
+    "pack_grey": look(srgb(98, 100, 88), srgb(130, 130, 118), wear=0.12, grime=0.3, spec=0.2, gloss=0.45,
+                      pattern="smooth", bevel=0.002),
     "injector": look(srgb(96, 102, 74), srgb(140, 140, 120), wear=0.2, grime=0.3, spec=0.25, gloss=0.45,
                      pattern="smooth", bevel=0.001),
     "pack_olive": look(srgb(112, 106, 80), srgb(140, 132, 104), wear=0.15, grime=0.4, spec=0.12, gloss=0.35,
