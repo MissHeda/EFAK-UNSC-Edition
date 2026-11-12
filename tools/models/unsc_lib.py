@@ -313,7 +313,7 @@ def read_mlod(path):
             e = data.index(b"\0", off)
             tex = data[off:e].decode("latin-1")
             off = data.index(b"\0", e + 1) + 1
-            faces.append((list(reversed(verts)), tex))
+            faces.append((verts, tex))   # as stored: with the mirrored y that is outward here
         assert data[off:off + 4] == b"TAGG"
         off += 4
         while True:

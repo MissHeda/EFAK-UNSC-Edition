@@ -58,7 +58,7 @@ def read_mlod(path):
             off = tex_end + 1
             mat_end = data.index(b"\0", off)
             off = mat_end + 1
-            faces.append((list(reversed(verts)), tex))
+            faces.append((verts, tex))   # as stored: with the mirrored y that is outward here
         # taggs
         assert data[off:off + 4] == b"TAGG"
         off += 4
