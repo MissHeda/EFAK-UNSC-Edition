@@ -267,6 +267,198 @@ class contents:
         GROUP.pop()
 
 
+FAR_DROP = [False]   # True: the parts made now leave the far LODs like the contents do (see eggcrate)
+
+# --- Pieces from other mods ----------------------------------------------------------------------
+# Some of what is packed in the kits is not built here but taken from other Halo mods (see
+# imports/README.md for what, from where and under which licence): their MLOD (debinarized) and their
+# colour texture as PNG lie in imports/<mod>/. imported() puts such a model in as parts of the kit;
+# the bake then copies its texture into the kit's own (through the UV layer "src").
+IMPORTS = os.path.join(HERE, "imports")
+_MLODS = {}
+
+
+def read_mlod(path):
+    """The visual LODs of an MLOD p3d, finest first: [(resolution, points, faces)], a face being
+    ([(point index, (u, v))...], texture path). Points come back in our Blender space."""
+    if path in _MLODS:
+        return _MLODS[path]
+    with open(path, "rb") as f:
+        data = f.read()
+    assert data[:4] == b"MLOD", "not an MLOD file: " + path
+    n_lods = struct.unpack_from("<I", data, 8)[0]
+    off = 12
+    lods = []
+    for _ in range(n_lods):
+        assert data[off:off + 4] == b"P3DM"
+        _, _, npts, nnorm, nfaces, _ = struct.unpack_from("<IIIIII", data, off + 4)
+        off += 28
+        pts = []
+        for i in range(npts):
+            x, y, z, _ = struct.unpack_from("<fffI", data, off)
+            pts.append((x, -y, z))
+            off += 16
+        off += 12 * nnorm
+        faces = []
+        for i in range(nfaces):
+            nv = struct.unpack_from("<I", data, off)[0]
+            off += 4
+            verts = []
+            for k in range(4):
+                pi, ni, u, v = struct.unpack_from("<IIff", data, off)
+                off += 16
+                if k < nv:
+                    verts.append((pi, (u, 1.0 - v)))
+            off += 4
+            e = data.index(b"\0", off)
+            tex = data[off:e].decode("latin-1")
+            off = data.index(b"\0", e + 1) + 1
+            faces.append((list(reversed(verts)), tex))
+        assert data[off:off + 4] == b"TAGG"
+        off += 4
+        while True:
+            off += 1
+            e = data.index(b"\0", off)
+            name = data[off:e].decode("latin-1")
+            off = e + 1
+            size = struct.unpack_from("<I", data, off)[0]
+            off += 4
+            if name == "#EndOfFile#":
+                break
+            off += size
+        res = struct.unpack_from("<f", data, off)[0]
+        off += 4
+        if res < 900 and faces:
+            lods.append((res, pts, faces))
+    lods.sort(key=lambda l: l[0])
+    _MLODS[path] = lods
+    return lods
+
+
+def _import_lod(file, max_faces):
+    lods = read_mlod(os.path.join(IMPORTS, file))
+    for lod in lods:
+        if len(lod[2]) <= max_faces:
+            return lod
+    return lods[-1]
+
+
+def _import_matrix(file, rot, scale, max_faces):
+    """The matrix that turns and scales the model, and its size then (w, d, h)."""
+    res, pts, faces = _import_lod(file, max_faces)
+    used = {v[0] for vs, _ in faces for v in vs}
+    m = _euler(rot).to_matrix().to_4x4() @ Matrix.Scale(scale, 4)
+    ps = [m @ Vector(pts[i]) for i in used]
+    lo = Vector([min(p[i] for p in ps) for i in range(3)])
+    hi = Vector([max(p[i] for p in ps) for i in range(3)])
+    return m, lo, hi
+
+
+def imported_size(file, rot=(0, 0, 0), scale=1.0, max_faces=900):
+    """(w, d, h) of an imported model once turned and scaled - for cutting its pocket."""
+    m, lo, hi = _import_matrix(file, rot, scale, max_faces)
+    return tuple(hi - lo)
+
+
+def imported(file, at, rot=(0, 0, 0), scale=1.0, max_faces=900, spec=0.2, gloss=0.4, textures=None):
+    """Puts a model from imports/ into the kit: turned by rot (degrees about x, y, z), scaled, its
+    footprint centred on at's x/y and standing on at's z. Uses the finest LOD of the file with at most
+    max_faces faces. textures: {name in the model: PNG to use instead} swaps a texture (the
+    injector's drug band). One part per texture; nothing in the shadow LOD."""
+    if SHADOW[0]:
+        return
+    res, pts, faces = _import_lod(file, max_faces)
+    m, lo, hi = _import_matrix(file, rot, scale, max_faces)
+    shift = Vector((at[0] - (lo.x + hi.x) / 2, at[1] - (lo.y + hi.y) / 2, at[2] - lo.z))
+    folder = os.path.dirname(os.path.join(IMPORTS, file))
+    by_tex = {}
+    for vs, tex in faces:
+        by_tex.setdefault(tex, []).append(vs)
+    with cluster():
+        for tex, fs in by_tex.items():
+            base = os.path.splitext(os.path.basename(tex.replace("\\", "/")))[0].lower()
+            if textures and base in textures:
+                base = textures[base]
+            png = os.path.join(folder, base + ".png")
+            name = "imp_" + base.replace(".", "_")
+            if name not in LOOKS:
+                LOOKS[name] = look(srgb(128, 128, 128), wear=0.0, grime=0.25, spec=spec, gloss=gloss, bevel=0.0004,
+                                   pattern="smooth", grain=0.0, streaks=0.0)
+                LOOKS[name]["image"] = png if os.path.exists(png) else None
+            bm = bmesh.new()
+            uv = bm.loops.layers.uv.new("src")
+            verts = {}
+            for vs in fs:
+                for pi, _ in vs:
+                    if pi not in verts:
+                        verts[pi] = bm.verts.new(m @ Vector(pts[pi]) + shift)
+                try:
+                    f = bm.faces.new([verts[pi] for pi, _ in vs])
+                except ValueError:
+                    continue      # a doubled or degenerate face in the source
+                for l, (_, t) in zip(f.loops, vs):
+                    l[uv].uv = t
+                f.smooth = True
+            _finish(bm, "imported", name, Matrix.Identity(4))
+
+
+
+def eggcrate(F, w, h, depth=0.008, pitch=0.036, look="foam", inside=None):
+    """Convoluted ("egg-crate") foam, the lining of a case lid: a sheet of w x h in the frame F (see
+    frame(): local z out of the surface it lines), its peaks `depth` high, one every `pitch` in a
+    staggered grid. The sheet's rim lies on the surface. inside(x, y) -> bool trims the sheet to a lid
+    that is not a rectangle. Real geometry up close; it leaves the far LODs, where the flat lining
+    under it is enough. No shadow of its own."""
+    if SHADOW[0]:
+        return
+    # six steps a period, and a whole number of periods each way so the rim cuts no peak in half
+    px = w / max(1, round(w / pitch))
+    py = h / max(1, round(h / pitch))
+    nx = max(2, int(round(w / px)) * 6)
+    ny = max(2, int(round(h / py)) * 6)
+    bm = bmesh.new()
+    grid = {}
+    for i in range(nx + 1):
+        for j in range(ny + 1):
+            x = -w / 2 + w * i / nx
+            y = -h / 2 + h * j / ny
+            rim = i in (0, nx) or j in (0, ny)
+            # round peaks and round pits in a staggered grid, the pits a little wider than the peaks
+            v = math.sin(2 * math.pi * (x + w / 2) / px) * math.sin(2 * math.pi * (y + h / 2) / py)
+            v = math.copysign(abs(v) ** 0.75, v)
+            z = 0.0 if rim else depth * (0.5 + 0.5 * v)
+            grid[i, j] = (x, y, z)
+    verts = {}
+
+    def vert(i, j):
+        if (i, j) not in verts:
+            verts[i, j] = bm.verts.new(grid[i, j])
+        return verts[i, j]
+
+    for i in range(nx):
+        for j in range(ny):
+            if inside is not None:
+                cx = (grid[i, j][0] + grid[i + 1, j + 1][0]) / 2
+                cy = (grid[i, j][1] + grid[i + 1, j + 1][1]) / 2
+                if not inside(cx, cy):
+                    continue
+            bm.faces.new((vert(i, j), vert(i + 1, j), vert(i + 1, j + 1), vert(i, j + 1)))
+    # a trimmed sheet: its new rim comes down onto the surface too
+    for e in bm.edges:
+        if e.is_boundary:
+            for v in e.verts:
+                v.co.z = 0.0
+    for f in bm.faces:
+        f.smooth = True
+    FAR_DROP[0] = True
+    try:
+        ob = _finish(bm, "eggcrate", look, F)
+    finally:
+        FAR_DROP[0] = False
+    ob["hollow"] = True     # a sheet, not a volume: the overlap check leaves it alone
+    return ob
+
+
 def lid_axis(p0, p1):
     """The lid's hinge line, from p0 to p1 (Blender space). The game turns the lid about it."""
     LID_AXIS[:] = [tuple(p0), tuple(p1)]
@@ -291,7 +483,7 @@ def _finish(bm, name, mat, matrix):
     comp.data.foreach_set("value", [len(PARTS)] * len(me.vertices))
     # what is packed inside, so the far LODs can leave it out
     inner = me.attributes.new("inner", "INT", "POINT")
-    inner.data.foreach_set("value", [int(GROUP[-1] == "contents")] * len(me.vertices))
+    inner.data.foreach_set("value", [int(GROUP[-1] == "contents" or FAR_DROP[0])] * len(me.vertices))
     ob = bpy.data.objects.new(name, me)
     bpy.context.scene.collection.objects.link(ob)
     ob.matrix_world = matrix
@@ -957,6 +1149,14 @@ def _build_material(name, lk, projectors, bake_img):
         col = mix(col, srgb(96, 52, 26), math_("MULTIPLY", streak, lk["rust"] * 0.9, clamp=True))
     col = mix(col, srgb(150, 138, 110), dust)
 
+    if lk.get("image"):
+        # an imported part: its own texture through its own UVs, only the kit's grime in the creases
+        uvn = node("ShaderNodeUVMap")
+        uvn.uv_map = "src"
+        src = node("ShaderNodeTexImage", image=bpy.data.images.load(lk["image"], check_existing=True))
+        L.new(uvn.outputs["UV"], src.inputs["Vector"])
+        col = mix(src.outputs["Color"], (0.03, 0.03, 0.03, 1.0), math_("MULTIPLY", cavity, 0.3))
+
     emit_co = node("ShaderNodeEmission")
     L.new(col, emit_co.inputs["Color"])
 
@@ -1101,6 +1301,10 @@ def unwrap(ob, margin=0.004):
     bpy.ops.object.select_all(action="DESELECT")
     ob.select_set(True)
     bpy.context.view_layer.objects.active = ob
+    # the kit's own layout goes into its own layer; "src" (imported parts) keeps their old one
+    atlas = ob.data.uv_layers.get("atlas") or ob.data.uv_layers.new(name="atlas")
+    ob.data.uv_layers.active = atlas
+    atlas.active_render = True
     bpy.ops.object.mode_set(mode="EDIT")
     bpy.ops.mesh.select_all(action="SELECT")
     bpy.ops.uv.smart_project(angle_limit=math.radians(55), island_margin=margin, area_weight=0.0,
@@ -1362,7 +1566,8 @@ def mesh_tris(me, use_comp=False):
     """Game triangles [(pos, normal, uv, group (see group_id), part)] * 3 from a triangulated mesh, CCW seen from
     outside. use_comp keeps the points of different parts apart when they are welded."""
     me.calc_loop_triangles()
-    uv = me.uv_layers.active.data if me.uv_layers.active is not None else None
+    layer = me.uv_layers.get("atlas") or me.uv_layers.active
+    uv = layer.data if layer is not None else None
     cn = me.corner_normals
     lid_attr = me.attributes.get("lid")
     lid_v = [int(round(d.value)) for d in lid_attr.data] if lid_attr is not None else None

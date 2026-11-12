@@ -5,7 +5,7 @@ pouches of Enhanced Utility Pouches into addons/eup (ADDON below).
 """
 import math
 
-from unsc_lib import (box, bolt, cluster, clustered, cyl, decal, frame, hinge, inset, lbox, lcyl, lid, lid_axis,
+from unsc_lib import (box, bolt, cluster, eggcrate, clustered, cyl, decal, frame, hinge, inset, lbox, lcyl, lid, lid_axis,
                       plate, prism, rect, rivets, rrect, screw, bail_latch, vents)
 
 F = (0, -1, 0)   # front normal
@@ -113,7 +113,8 @@ def unsc_case(W, D, H, body, lid_h=0.048, base_h=0.026, cap=0.034, latches=2, ha
         box((W + 0.006, D + 0.016, 0.01), (0, 0, top - 0.005), "frame_black", bevel=0.006, segs=3)
         box((W + 0.006, D + 0.016, lid_h - 0.006), (0, 0, lb + (lid_h - 0.006) / 2), "frame_black", bevel=0.004,
             segs=2, hollow=0.008)
-        box((W + 0.006 - 0.02, D + 0.016 - 0.02, 0.006), (0, 0, top - 0.013), "foam_egg", bevel=0.0015, segs=1)
+        box((W + 0.006 - 0.02, D + 0.016 - 0.02, 0.006), (0, 0, top - 0.013), "foam", bevel=0.0015, segs=1)
+        eggcrate(frame((0, 0, top - 0.016), DOWN, B), W - 0.02, D - 0.01, depth=0.014, pitch=0.046)
         for sy in (-1, 1):
             lbox(frame((0, sy * (D / 2 - 0.018), top - 0.0005), UP, B), (W * 0.62, 0.008, 0.003), (0, 0, 0),
                  "frame_black", cut=0.003, bevel=0.0012)
@@ -161,7 +162,8 @@ def ifak():
             axis="y", bevel=0.0018, segs=2)
         box((0.152, 0.004, 0.114), (0, -D / 2 - 0.0016, 0.066), "olive_dark", cut=0.018, cuts=(0.5, 0.5, 1, 1),
             axis="y", bevel=0.0012, segs=1, hollow=0.005)
-        box((0.13, 0.002, 0.09), (0, -D / 2 - 0.0025, 0.066), "foam_egg", cut=0.01, axis="y", bevel=0.0006, segs=1)
+        box((0.13, 0.002, 0.09), (0, -D / 2 - 0.0025, 0.066), "foam", cut=0.01, axis="y", bevel=0.0006, segs=1)
+        eggcrate(frame((0, -D / 2 - 0.0015, 0.066), B, UP), 0.118, 0.078, depth=0.005, pitch=0.026)
         # raised label field on the lid
         box((0.128, 0.003, 0.066), (0, -D / 2 - 0.009, 0.07), "olive_dark", cut=0.006, axis="y", bevel=0.001,
             segs=1)
@@ -209,7 +211,9 @@ def afak():
     with lid():
         prism(outline, lid_h - 0.014, "shell_grey", (0, 0, lid_z), bevel=0.003, segs=2, hollow=0.008)
         prism(outline, 0.016, "shell_grey", (0, 0, top - 0.016), bevel=0.003, segs=2, taper=0.012)
-        prism(inset(outline, 0.009), 0.005, "foam_egg", (0, 0, top - 0.021), bevel=0.0015, segs=1)
+        prism(inset(outline, 0.009), 0.005, "foam", (0, 0, top - 0.021), bevel=0.0015, segs=1)
+        eggcrate(frame((0, 0, top - 0.021), DOWN, B), W - 0.024, D - 0.024, depth=0.011, pitch=0.042,
+                 inside=lambda x, y: abs(x) + abs(y) < W / 2 + D / 2 - C - 0.02)
         # centre plate with the mark, screwed down
         box((0.135, 0.135, 0.008), (0, 0, top + 0.003), "shell_white", cut=0.01, bevel=0.002, segs=2, taper=0.003)
         for sx in (-1, 1):
@@ -313,7 +317,9 @@ def narcbox():
     with lid():
         prism(outline, 0.03, "poly_green", (0, 0, 0.046), bevel=0.004, segs=2, hollow=0.007)
         prism(outline, 0.014, "poly_green", (0, 0, 0.076), bevel=0.01, segs=3)
-        prism(inset(outline, 0.008), 0.004, "foam_egg", (0, 0, 0.072), bevel=0.0012, segs=1)
+        prism(inset(outline, 0.008), 0.004, "foam", (0, 0, 0.072), bevel=0.0012, segs=1)
+        eggcrate(frame((0, 0, 0.072), DOWN, B), W - 0.03, D - 0.03, depth=0.009, pitch=0.038,
+                 inside=lambda x, y: abs(x) < 0.097 or abs(y) < 0.024)
     lid_axis((-W / 2 + r, D / 2 + 0.002, 0.046), (W / 2 - r, D / 2 + 0.002, 0.046))
     top = 0.09
     # moulded grip grooves along the long sides of the base
@@ -382,7 +388,8 @@ def utility_pouch():
         box((W + 0.004, D + 0.006, 0.005), (0, 0, H + 0.0015), "olive_dark", cut=0.008, bevel=0.002, segs=2)
         box((W + 0.004, D + 0.006, 0.008), (0, 0, H - 0.005), "olive_dark", cut=0.008, bevel=0.0015, segs=1,
             hollow=0.004)
-        box((W - 0.012, D - 0.006, 0.002), (0, 0, H - 0.002), "foam_egg", cut=0.004, bevel=0.0006, segs=1)
+        box((W - 0.012, D - 0.006, 0.002), (0, 0, H - 0.002), "foam", cut=0.004, bevel=0.0006, segs=1)
+        eggcrate(frame((0, 0, H - 0.003), DOWN, B), W - 0.022, D - 0.014, depth=0.004, pitch=0.022)
         box((W - 0.016, 0.006, 0.05), (0, flap_y, H - 0.03), "olive_dark", cut=0.012, cuts=(1, 1, 0, 0),
             axis="y", bevel=0.002, segs=2)
     decal("util_label", (0, flap_y - 0.003, H - 0.026), F, UP, 0.062, depth=0.003)
@@ -428,7 +435,8 @@ def ammo_pouch():
             box((0.05, D + 0.006, 0.004), (x, 0, H - 0.002), "olive_dark", cut=0.004, bevel=0.0015, segs=2)
             box((0.05, D + 0.006, 0.009), (x, 0, H - 0.0085), "olive_dark", cut=0.004, bevel=0.0012, segs=1,
                 hollow=0.0035)
-            box((0.04, D - 0.004, 0.002), (x, 0, H - 0.005), "foam_egg", bevel=0.0005, segs=1)
+            box((0.04, D - 0.004, 0.002), (x, 0, H - 0.005), "foam", bevel=0.0005, segs=1)
+            eggcrate(frame((x, 0, H - 0.006), DOWN, B), 0.034, D - 0.012, depth=0.004, pitch=0.02)
             box((0.032, 0.005, 0.034), (x, -D / 2 - 0.003, H - 0.024), "olive_dark", cut=0.008,
                 cuts=(1, 1, 0, 0), axis="y", bevel=0.0015, segs=2)
             Fs = frame((x, -D / 2 - 0.0055, H - 0.03), F, UP)
