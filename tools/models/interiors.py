@@ -207,7 +207,9 @@ def dressing(c, w=0.06, d=0.04, h=0.012, look="pack_olive", flat=True):
         box((w, h, d), (x, y - h / 2, z), look, bevel=0.0015, segs=1)
         box((w + 0.005, 0.0012, d + 0.005), (x, y - h * 0.45, z), look, bevel=0.0004, segs=1)
         box((w * 0.9, 0.0012, 0.003), (x, y - h - 0.0004, z + d * 0.36), "red", bevel=0.0003, segs=1)
-        print_on(image, (x, y - h, z - d * 0.06), (0, -1, 0), (0, 0, 1), w * 0.92, look=look)
+        # the IFAK lies on its back with the latch towards the user: like the label on its lid, the
+        # print reads from that side, its top towards the hinge (-z here)
+        print_on(image, (x, y - h, z - d * 0.06), (0, -1, 0), (0, 0, -1), w * 0.92, look=look)
 
 
 @clustered
