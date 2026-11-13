@@ -1703,15 +1703,23 @@ def shadow_open_edges(tris):
 # LOD 1, 2 and 4: (leave out parts smaller than this in metres, merge flat faces within this many degrees)
 # (drop parts smaller than, dissolve flat faces within degrees, keep the contents) per LOD 1, 2, 4, 8,
 # 16: the contents only matter up close, where someone has the lid open; far away a kit is its case.
-# Arma picks a LOD by how many faces fit the model's size on screen, and these models are small: at one
-# to four metres it is already drawing the LAST LOD. So there are two models of every kit:
-#   the kit itself (in an inventory holder, always shut): what is packed inside is in no LOD at all,
-#     and the last LOD still has everything a player sees from standing height;
-#   the kit's open twin (<kit>_open.p3d, the prop efku_lids swings open): the contents, the cut foam
-#     and the lid lining in every LOD, only their smallest parts go.
+# Which LOD Arma draws, measured in game with colour-coded LODs (EFKU_LODTEST, EFKU_LodTest.VR): it has
+# a face budget per object that shrinks with distance and with the object's size. A kit in a ground
+# holder draws its first LOD up to about 2.5 m and its LAST one from 4 m on, whatever lies between
+# and whatever the LODs' resolution numbers are; the kit's open twin, a tiny object of its own, draws
+# its LAST LOD always, even at arm's length. So the last LOD is the one players see, and it has to be
+# complete - a kit must look the same shut and open, near and at twenty metres and beyond:
+#   <kit>.p3d       (in a holder, always shut): one LOD, complete, without what is packed inside
+#   <kit>_open.p3d  (the prop efku_lids swings open): one LOD, complete, with the contents
+# A second LOD would have to leave something out to be worth having (merging flat faces saves nothing
+# on these bevelled parts), and whatever it left out would vanish at four metres.
 # (drop parts smaller than, dissolve flat faces within degrees, keep the contents) per LOD.
-LODS = ((0.0, 0.0, False), (0.006, 1.0, False), (0.012, 2.0, False), (0.02, 3.0, False), (0.035, 5.0, False))
-LODS_OPEN = ((0.0, 0.0, True), (0.004, 1.0, True), (0.008, 2.0, True), (0.012, 3.0, True), (0.016, 4.0, True))
+LODS = ((0.0, 0.0, False),)
+LODS_OPEN = ((0.0, 0.0, True),)
+
+
+# The resolution each LOD of a chain is stored under.
+RESOLUTIONS = (1, 2, 4, 8, 16, 32)
 
 
 def write_p3d(path, ob, tex, mat, shadow=None, lods_spec=None):
@@ -1722,10 +1730,21 @@ def write_p3d(path, ob, tex, mat, shadow=None, lods_spec=None):
     # a small kit must not lose its body: no part above a third of the kit's size is ever dropped
     bb = [ob.matrix_world @ v.co for v in ob.data.vertices]
     span = max(max(p[i] for p in bb) - min(p[i] for p in bb) for i in range(3))
-    for i, (drop, dissolve, keep) in enumerate(lods_spec or LODS):
+    # EFKU_LODTEST (tools/ingame_test, EFKU_LodTest.VR): every LOD after the first in a flat colour of
+    # its own, to see in game which one is drawn from where. "A": the usual resolutions; "B": the same
+    # meshes at resolutions far apart; "C": the same mesh in every LOD at the usual resolutions.
+    test = os.environ.get("EFKU_LODTEST", "")
+    colours = ["", "#(argb,8,8,3)color(1,0,0,1,co)", "#(argb,8,8,3)color(0,1,0,1,co)",
+               "#(argb,8,8,3)color(0,0,1,1,co)", "#(argb,8,8,3)color(1,0,1,1,co)", "#(argb,8,8,3)color(1,1,0,1,co)"]
+    spec = list(lods_spec or LODS)
+    for i, (drop, dissolve, keep) in enumerate(spec):
+        if test == "C":
+            drop, dissolve, keep = spec[0]
         me = lod_mesh(ob, drop=min(drop, span / 3), dissolve=dissolve, inner=keep)
-        data, npt, nf = lod_bytes(float(2 ** i), mesh_tris(me), tex, mat, selections=group_names())
-        print("LOD", 2 ** i, "points", npt, "faces", nf)
+        res = float(RESOLUTIONS[i]) if not test else float((1, 2, 4, 8, 16, 32)[i] if test in ("A", "C") else (1, 40, 160, 640, 2560, 9000)[i])
+        ltex, lmat = (tex, mat) if not (test and i) else (colours[i], "")
+        data, npt, nf = lod_bytes(res, mesh_tris(me), ltex, lmat, selections=group_names())
+        print("LOD", res, "points", npt, "faces", nf)
         lods.append(data)
         last = me
     data, npt, nf = lod_bytes(10000.0, shadow if shadow else hull_tris(last), "", "", sharp=True,
