@@ -552,75 +552,111 @@ def special_ammo():
     return 4096
 
 
-ORD = dict(W=0.56, D=0.22, H=0.135, seam=0.07, wall=0.01, floor=0.026)
+# The ordnance case: width, depth, height, the seam's height, wall and floor thickness. About two
+# thirds of a real rocket case - a two-hand load with a grip on each end and one on the front.
+ORD = dict(W=0.78, D=0.27, H=0.17, seam=0.088, wall=0.012, floor=0.03)
+BUMP = dict(bx=0.095, by=0.07, proud=0.008, r=0.016)
 
 
-def _bumper(sx, sy, z0, z1, look="bumper_tan", bx=0.07, by=0.052, proud=0.006, ch=0.014):
-    """A corner bumper of the ordnance case: an angle of rubber round the corner (sx, sy), from z0 to
-    z1, standing proud of both faces, its outer corner cut. Only as deep as the wall, so the open tub
-    shows none of it."""
-    W, D = ORD["W"], ORD["D"]
-    cx, cy = W / 2, D / 2
-    t = 0.002
-    pts = [(cx - bx, cy + proud), (cx + proud - ch, cy + proud), (cx + proud, cy + proud - ch), (cx + proud, cy - by),
-           (cx - t, cy - by), (cx - t, cy - t), (cx - bx, cy - t)]
+def _bumper_outline(sx, sy, proud, inner):
+    """Outline of a corner bumper round the corner (sx, sy) of the ordnance case: bx along the long
+    face, by along the end, standing `proud` of both, its outer corner rounded. inner=True: an angle
+    only as deep as the wall (2 mm into it), so the open tub shows none of it; False: the whole
+    corner field, for the caps on top and underneath."""
+    import math as _mm
+    cx, cy = ORD["W"] / 2, ORD["D"] / 2
+    bx, by, r = BUMP["bx"], BUMP["by"], BUMP["r"] + (proud - BUMP["proud"])
+    pts = [(cx - bx, cy + proud)]
+    for k in range(7):
+        a = _mm.radians(90 - 15 * k)
+        pts.append((cx + proud - r + r * _mm.cos(a), cy + proud - r + r * _mm.sin(a)))
+    pts.append((cx + proud, cy - by))
+    if inner:
+        pts += [(cx - 0.002, cy - by), (cx - 0.002, cy - 0.002), (cx - bx, cy - 0.002)]
+    else:
+        pts.append((cx - bx, cy - by))
     pts = [(sx * x, sy * y) for x, y in pts]
     if sx * sy < 0:
         pts.reverse()
-    prism(pts, z1 - z0, look, (0, 0, z0), bevel=0.003, segs=2)
+    return pts
+
+
+def _bumper(sx, sy, z0, z1, cap_z, look="bumper_tan"):
+    """One corner bumper: the angle round the corner from z0 to z1 and its cap at cap_z (the foot
+    under a lower bumper, the cap on an upper one). The cap overhangs the angle by a lip and the
+    angle runs into it, so the two read as one moulding without a seam between them."""
+    p = BUMP["proud"]
+    prism(_bumper_outline(sx, sy, p, True), z1 - z0, look, (0, 0, z0), bevel=0.0035, segs=3)
+    prism(_bumper_outline(sx, sy, p + 0.0015, False), 0.008, look, (0, 0, cap_z), bevel=0.003, segs=3)
+
+
+@clustered
+def bar_handle(center, normal, length, look="black_metal"):
+    """A fixed grip on a face: two bolted mounts and a bar with a rubber sleeve, standing off the
+    face far enough for a gloved hand."""
+    Fh = frame(center, normal, UP)
+    for sx in (-1, 1):
+        lbox(Fh, (0.022, 0.03, 0.03), (sx * length / 2, 0, 0), look, cut=0.004, bevel=0.002, segs=2)
+        lcyl(Fh, 0.0035, 0.003, (sx * length / 2, -0.008, 0.03), "steel", n=12)
+    lbox(Fh, (length + 0.022, 0.012, 0.012), (0, 0.004, 0.022), look, cut=0.003, bevel=0.002, segs=2)
+    lbox(Fh, (length * 0.7, 0.016, 0.016), (0, 0.004, 0.02), "rubber", cut=0.004, bevel=0.002, segs=2)
 
 
 def ordnance_crate():
     """Explosives and ordnance case, after the UNSC's rocket case: a long, flat shell of red-brown
-    polymer split at half height, tan rubber bumpers on its eight corners, two draw latches on the
-    front, the stencil across the lid."""
+    polymer split at half height, tan rubber bumpers moulded round its eight corners, two draw
+    latches and a grip on the front, a grip on each end, the stencil across the lid."""
     W, D, H, zl, wall, floor = (ORD[k] for k in ("W", "D", "H", "seam", "wall", "floor"))
     body = "ord_brown"
-    # the tub: a floor with cut lower edges, a wall round the well, a gasket on its rim
-    box((W - 0.012, D - 0.012, floor - 0.004), (0, 0, 0.004 + (floor - 0.004) / 2), body, cut=0.006,
+    bx, by, p = BUMP["bx"], BUMP["by"], BUMP["proud"]
+    # the tub: a floor set in from the wall, the wall round the well, a gasket on its rim
+    box((W - 0.014, D - 0.014, floor - 0.004), (0, 0, 0.004 + (floor - 0.004) / 2), body, cut=0.006,
         cuts=(1, 1, 0, 0), axis="x", bevel=0.003, segs=2)
-    box((W, D, zl - 0.012), (0, 0, (0.012 + zl) / 2), body, bevel=0.003, segs=2, hollow=wall)
+    box((W, D, zl - 0.012), (0, 0, (0.012 + zl) / 2), body, bevel=0.004, segs=3, hollow=wall)
     box((W - 0.004, D - 0.004, 0.004), (0, 0, zl + 0.0005), "rubber", bevel=0.001, segs=1, hollow=0.006)
-    # a rib round the tub under the seam, and two skids
-    box((W + 0.004, D + 0.004, 0.008), (0, 0, zl - 0.012), body, bevel=0.002, segs=2, hollow=0.012)
+    # a rib round the tub under the seam, two skids, the rail the hinge sits on
+    box((W + 0.004, D + 0.004, 0.01), (0, 0, zl - 0.014), body, bevel=0.002, segs=2, hollow=0.014)
     for sx in (-1, 1):
-        box((0.03, D * 0.8, 0.005), (sx * W * 0.22, 0, 0.0025), "frame_black", bevel=0.0015, segs=1)
+        box((0.04, D * 0.8, 0.005), (sx * W * 0.2, 0, 0.0025), "frame_black", bevel=0.0015, segs=1)
+    box((W * 0.62, 0.008, 0.012), (0, D / 2 + 0.004, zl - 0.007), body, bevel=0.002, segs=2)
     for sx in (-1, 1):
         for sy in (-1, 1):
-            _bumper(sx, sy, 0.0, zl - 0.003)
-            # the bumper's foot, under the corner
-            box((0.076, 0.058, 0.005), (sx * (W / 2 - 0.032), sy * (D / 2 - 0.023), 0.0025), "bumper_tan", cut=0.014,
-                cuts=(sx < 0 and sy < 0, sx > 0 and sy < 0, sx > 0 and sy > 0, sx < 0 and sy > 0), bevel=0.002, segs=2)
+            _bumper(sx, sy, 0.004, zl - 0.001, 0.0)
     top = H
     lb = zl + 0.002
     with lid():
         # the lid: a skirt and a top plate with cut upper edges, a raised field for the stencil,
         # lined with egg-crate foam
-        box((W, D, top - 0.01 - lb), (0, 0, (lb + top - 0.01) / 2), body, bevel=0.003, segs=2, hollow=wall)
-        box((W, D, 0.01), (0, 0, top - 0.005), body, cut=0.006, cuts=(0, 0, 1, 1), axis="x", bevel=0.003, segs=2)
-        box((W - 0.16, D - 0.05, 0.002), (0, 0, top + 0.001), body, cut=0.012, bevel=0.0012, segs=1)
-        box((W + 0.004, D + 0.004, 0.008), (0, 0, lb + 0.012), body, bevel=0.002, segs=2, hollow=0.012)
-        box((W - 2 * wall - 0.002, D - 2 * wall - 0.002, 0.004), (0, 0, top - 0.012), "foam", bevel=0.0015, segs=1)
-        eggcrate(frame((0, 0, top - 0.014), DOWN, B), W - 2 * wall - 0.006, D - 2 * wall - 0.006, depth=0.012,
-                 pitch=0.044)
+        box((W, D, top - 0.012 - lb), (0, 0, (lb + top - 0.012) / 2), body, bevel=0.004, segs=3, hollow=wall)
+        box((W, D, 0.012), (0, 0, top - 0.006), body, cut=0.006, cuts=(0, 0, 1, 1), axis="x", bevel=0.003, segs=2)
+        box((W - 2 * bx - 0.03, D - 0.06, 0.002), (0, 0, top + 0.001), body, cut=0.012, bevel=0.0012, segs=1)
+        box((W + 0.004, D + 0.004, 0.01), (0, 0, lb + 0.014), body, bevel=0.002, segs=2, hollow=0.014)
+        box((W * 0.62, 0.008, 0.012), (0, D / 2 + 0.004, lb + 0.007), body, bevel=0.002, segs=2)
+        box((W - 2 * wall - 0.002, D - 2 * wall - 0.002, 0.004), (0, 0, top - 0.014), "foam", bevel=0.0015, segs=1)
+        eggcrate(frame((0, 0, top - 0.016), DOWN, B), W - 2 * wall - 0.006, D - 2 * wall - 0.006, depth=0.014,
+                 pitch=0.046)
         for sx in (-1, 1):
             for sy in (-1, 1):
-                _bumper(sx, sy, lb + 0.002, top)
-                box((0.076, 0.058, 0.005), (sx * (W / 2 - 0.032), sy * (D / 2 - 0.023), top + 0.0025), "bumper_tan",
-                    cut=0.014, cuts=(sx < 0 and sy < 0, sx > 0 and sy < 0, sx > 0 and sy > 0, sx < 0 and sy > 0),
-                    bevel=0.002, segs=2)
-    hy = D / 2 + 0.005
+                _bumper(sx, sy, lb + 0.001, top - 0.002, top - 0.002)
+    # the hinge on its rails, clear of the bumpers, so the lid swings past them
+    hy = D / 2 + 0.011
     lid_axis((-W / 2, hy, zl + 0.001), (W / 2, hy, zl + 0.001))
     for x in (-W * 0.2, W * 0.2):
-        bail_latch((x, -D / 2, lb), F, UP, w=0.036, below=0.02, body_off=0.0, lid_off=0.0, look="black_metal")
-    hinge((-W * 0.3, hy, zl + 0.001), (W * 0.3, hy, zl + 0.001), r=0.004, knuckles=9, look="black_metal")
-    # the stencil across the lid, reading from the front; small marks on the faces
-    decal("ord_label", (0, 0, top + 0.002), UP, B, W - 0.2, depth=0.005)
-    decal("ord_front", (0, -D / 2, 0.036), F, UP, 0.11, depth=0.004)
-    decal("unsc_white", (0, -D / 2, lb + (top - lb) * 0.5), F, UP, 0.07, depth=0.004)
-    decal("ord_front", (0, D / 2, 0.104), B, UP, 0.09, depth=0.004)
-    decal("code_grey", (W / 2, 0, 0.033), R, UP, 0.04, depth=0.004)
-    decal("side_up_white", (-W / 2, 0, 0.033), L_, UP, 0.04, depth=0.004)
+        bail_latch((x, -D / 2, lb), F, UP, w=0.04, below=0.022, body_off=0.0, lid_off=0.0, look="black_metal")
+    hinge((-W * 0.3, hy, zl + 0.001), (W * 0.3, hy, zl + 0.001), r=0.0045, knuckles=11, look="black_metal")
+    # grips: one on the front between the latches, one on each end between the bumpers
+    zg = 0.012 + (zl - 0.012 - 0.014) * 0.5
+    bar_handle((0, -D / 2, zg), F, 0.15)
+    for sx in (-1, 1):
+        bar_handle((sx * W / 2, 0, zg), (sx, 0, 0), D - 2 * by - 0.05)
+    # the stencil across the lid, reading from the front; small marks on the lid's faces
+    zm = lb + 0.019 + (top - 0.012 - lb - 0.019) * 0.5
+    decal("ord_label", (0, 0, top + 0.002), UP, B, 0.5, depth=0.005)
+    decal("ord_front", (-0.215, -D / 2, zm), F, UP, 0.12, depth=0.004)
+    decal("unsc_white", (0.215, -D / 2, zm), F, UP, 0.09, depth=0.004)
+    decal("ord_front", (0, D / 2, zm), B, UP, 0.11, depth=0.004)
+    decal("code_grey", (W / 2, 0, zm), R, UP, 0.045, depth=0.004)
+    decal("side_up_white", (-W / 2, 0, zm), L_, UP, 0.05, depth=0.004)
     return 4096
 
 

@@ -104,6 +104,12 @@ def print_on(image, center, normal, up, width, look=None, depth=0.004):
 #   injector  UNSC Infirmary's auto-injector, 20 cm there - at 55 %
 #   ammo pack OPTRE's sealed M118 7.62x51 pack
 #   magazine  OPTRE's MA5 series magazine and BR magazine
+# How the sniper magazines and the 14.5 mm packets lie in the special ammunition case: flat, the
+# side with their markings up and reading from the front.
+SRS_ROT = (0, 0, 0)
+M99_ROT = (0, 0, 0)
+PKT_ROT = (0, 90, 180)
+
 _REAL = {
     "biofoam": ("optre/biofoam.p3d", (-90, 0, 0), 0.36, 900),
     "medigel": ("unsci/medigel_tube.p3d", (-90, 0, 0), 1.0, 700, -90),
@@ -113,11 +119,11 @@ _REAL = {
     "br_mag": ("optre/br_mag.p3d", (90, 0, 0), 0.5, 500),
     # the two cases of this mod's own: OPTRE's M41 twin HEAT tube and M44 Lykoi HEAT rocket, its
     # SRS99C and M99 magazines and its 14.5x114 packet
-    "m41_heat": ("optre/m41_heat.p3d", (0, 0, 180), 0.42, 4000),   # turned: its print reads from the front
-    "lykoi": ("optre/lykoi_mag.p3d", (0, 0, 0), 0.42, 3000),
-    "srs_mag": ("optre/srs99c_mag.p3d", (0, 0, 0), 0.5, 600),
-    "m99_mag": ("optre/m99_mag.p3d", (0, 0, 0), 0.36, 700),
-    "pkt_145": ("optre/pkt_145.p3d", (0, 90, 0), 0.5, 400),
+    "m41_heat": ("optre/m41_heat.p3d", (0, 0, 180), 0.6, 4000),   # turned: its print reads from the front
+    "lykoi": ("optre/lykoi_mag.p3d", (0, 0, 0), 0.6, 3000),
+    "srs_mag": ("optre/srs99c_mag.p3d", SRS_ROT, 0.45, 600),
+    "m99_mag": ("optre/m99_mag.p3d", M99_ROT, 0.34, 700),
+    "pkt_145": ("optre/pkt_145.p3d", PKT_ROT, 0.5, 400),
 }
 
 
@@ -843,57 +849,47 @@ def ammo_sack(c, w=0.046, d=0.066, h=0.013):
 
 
 def fill_special_ammo():
-    """Special ammunition case: SRS99 magazines on edge, M99 magazines lying flat, 14.5x114 packets
-    and sealed foil sacks of loose rounds - four columns, each piece in its own cut."""
+    """Special ammunition case: three SRS99 magazines and a foil sack of loose rounds in the back
+    row, an M99 magazine, two 14.5x114 packets and a second sack in the front row - everything
+    lying flat, its markings up, each piece in its own cut."""
     W, D, H, lid_h, cap = 0.36, 0.18, 0.2, 0.042, 0.03
-    srs = _REAL["srs_mag"]
     pkt = _REAL["pkt_145"]
     with contents():
-        pockets = []
-        sw, sd, sh = imported_size(srs[0], (90, 0, 0), srs[2], srs[3])
-        mags = [(-0.097, y) for y in (-0.054, -0.018, 0.018, 0.054)]
-        for x, y in mags:
-            pockets.append((x, y, sw, sd))
-        m99 = [(-0.0186, y) for y in (-0.036, 0.036)]
-        for x, y in m99:
-            pockets.append(real_pocket("m99_mag", (x, y, 0), axis="x"))
+        yb, yf = 0.0405, -0.0405
+        srs = [(x, yb) for x in (-0.1012, -0.0274, 0.0464)]
+        m99 = [(-0.0953, yf)]
+        pkts = [(-0.0222, yf), (0.0457, yf)]
+        sacks = [(0.1107, yb), (0.1107, yf)]
+        pockets = [real_pocket("srs_mag", (x, y, 0), axis="x") for x, y in srs]
+        pockets += [real_pocket("m99_mag", (x, y, 0), axis="x") for x, y in m99]
         pw, pd, ph = imported_size(pkt[0], pkt[1], pkt[2], pkt[3])
-        pkts = [(0.0498, y) for y in (-0.036, 0.036)]
-        for x, y in pkts:
-            pockets.append((x, y, pw, pd))
-        sacks = [(0.1092, y) for y in (-0.039, 0.039)]
-        for x, y in sacks:
-            pockets.append((x, y, 0.046, 0.066))
-        zf = case_tray(W, D, H, lid_h, cap, pockets, h=0.018)
-        for x, y in mags:
-            imported(srs[0], (x, y, zf - (sh - 0.019)), rot=(90, 0, 0), scale=srs[2], max_faces=srs[3], spec=0.25,
-                     gloss=0.4)
+        pockets += [(x, y, pw, pd) for x, y in pkts]
+        pockets += [(x, y, 0.044, 0.066) for x, y in sacks]
+        zf = case_tray(W, D, H, lid_h, cap, pockets, h=0.016)
+        for x, y in srs:
+            real("srs_mag", (x, y, zf - 0.004), axis="x", spec=0.25, gloss=0.4)
         for x, y in m99:
             real("m99_mag", (x, y, zf), axis="x", spec=0.25, gloss=0.4)
         for k, (x, y) in enumerate(pkts):
             imported(pkt[0], (x, y, zf - (ph - 0.02)), rot=pkt[1], scale=pkt[2], max_faces=pkt[3], spec=0.15,
                      gloss=0.35, textures={"sniper_co": "pkt_145_apfsds_co" if k else "pkt_145_hedp_co"})
         for x, y in sacks:
-            ammo_sack((x, y, zf))
+            ammo_sack((x, y, zf), w=0.044)
 
 
 def fill_ordnance_crate():
-    """Explosives and ordnance case: an M41 twin HEAT tube along the front, an M44 Lykoi HEAT rocket
-    behind it and a demolition charge beside that, each half sunk into deep cut foam."""
-    W, D, H, zl, wall, floor = 0.56, 0.22, 0.135, 0.07, 0.01, 0.026
+    """Explosives and ordnance case: an M41 twin HEAT tube along the front and an M44 Lykoi HEAT
+    rocket behind it, each half sunk into deep cut foam."""
+    from kits import ORD
+    W, D, zl, wall, floor = (ORD[k] for k in ("W", "D", "seam", "wall", "floor"))
     tw, td = W - 2 * wall - 0.004, D - 2 * wall - 0.004
     with contents():
         zf = floor + 0.004
         box((tw, td, 0.004), (0, 0, zf - 0.002), "foam", bevel=0.0015, segs=2)
-        tube = (0.0, -0.05)
-        rocket = (-0.068, 0.047)
-        charge = (0.192, 0.047)
+        tube = (0.0, -0.057)
+        rocket = (0.0, 0.063)
         pockets = [real_pocket("m41_heat", (tube[0], tube[1], 0), axis="x"),
-                   real_pocket("lykoi", (rocket[0], rocket[1], 0), axis="x"),
-                   (charge[0], charge[1], 0.09, 0.05)]
+                   real_pocket("lykoi", (rocket[0], rocket[1], 0), axis="x")]
         pocket_foam(-tw / 2, -td / 2, tw / 2, td / 2, zf, zl - 0.006 - zf, pockets)
         real("m41_heat", (tube[0], tube[1], zf), axis="x", spec=0.3, gloss=0.45)
         real("lykoi", (rocket[0], rocket[1], zf), axis="x", spec=0.25, gloss=0.4)
-        # the charge on a foam block, its top level with the tray
-        box((0.09, 0.05, 0.012), (charge[0], charge[1], zf + 0.006), "foam", bevel=0.001, segs=1)
-        demo_block((charge[0], charge[1], zf + 0.012))

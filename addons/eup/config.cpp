@@ -28,6 +28,17 @@ class CfgPatches {
         efku_lidProp = QUOTE(DOUBLES(efku_LidProp,FILE)); \
     }
 
+// EUP's three bags are hard boxes here, and are called that.
+#define BOX_LOOK(CLASS,FILE,NAME,DESC) \
+    class CLASS: eup_PouchBase { \
+        model = QPATHTOF(data\FILE.p3d); \
+        displayName = NAME; \
+        descriptionShort = DESC; \
+        picture = QPATHTOF(ui\DOUBLES(FILE,ca).paa); \
+        editorPreview = QPATHTOF(ui\DOUBLES(FILE,ca).paa); \
+        efku_lidProp = QUOTE(DOUBLES(efku_LidProp,FILE)); \
+    }
+
 // The two cases are items like EUP's pouches (its base class), only brought by this mod.
 #define CASE_ITEM(CLASS,FILE,NAME,DESC,EMPTY,MASS) \
     class CLASS: eup_PouchBase { \
@@ -50,20 +61,28 @@ class CfgWeapons {
     class CBA_MiscItem_ItemInfo;
     POUCH_LOOK(eup_UtilityPouch,utility_pouch);
     POUCH_LOOK(eup_AmmoPouch,ammo_pouch);
-    POUCH_LOOK(eup_AmmoBag,ammo_bag);
-    POUCH_LOOK(eup_EngineerBag,engineer_bag);
-    POUCH_LOOK(eup_CBRNBag,cbrn_bag);
+    BOX_LOOK(eup_AmmoBag,ammo_bag,"Ammo Box","A box of ammunition for the team - belts, magazines, grenades, rockets. Takes magazines only.");
+    BOX_LOOK(eup_EngineerBag,engineer_bag,"Engineer Box","Tools and explosives in one box - toolkit, wire cutter, defusal kit, charges and mines.");
+    BOX_LOOK(eup_CBRNBag,cbrn_bag,"CBRN Box","Protective gear in one box - CBRN suit, respirator, breathing set, detector watch, filters and decon kit.");
 
     // Masses as EUP has them: the room the packed case takes, about 40% of its default capacity;
     // EFAK_emptyWeight is what the empty case weighs (1 mass unit = 0.1 lb).
-    CASE_ITEM(efku_SpecialAmmoCase,special_ammo,"Special Ammunition Case","A case for the marksmen's ammunition: sniper magazines and sealed packets of rounds. Takes magazines only.",12,95);
-    CASE_ITEM(efku_OrdnanceCase,ordnance_crate,"Explosives + Ordnance Case","A padded case for rockets and missiles, demolition charges, mines and hand grenades. Takes nothing else.",18,120);
+    CASE_ITEM(efku_SpecialAmmoCase,special_ammo,"Special Ammunition Box","A box for the marksmen's ammunition: sniper magazines and sealed packets of rounds. Takes magazines only.",12,95);
+    CASE_ITEM(efku_OrdnanceCase,ordnance_crate,"Explosives + Ordnance Box","A padded box for rockets and missiles, demolition charges, mines and hand grenades. Takes nothing else.",18,120);
 
     #include "CfgWeapons_instances.hpp"
 };
 
 #define POUCH_ICONS(KIT,FILE) \
     class KIT { \
+        icon = QPATHTOF(ui\DOUBLES(FILE,ca).paa); \
+        iconContents = QPATHTOF(ui\DOUBLES(FILE,ca).paa); \
+        background = QPATHTOF(ui\DOUBLES(FILE,bg_ca).paa); \
+    }
+
+#define BOX_ICONS(KIT,FILE,NAME) \
+    class KIT { \
+        shortName = NAME; \
         icon = QPATHTOF(ui\DOUBLES(FILE,ca).paa); \
         iconContents = QPATHTOF(ui\DOUBLES(FILE,ca).paa); \
         background = QPATHTOF(ui\DOUBLES(FILE,bg_ca).paa); \
@@ -86,14 +105,14 @@ class CfgWeapons {
 class EFAK_Kits {
     POUCH_ICONS(EUP_UtilityPouch,utility_pouch);
     POUCH_ICONS(EUP_AmmoPouch,ammo_pouch);
-    POUCH_ICONS(EUP_AmmoBag,ammo_bag);
-    POUCH_ICONS(EUP_EngineerBag,engineer_bag);
-    POUCH_ICONS(EUP_CBRNBag,cbrn_bag);
+    BOX_ICONS(EUP_AmmoBag,ammo_bag,"Ammo Box");
+    BOX_ICONS(EUP_EngineerBag,engineer_bag,"Engineer Box");
+    BOX_ICONS(EUP_CBRNBag,cbrn_bag,"CBRN Box");
 
     // Magazines only, like the ammo bag - the one the marksmen's ammunition is kept apart in.
     class EFKU_SpecialAmmoCase {
         item = "efku_SpecialAmmoCase";
-        shortName = "Special Ammunition";
+        shortName = "Special Ammunition Box";
         capacity = 240;
         itemTypes[] = {"magazine"};
         CASE_COMMON(special_ammo);
@@ -107,7 +126,7 @@ class EFAK_Kits {
     // adds another mod's in the case's whitelist setting.
     class EFKU_OrdnanceCase {
         item = "efku_OrdnanceCase";
-        shortName = "Explosives + Ordnance";
+        shortName = "Explosives + Ordnance Box";
         capacity = 300;
         itemTypes[] = {"magazine/secondary", "magazine/unknown"};
         whitelist = "HandGrenade, MiniGrenade, SmokeShell*, ACE_M84, ACE_M14, ACE_CTS9, OPTRE_M9_Frag, OPTRE_M2_Smoke*, OPTRE_c7_remote_throwable_sticky_mag";
@@ -152,8 +171,15 @@ class Cfg3DEN {
         class AttributeCategories {
             class efak_core_attributes {
                 class Attributes {
-                    CRATE_CASE_ATTRIBUTES(efku_SpecialAmmoCase,Special ammunition case);
-                    CRATE_CASE_ATTRIBUTES(efku_OrdnanceCase,Explosives + ordnance case);
+                    CRATE_CASE_ATTRIBUTES(efku_SpecialAmmoCase,Special Ammunition Box);
+                    CRATE_CASE_ATTRIBUTES(efku_OrdnanceCase,Explosives + Ordnance Box);
+                    // EUP's own fields, under the boxes' names
+                    class efak_core_crate_eup_AmmoBag {displayName = "Ammo Box contents";};
+                    class efak_core_crateName_eup_AmmoBag {displayName = "Ammo Box name";};
+                    class efak_core_crate_eup_EngineerBag {displayName = "Engineer Box contents";};
+                    class efak_core_crateName_eup_EngineerBag {displayName = "Engineer Box name";};
+                    class efak_core_crate_eup_CBRNBag {displayName = "CBRN Box contents";};
+                    class efak_core_crateName_eup_CBRNBag {displayName = "CBRN Box name";};
                 };
             };
         };

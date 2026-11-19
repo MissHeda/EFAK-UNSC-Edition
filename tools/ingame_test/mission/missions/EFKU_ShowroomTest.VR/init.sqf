@@ -158,5 +158,8 @@ if (!hasInterface) exitWith {};
         "1Rnd_HE_Grenade_shell", "FirstAidKit"] apply {
         [_x, (["efku_OrdnanceCase", _x] call efak_core_fnc_isItemAllowed) select 0]
     }];
+    // the names the boxes go by, on the item and one of its instances
+    diag_log format ["EFKUTEST NAMES %1", ["eup_AmmoBag", "eup_EngineerBag_7", "eup_CBRNBag", "efku_SpecialAmmoCase_3", "efku_OrdnanceCase",
+        "eup_UtilityPouch"] apply {getText (configFile >> "CfgWeapons" >> _x >> "displayName")}];
     diag_log "EFKUTEST DONE";
 };
