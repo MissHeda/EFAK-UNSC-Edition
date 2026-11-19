@@ -57,7 +57,7 @@ class CfgWeapons {
     // Masses as EUP has them: the room the packed case takes, about 40% of its default capacity;
     // EFAK_emptyWeight is what the empty case weighs (1 mass unit = 0.1 lb).
     CASE_ITEM(efku_SpecialAmmoCase,special_ammo,"Special Ammunition Case","A case for the marksmen's ammunition: sniper magazines and sealed packets of rounds. Takes magazines only.",12,95);
-    CASE_ITEM(efku_OrdnanceCase,ordnance_crate,"Explosives + Ordnance Case","A padded case for rockets and missiles, demolition charges and mines. Takes nothing else.",18,120);
+    CASE_ITEM(efku_OrdnanceCase,ordnance_crate,"Explosives + Ordnance Case","A padded case for rockets and missiles, demolition charges, mines and hand grenades. Takes nothing else.",18,120);
 
     #include "CfgWeapons_instances.hpp"
 };
@@ -99,14 +99,18 @@ class EFAK_Kits {
         CASE_COMMON(special_ammo);
     };
 
-    // Rockets, missiles, charges and mines: launcher magazines and what ACE calls "secondary"
-    // magazines (everything that is put down). Hand grenades are the same kind of magazine as rifle
-    // magazines to the game, so they stay out unless the whitelist setting names them.
+    // Rockets, missiles, charges and mines. ACE sorts magazines by their type number: "secondary"
+    // (512) is unguided rockets and everything that is put down, and the guided ones (768, 1536 -
+    // Titan, NLAW, Vorona) are "unknown" to it (measured in game, 2026-11-20). Hand grenades are the same kind of magazine as rifle
+    // magazines to the game, so no type lets them in: the whitelist names them - the game's, ACE's
+    // and OPTRE's frag, stun, incendiary and smoke grenades (a * stands for any ending). A mission
+    // adds another mod's in the case's whitelist setting.
     class EFKU_OrdnanceCase {
         item = "efku_OrdnanceCase";
         shortName = "Explosives + Ordnance";
         capacity = 300;
-        itemTypes[] = {"magazine/secondary", "magazine/missile"};
+        itemTypes[] = {"magazine/secondary", "magazine/unknown"};
+        whitelist = "HandGrenade, MiniGrenade, SmokeShell*, ACE_M84, ACE_M14, ACE_CTS9, OPTRE_M9_Frag, OPTRE_M2_Smoke*, OPTRE_c7_remote_throwable_sticky_mag";
         CASE_COMMON(ordnance_crate);
     };
 };

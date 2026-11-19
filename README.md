@@ -24,7 +24,7 @@ framework, listed with the pouches in the menu, the arsenal and the settings):
 | Case | Takes | Looks like |
 |---|---|---|
 | Special Ammunition Case (`efku_SpecialAmmoCase`) | magazines | the ammunition case with a red band: SRS99 and M99 magazines, 14.5x114 packets and foil sacks inside |
-| Explosives + Ordnance Case (`efku_OrdnanceCase`) | rockets, missiles, charges, mines | a long red-brown rocket case with tan corner bumpers: an M41 twin HEAT tube, an M44 Lykoi HEAT rocket and a charge inside |
+| Explosives + Ordnance Case (`efku_OrdnanceCase`) | rockets, missiles, charges, mines, hand grenades | a long red-brown rocket case with tan corner bumpers: an M41 twin HEAT tube, an M44 Lykoi HEAT rocket and a charge inside |
 
 Kits on the ground lie shut. Open a kit's window and that kit's lid unlatches and swings open while you
 look inside, and shuts again when you close the window (only you see it; switch it off in the addon

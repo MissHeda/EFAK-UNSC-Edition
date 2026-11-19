@@ -152,5 +152,11 @@ if (!hasInterface) exitWith {};
         [_x, isClass (configFile >> "EFAK_Kits" >> _x), isClass (configFile >> "CfgWeapons" >> (_item + "_300")),
             getText (configFile >> "CfgWeapons" >> _item >> "displayName")]
     }];
+    // what the ordnance case takes: rockets, charges and grenades, no rifle magazines
+    diag_log format ["EFKUTEST ORDNANCE %1", ["HandGrenade", "MiniGrenade", "SmokeShellRed", "ACE_M84", "DemoCharge_Remote_Mag",
+        "MRAWS_HEAT_F", "Titan_AA", "NLAW_F", "Vorona_HEAT", "APERSMine_Range_Mag", "30Rnd_65x39_caseless_mag",
+        "1Rnd_HE_Grenade_shell", "FirstAidKit"] apply {
+        [_x, (["efku_OrdnanceCase", _x] call efak_core_fnc_isItemAllowed) select 0]
+    }];
     diag_log "EFKUTEST DONE";
 };
