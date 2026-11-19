@@ -616,3 +616,66 @@ for k, lab in enumerate(labels):
     x1, y1 = 120 + 80 * _m.cos(ang), 120 - 80 * _m.sin(ang)
     dd.line([(x0 * SS, y0 * SS), (x1 * SS, y1 * SS)], fill=BLACK, width=3 * SS)
 save(im, "lbl_meter_dial", wear=0.08)
+
+
+# --- the two cases of this mod's own -----------------------------------------------------------------
+im = canvas(700, 240)
+d = ImageDraw.Draw(im)
+text(d, (12, 4), "SPECIAL AMMUNITION", font(82, "Bold"), YELLOW)
+rect(d, (12, 104, 688, 110), fill=YELLOW)
+text(d, (12, 124), "CTG 14.5x114mm APFSDS / HEDP   48 RDS (12x4)", font(30, "SemiBold"), YELLOW)
+text(d, (12, 168), "SRS99 SERIES MAGAZINES  //  LOT 2552-207  //  GROSS WT 11.2 KG", font(24, "Regular"), YELLOW)
+save(im, "spec_ammo_label", wear=0.35)
+
+
+def burst(d, cx, cy, r, fill, points=12):
+    """The explosives mark: a jagged burst, drawn as an outline round a solid core."""
+    def star(ro, ri):
+        pts = []
+        for k in range(points * 2):
+            a = _m.pi * k / points - _m.pi / 2
+            rr = ro if k % 2 == 0 else ri
+            pts.append((cx + rr * _m.cos(a), cy + rr * _m.sin(a)))
+        return pts
+    poly(d, star(r, r * 0.6), fill)
+    poly(d, star(r * 0.8, r * 0.47), (0, 0, 0, 0))
+    d.ellipse([(cx - r * 0.24) * SS, (cy - r * 0.24) * SS, (cx + r * 0.24) * SS, (cy + r * 0.24) * SS], fill=fill)
+
+
+im = canvas(1080, 400)
+d = ImageDraw.Draw(im)
+text(d, (16, 0), "EXPLOSIVES", font(150, "Bold"), WHITE)
+text(d, (16, 142), "AND ORDNANCE", font(150, "Bold"), WHITE)
+burst(d, 930, 150, 132, WHITE)
+rect(d, (16, 304, 1064, 310), fill=WHITE)
+text(d, (16, 322), "UNSC ORDNANCE  //  HAZARD CLASS 1.1  //  HIGH EXPLOSIVE", font(30, "SemiBold"), WHITE)
+text(d, (16, 362), "HANDLE WITH CARE  //  KEEP AWAY FROM HEAT AND OPEN FLAME", font(26, "Regular"), WHITE)
+save(im, "ord_label", wear=0.3)
+
+im = canvas(480, 120)
+d = ImageDraw.Draw(im)
+rect(d, (0, 0, 480, 120), outline=WHITE, width=4)
+burst(d, 60, 60, 44, WHITE, points=10)
+text(d, (122, 12), "EXPLOSIVES AND ORDNANCE", font(34, "Bold"), WHITE)
+text(d, (122, 54), "HAZARD CLASS 1.1  //  UNSC", font(24, "SemiBold"), WHITE)
+text(d, (122, 84), "LOT 2552-ORD-0417", font(22, "Regular"), WHITE)
+save(im, "ord_front", wear=0.3)
+
+# a foil sack of loose rounds: dark blue head with the calibre, the pull tab at its foot
+NAVY = (26, 34, 70, 255)
+im = canvas(300, 360)
+d = ImageDraw.Draw(im)
+rect(d, (0, 0, 300, 118), fill=NAVY)
+text(d, (14, 10), "UNSC  M232", font(26, "SemiBold"), WHITE)
+text(d, (14, 40), "14.5x114mm", font(40, "Bold"), WHITE)
+text(d, (14, 84), "APFSDS  //  8 RDS", font(24, "SemiBold"), YELLOW)
+d.ellipse([230 * SS, 14 * SS, 284 * SS, 68 * SS], fill=YELLOW)
+text(d, (257, 41), "AP", font(26, "Bold"), NAVY, anchor="mm")
+text(d, (14, 134), "LOOSE ROUNDS, SEALED", font(22, "SemiBold"), NAVY)
+text(d, (14, 164), "LOT 2552-207   SRS99 SERIES", font(18, "Regular"), NAVY)
+barcode(d, 14, 196, 180, 34, NAVY, seed=44)
+rect(d, (0, 262, 300, 266), fill=NAVY)
+text(d, (150, 312), "PULL TAB", font(40, "Bold"), NAVY, anchor="mm")
+poly(d, [(40, 300), (64, 312), (40, 324)], NAVY)
+poly(d, [(260, 300), (236, 312), (260, 324)], NAVY)
+save(im, "lbl_sack", wear=0.06)

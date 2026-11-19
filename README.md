@@ -1,6 +1,6 @@
 # EFAK: UNSC Edition
 
-A look-only add-on for [Enhanced First Aid Kits](https://steamcommunity.com/sharedfiles/filedetails/?id=3809430149)
+An add-on for [Enhanced First Aid Kits](https://steamcommunity.com/sharedfiles/filedetails/?id=3809430149)
 and [Enhanced Utility Pouches](https://steamcommunity.com/sharedfiles/filedetails/?id=3812667721): every kit
 and pouch gets a new model in the style of the UNSC, new inventory pictures, and the kit window turns into
 a cyan HUD readout on dark glass. Works with EFAK, EUP or both - whichever is loaded gets the new look.
@@ -17,6 +17,14 @@ a cyan HUD readout on dark glass. Works with EFAK, EUP or both - whichever is lo
 | Ammo Bag | olive UNSC ammunition case with Marine Corps insignia and folding handle |
 | Engineer Bag | grey UNSC tool case with hazard stripes |
 | CBRN Bag | white UNSC case with yellow band, seal gauge and purge valve |
+
+With Enhanced Utility Pouches loaded the add-on also brings two cases of its own (kits of the same
+framework, listed with the pouches in the menu, the arsenal and the settings):
+
+| Case | Takes | Looks like |
+|---|---|---|
+| Special Ammunition Case (`efku_SpecialAmmoCase`) | magazines | the ammunition case with a red band: SRS99 and M99 magazines, 14.5x114 packets and foil sacks inside |
+| Explosives + Ordnance Case (`efku_OrdnanceCase`) | rockets, missiles, charges, mines | a long red-brown rocket case with tan corner bumpers: an M41 twin HEAT tube, an M44 Lykoi HEAT rocket and a charge inside |
 
 Kits on the ground lie shut. Open a kit's window and that kit's lid unlatches and swings open while you
 look inside, and shuts again when you close the window (only you see it; switch it off in the addon

@@ -110,6 +110,15 @@ LOOKS = {
                        pattern="paint", grain=0.3, bevel=0.003),
     "pack_white": look(srgb(222, 220, 212), srgb(180, 178, 170), wear=0.15, grime=0.35, spec=0.15, gloss=0.4,
                        pattern="paint", grain=0.25, bevel=0.003),
+    # the ordnance case: red-brown moulded polymer, tan rubber bumpers on its corners
+    "ord_brown": look(srgb(74, 44, 30), srgb(126, 96, 78), wear=0.35, grime=0.5, spec=0.16, gloss=0.38,
+                      pattern="stipple", grain=0.2, bevel=0.003),
+    "bumper_tan": look(srgb(150, 112, 66), srgb(176, 146, 104), wear=0.3, grime=0.55, spec=0.06, gloss=0.2,
+                       pattern="rubber", grain=0.3, bevel=0.003),
+    # a painted band round a case, and the foil of a sealed ammunition sack
+    "band_red": look(srgb(140, 34, 28), STEEL, wear=0.5, grime=0.55, spec=0.24, gloss=0.46, primer=PRIMER),
+    "foil": look(srgb(186, 190, 192), srgb(150, 154, 158), wear=0.08, grime=0.3, spec=0.45, gloss=0.6,
+                 pattern="smooth", grain=0.05, bevel=0.003),
     "foam_egg": look(srgb(44, 46, 48), srgb(60, 62, 64), wear=0.05, grime=0.45, spec=0.03, gloss=0.08,
                      pattern="eggcrate", grain=1.2, streaks=0.0, bevel=0.002),
     "glass_amber": look(srgb(150, 86, 30), srgb(180, 120, 60), wear=0.05, grime=0.2, spec=0.85, gloss=0.92,

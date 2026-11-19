@@ -111,6 +111,13 @@ _REAL = {
     "ammo_pack": ("optre/ma5ammo.p3d", (-90, 0, 0), 0.36, 500),
     "ma5_mag": ("optre/ma5_mag.p3d", (0, 0, 0), 0.5, 500),
     "br_mag": ("optre/br_mag.p3d", (90, 0, 0), 0.5, 500),
+    # the two cases of this mod's own: OPTRE's M41 twin HEAT tube and M44 Lykoi HEAT rocket, its
+    # SRS99C and M99 magazines and its 14.5x114 packet
+    "m41_heat": ("optre/m41_heat.p3d", (0, 0, 180), 0.42, 4000),   # turned: its print reads from the front
+    "lykoi": ("optre/lykoi_mag.p3d", (0, 0, 0), 0.42, 3000),
+    "srs_mag": ("optre/srs99c_mag.p3d", (0, 0, 0), 0.5, 600),
+    "m99_mag": ("optre/m99_mag.p3d", (0, 0, 0), 0.36, 700),
+    "pkt_145": ("optre/pkt_145.p3d", (0, 90, 0), 0.5, 400),
 }
 
 
@@ -823,3 +830,70 @@ def fill_cbrn_bag():
             injector((0.09, y, zf), axis="x", cap="orange")
         decon_kit((-0.105, -0.06, zf))
         detector_paper((-0.022, -0.058, zf))
+
+
+@clustered
+def ammo_sack(c, w=0.046, d=0.066, h=0.013):
+    """A sealed foil sack of loose rounds: a flat pouch crimped at both ends, its print on top."""
+    x, y, z = c
+    box((w, d * 0.82, h), (x, y, z + h / 2), "foil", bevel=0.005, segs=3)
+    for sy in (-1, 1):
+        box((w, d * 0.1, 0.0016), (x, y + sy * d * 0.45, z + h * 0.5), "foil", bevel=0.0005, segs=1)
+    print_on("lbl_sack", (x, y, z + h), (0, 0, 1), (0, 1, 0), w * 0.92, look="foil")
+
+
+def fill_special_ammo():
+    """Special ammunition case: SRS99 magazines on edge, M99 magazines lying flat, 14.5x114 packets
+    and sealed foil sacks of loose rounds - four columns, each piece in its own cut."""
+    W, D, H, lid_h, cap = 0.36, 0.18, 0.2, 0.042, 0.03
+    srs = _REAL["srs_mag"]
+    pkt = _REAL["pkt_145"]
+    with contents():
+        pockets = []
+        sw, sd, sh = imported_size(srs[0], (90, 0, 0), srs[2], srs[3])
+        mags = [(-0.097, y) for y in (-0.054, -0.018, 0.018, 0.054)]
+        for x, y in mags:
+            pockets.append((x, y, sw, sd))
+        m99 = [(-0.0186, y) for y in (-0.036, 0.036)]
+        for x, y in m99:
+            pockets.append(real_pocket("m99_mag", (x, y, 0), axis="x"))
+        pw, pd, ph = imported_size(pkt[0], pkt[1], pkt[2], pkt[3])
+        pkts = [(0.0498, y) for y in (-0.036, 0.036)]
+        for x, y in pkts:
+            pockets.append((x, y, pw, pd))
+        sacks = [(0.1092, y) for y in (-0.039, 0.039)]
+        for x, y in sacks:
+            pockets.append((x, y, 0.046, 0.066))
+        zf = case_tray(W, D, H, lid_h, cap, pockets, h=0.018)
+        for x, y in mags:
+            imported(srs[0], (x, y, zf - (sh - 0.019)), rot=(90, 0, 0), scale=srs[2], max_faces=srs[3], spec=0.25,
+                     gloss=0.4)
+        for x, y in m99:
+            real("m99_mag", (x, y, zf), axis="x", spec=0.25, gloss=0.4)
+        for k, (x, y) in enumerate(pkts):
+            imported(pkt[0], (x, y, zf - (ph - 0.02)), rot=pkt[1], scale=pkt[2], max_faces=pkt[3], spec=0.15,
+                     gloss=0.35, textures={"sniper_co": "pkt_145_apfsds_co" if k else "pkt_145_hedp_co"})
+        for x, y in sacks:
+            ammo_sack((x, y, zf))
+
+
+def fill_ordnance_crate():
+    """Explosives and ordnance case: an M41 twin HEAT tube along the front, an M44 Lykoi HEAT rocket
+    behind it and a demolition charge beside that, each half sunk into deep cut foam."""
+    W, D, H, zl, wall, floor = 0.56, 0.22, 0.135, 0.07, 0.01, 0.026
+    tw, td = W - 2 * wall - 0.004, D - 2 * wall - 0.004
+    with contents():
+        zf = floor + 0.004
+        box((tw, td, 0.004), (0, 0, zf - 0.002), "foam", bevel=0.0015, segs=2)
+        tube = (0.0, -0.05)
+        rocket = (-0.068, 0.047)
+        charge = (0.192, 0.047)
+        pockets = [real_pocket("m41_heat", (tube[0], tube[1], 0), axis="x"),
+                   real_pocket("lykoi", (rocket[0], rocket[1], 0), axis="x"),
+                   (charge[0], charge[1], 0.09, 0.05)]
+        pocket_foam(-tw / 2, -td / 2, tw / 2, td / 2, zf, zl - 0.006 - zf, pockets)
+        real("m41_heat", (tube[0], tube[1], zf), axis="x", spec=0.3, gloss=0.45)
+        real("lykoi", (rocket[0], rocket[1], zf), axis="x", spec=0.25, gloss=0.4)
+        # the charge on a foam block, its top level with the tray
+        box((0.09, 0.05, 0.012), (charge[0], charge[1], zf + 0.006), "foam", bevel=0.001, segs=1)
+        demo_block((charge[0], charge[1], zf + 0.012))

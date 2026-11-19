@@ -34,6 +34,8 @@ KITS = {
         ("ammo_bag", 1.75, 2, "lid cap hinged at the back: up about 100 degrees"),
         ("engineer_bag", 1.75, 2, "lid cap hinged at the back: up about 100 degrees"),
         ("cbrn_bag", 1.75, 2, "lid cap hinged at the back: up about 100 degrees"),
+        ("special_ammo", 1.75, 2, "lid cap hinged at the back: up about 100 degrees"),
+        ("ordnance_crate", 1.75, 2, "upper shell hinged at the back: up about 100 degrees"),
     ],
 }
 
@@ -75,6 +77,9 @@ def model_cfg(kits):
             out.append(anim("latch%d" % (i + 1), "latch%d_axis" % (i + 1), 0, LATCH_PHASE, LATCH_ANGLE))
         out.append(anim("lid", "lid_axis", LATCH_PHASE if latches else 0, 1, angle))
         out.append("        };\n    };\n")
+    out.append("    // the open twins the lids addon swings open (contents in every LOD): same skeleton and animations\n")
+    for kit, *_ in kits:
+        out.append("    class %s_open: %s {};\n" % (kit, kit))
     out.append("    // shadow casters for kits lying in ground holders (efku_lids), no animation\n")
     for kit, *_ in kits:
         out.append("    class %s_shadow: Default {};\n" % kit)

@@ -1,7 +1,8 @@
 """The kit models, built from the parts in unsc_lib. Blender space: front at -y, z up, metres.
 
 Each builder returns the texture size of its kit. EFAK's five kits go into addons/kits, the five
-pouches of Enhanced Utility Pouches into addons/eup (ADDON below).
+pouches of Enhanced Utility Pouches into addons/eup (ADDON below), and with them the two cases this
+mod adds itself: special ammunition, explosives and ordnance.
 """
 import math
 
@@ -531,6 +532,99 @@ def cbrn_bag():
 
 
 # ===================================================================================================
+# Two cases of this mod's own (kits it registers itself, addons/eup)
+# ===================================================================================================
+def special_ammo():
+    """Special ammunition case: the ammunition case again, a red band round its body and its own
+    stencil - what the marksmen draw."""
+    W, D, H = 0.36, 0.18, 0.2
+    c = unsc_case(W, D, H, "unsc_olive", lid_h=0.042, cap=0.03)
+    box((c["inner"] * 0.98, D + 0.012, 0.016), (0, 0, c["zb"] + 0.02), "band_red", bevel=0.002, segs=1)
+    with lid():
+        carry_handle(0, 0, c["top"], 0.13, look="rubber")
+    decal("marines_white", (-0.085, c["front"], c["mid"] + 0.01), F, UP, 0.05, depth=0.004)
+    decal("spec_ammo_label", (0.035, c["front"], c["mid"] + 0.01), F, UP, 0.15, depth=0.004)
+    decal("wordmark_white", (c["lid_x"] - 0.034, c["lid_front"], c["lid_z"]), F, UP, 0.05, depth=0.003)
+    decal("sticker_orange", (-0.12, 0.05, c["top"]), UP, B, 0.05, depth=0.006)
+    decal("spec_ammo_label", (0, c["back"], c["mid"] + 0.008), B, UP, 0.17, depth=0.004)
+    decal("code_grey", (W / 2, 0, c["zb"] + 0.028), R, UP, 0.05, depth=0.006)
+    decal("side_up_white", (-W / 2, 0, c["zb"] + 0.028), L_, UP, 0.06, depth=0.006)
+    return 4096
+
+
+ORD = dict(W=0.56, D=0.22, H=0.135, seam=0.07, wall=0.01, floor=0.026)
+
+
+def _bumper(sx, sy, z0, z1, look="bumper_tan", bx=0.07, by=0.052, proud=0.006, ch=0.014):
+    """A corner bumper of the ordnance case: an angle of rubber round the corner (sx, sy), from z0 to
+    z1, standing proud of both faces, its outer corner cut. Only as deep as the wall, so the open tub
+    shows none of it."""
+    W, D = ORD["W"], ORD["D"]
+    cx, cy = W / 2, D / 2
+    t = 0.002
+    pts = [(cx - bx, cy + proud), (cx + proud - ch, cy + proud), (cx + proud, cy + proud - ch), (cx + proud, cy - by),
+           (cx - t, cy - by), (cx - t, cy - t), (cx - bx, cy - t)]
+    pts = [(sx * x, sy * y) for x, y in pts]
+    if sx * sy < 0:
+        pts.reverse()
+    prism(pts, z1 - z0, look, (0, 0, z0), bevel=0.003, segs=2)
+
+
+def ordnance_crate():
+    """Explosives and ordnance case, after the UNSC's rocket case: a long, flat shell of red-brown
+    polymer split at half height, tan rubber bumpers on its eight corners, two draw latches on the
+    front, the stencil across the lid."""
+    W, D, H, zl, wall, floor = (ORD[k] for k in ("W", "D", "H", "seam", "wall", "floor"))
+    body = "ord_brown"
+    # the tub: a floor with cut lower edges, a wall round the well, a gasket on its rim
+    box((W - 0.012, D - 0.012, floor - 0.004), (0, 0, 0.004 + (floor - 0.004) / 2), body, cut=0.006,
+        cuts=(1, 1, 0, 0), axis="x", bevel=0.003, segs=2)
+    box((W, D, zl - 0.012), (0, 0, (0.012 + zl) / 2), body, bevel=0.003, segs=2, hollow=wall)
+    box((W - 0.004, D - 0.004, 0.004), (0, 0, zl + 0.0005), "rubber", bevel=0.001, segs=1, hollow=0.006)
+    # a rib round the tub under the seam, and two skids
+    box((W + 0.004, D + 0.004, 0.008), (0, 0, zl - 0.012), body, bevel=0.002, segs=2, hollow=0.012)
+    for sx in (-1, 1):
+        box((0.03, D * 0.8, 0.005), (sx * W * 0.22, 0, 0.0025), "frame_black", bevel=0.0015, segs=1)
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            _bumper(sx, sy, 0.0, zl - 0.003)
+            # the bumper's foot, under the corner
+            box((0.076, 0.058, 0.005), (sx * (W / 2 - 0.032), sy * (D / 2 - 0.023), 0.0025), "bumper_tan", cut=0.014,
+                cuts=(sx < 0 and sy < 0, sx > 0 and sy < 0, sx > 0 and sy > 0, sx < 0 and sy > 0), bevel=0.002, segs=2)
+    top = H
+    lb = zl + 0.002
+    with lid():
+        # the lid: a skirt and a top plate with cut upper edges, a raised field for the stencil,
+        # lined with egg-crate foam
+        box((W, D, top - 0.01 - lb), (0, 0, (lb + top - 0.01) / 2), body, bevel=0.003, segs=2, hollow=wall)
+        box((W, D, 0.01), (0, 0, top - 0.005), body, cut=0.006, cuts=(0, 0, 1, 1), axis="x", bevel=0.003, segs=2)
+        box((W - 0.16, D - 0.05, 0.002), (0, 0, top + 0.001), body, cut=0.012, bevel=0.0012, segs=1)
+        box((W + 0.004, D + 0.004, 0.008), (0, 0, lb + 0.012), body, bevel=0.002, segs=2, hollow=0.012)
+        box((W - 2 * wall - 0.002, D - 2 * wall - 0.002, 0.004), (0, 0, top - 0.012), "foam", bevel=0.0015, segs=1)
+        eggcrate(frame((0, 0, top - 0.014), DOWN, B), W - 2 * wall - 0.006, D - 2 * wall - 0.006, depth=0.012,
+                 pitch=0.044)
+        for sx in (-1, 1):
+            for sy in (-1, 1):
+                _bumper(sx, sy, lb + 0.002, top)
+                box((0.076, 0.058, 0.005), (sx * (W / 2 - 0.032), sy * (D / 2 - 0.023), top + 0.0025), "bumper_tan",
+                    cut=0.014, cuts=(sx < 0 and sy < 0, sx > 0 and sy < 0, sx > 0 and sy > 0, sx < 0 and sy > 0),
+                    bevel=0.002, segs=2)
+    hy = D / 2 + 0.005
+    lid_axis((-W / 2, hy, zl + 0.001), (W / 2, hy, zl + 0.001))
+    for x in (-W * 0.2, W * 0.2):
+        bail_latch((x, -D / 2, lb), F, UP, w=0.036, below=0.02, body_off=0.0, lid_off=0.0, look="black_metal")
+    hinge((-W * 0.3, hy, zl + 0.001), (W * 0.3, hy, zl + 0.001), r=0.004, knuckles=9, look="black_metal")
+    # the stencil across the lid, reading from the front; small marks on the faces
+    decal("ord_label", (0, 0, top + 0.002), UP, B, W - 0.2, depth=0.005)
+    decal("ord_front", (0, -D / 2, 0.036), F, UP, 0.11, depth=0.004)
+    decal("unsc_white", (0, -D / 2, lb + (top - lb) * 0.5), F, UP, 0.07, depth=0.004)
+    decal("ord_front", (0, D / 2, 0.104), B, UP, 0.09, depth=0.004)
+    decal("code_grey", (W / 2, 0, 0.033), R, UP, 0.04, depth=0.004)
+    decal("side_up_white", (-W / 2, 0, 0.033), L_, UP, 0.04, depth=0.004)
+    return 4096
+
+
+# ===================================================================================================
 # What is packed inside - seen when a lid opens (efku_lids). Every piece sits under the closed lid, so
 # the lid hides it; it casts no shadow and leaves the far LODs.
 # ===================================================================================================
@@ -549,7 +643,8 @@ def foam(size, center, profile=None):
 
 # The contents and the cut foam they lie in: interiors.py.
 from interiors import (fill_ifak, fill_afak, fill_mfak, fill_mfakplus, fill_narcbox, fill_utility_pouch,  # noqa: E402
-                       fill_ammo_pouch, fill_ammo_bag, fill_engineer_bag, fill_cbrn_bag)
+                       fill_ammo_pouch, fill_ammo_bag, fill_engineer_bag, fill_cbrn_bag, fill_special_ammo,
+                       fill_ordnance_crate)
 
 
 def _filled(builder, fill):
@@ -572,6 +667,8 @@ BUILDERS = {
     "ammo_bag": _filled(ammo_bag, fill_ammo_bag),
     "engineer_bag": _filled(engineer_bag, fill_engineer_bag),
     "cbrn_bag": _filled(cbrn_bag, fill_cbrn_bag),
+    "special_ammo": _filled(special_ammo, fill_special_ammo),
+    "ordnance_crate": _filled(ordnance_crate, fill_ordnance_crate),
 }
 
 
@@ -581,4 +678,5 @@ BUILDERS = {
 EXPORT_ROT = {"ifak": (-90, 0, 180)}
 
 ADDON = {k: "kits" for k in ("ifak", "afak", "mfak", "mfakplus", "narcbox")}
-ADDON.update({k: "eup" for k in ("utility_pouch", "ammo_pouch", "ammo_bag", "engineer_bag", "cbrn_bag")})
+ADDON.update({k: "eup" for k in ("utility_pouch", "ammo_pouch", "ammo_bag", "engineer_bag", "cbrn_bag", "special_ammo",
+                                 "ordnance_crate")})

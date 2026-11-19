@@ -45,7 +45,7 @@ if (!hasInterface) exitWith {};
     };
 
     // Every kit on its own, in a row in front of the player.
-    private _kits = ["efak_IFAK", "efak_AFAK", "efak_MFAK", "efak_MFAKPlus", "efak_NarcBox", "eup_UtilityPouch", "eup_AmmoPouch", "eup_AmmoBag", "eup_EngineerBag", "eup_CBRNBag"];
+    private _kits = ["efak_IFAK", "efak_AFAK", "efak_MFAK", "efak_MFAKPlus", "efak_NarcBox", "eup_UtilityPouch", "eup_AmmoPouch", "eup_AmmoBag", "eup_EngineerBag", "eup_CBRNBag", "efku_SpecialAmmoCase", "efku_OrdnanceCase"];
     _kits = _kits select {isClass (configFile >> "CfgWeapons" >> _x)};
     {
         private _pos = _center vectorAdd [(_forEachIndex - (count _kits - 1) / 2) * 1.4, 4, 0];
@@ -127,7 +127,7 @@ if (!hasInterface) exitWith {};
     } forEach [[8, 0.75], [25, 0.25], [60, 0.11]];
     {
         _x params ["_i", "_name"];
-        private _p = [4096 + (_i - 4.5) * 1.4, 4100, 0];
+        private _p = [4096 + (_i - 5.5) * 1.4, 4100, 0];   // the row of twelve kits
         private _h = efku_showroom_holders select _i;
         [_h] call efku_lids_fnc_openHolder;
         sleep 1.5;
@@ -144,7 +144,13 @@ if (!hasInterface) exitWith {};
         } forEach [["eye", [0.15, -0.7, 1.1], 0.75], ["far", [0.3, -4, 1.6], 0.75], ["open", [0.25, -0.75, 0.75], 0.45]];
         ["", true] call efku_lids_fnc_closeLids;
         sleep 0.5;
-    } forEach [[0, "ifak"], [1, "afak"], [2, "mfak"], [8, "engineer"]];
+    } forEach [[0, "ifak"], [8, "engineer"], [10, "specammo"], [11, "ordnance"]];
     diag_log format ["EFKUTEST CASTERS %1", count efku_lids_casters];
+    // the two cases of this mod's own: registered as kits, their instance pool there
+    diag_log format ["EFKUTEST KITS %1", ["EFKU_SpecialAmmoCase", "EFKU_OrdnanceCase"] apply {
+        private _item = getText (configFile >> "EFAK_Kits" >> _x >> "item");
+        [_x, isClass (configFile >> "EFAK_Kits" >> _x), isClass (configFile >> "CfgWeapons" >> (_item + "_300")),
+            getText (configFile >> "CfgWeapons" >> _item >> "displayName")]
+    }];
     diag_log "EFKUTEST DONE";
 };

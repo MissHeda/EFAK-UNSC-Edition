@@ -1,12 +1,13 @@
 #include "script_component.hpp"
 
-// The same for Enhanced Utility Pouches: new models and pictures for its five pouches. Skipped
+// The same for Enhanced Utility Pouches: new models and pictures for its five pouches - and two
+// cases of this mod's own next to them, special ammunition and explosives + ordnance. Skipped
 // without a word when EUP is not loaded, so this mod works with EFAK alone, EUP alone or both.
 class CfgPatches {
     class ADDON {
         name = COMPONENT_NAME;
         units[] = {};
-        weapons[] = {};
+        weapons[] = {"efku_SpecialAmmoCase", "efku_OrdnanceCase"};
         requiredVersion = REQUIRED_VERSION;
         requiredAddons[] = {"efku_main", "eup_pouches"};
         skipWhenMissingDependencies = 1;
@@ -16,6 +17,9 @@ class CfgPatches {
     };
 };
 
+// Size of the generated pool of instance classes per case (tools/generate_instances.py)
+#define EFKU_INSTANCES_PER_CASE 300
+
 #define POUCH_LOOK(CLASS,FILE) \
     class CLASS: eup_PouchBase { \
         model = QPATHTOF(data\FILE.p3d); \
@@ -24,13 +28,38 @@ class CfgPatches {
         efku_lidProp = QUOTE(DOUBLES(efku_LidProp,FILE)); \
     }
 
+// The two cases are items like EUP's pouches (its base class), only brought by this mod.
+#define CASE_ITEM(CLASS,FILE,NAME,DESC,EMPTY,MASS) \
+    class CLASS: eup_PouchBase { \
+        model = QPATHTOF(data\FILE.p3d); \
+        scope = 2; \
+        scopeArsenal = 2; \
+        displayName = NAME; \
+        descriptionShort = DESC; \
+        picture = QPATHTOF(ui\DOUBLES(FILE,ca).paa); \
+        editorPreview = QPATHTOF(ui\DOUBLES(FILE,ca).paa); \
+        efku_lidProp = QUOTE(DOUBLES(efku_LidProp,FILE)); \
+        EFAK_emptyWeight = EMPTY; \
+        class ItemInfo: CBA_MiscItem_ItemInfo { \
+            mass = MASS; \
+        }; \
+    }
+
 class CfgWeapons {
     class eup_PouchBase;
+    class CBA_MiscItem_ItemInfo;
     POUCH_LOOK(eup_UtilityPouch,utility_pouch);
     POUCH_LOOK(eup_AmmoPouch,ammo_pouch);
     POUCH_LOOK(eup_AmmoBag,ammo_bag);
     POUCH_LOOK(eup_EngineerBag,engineer_bag);
     POUCH_LOOK(eup_CBRNBag,cbrn_bag);
+
+    // Masses as EUP has them: the room the packed case takes, about 40% of its default capacity;
+    // EFAK_emptyWeight is what the empty case weighs (1 mass unit = 0.1 lb).
+    CASE_ITEM(efku_SpecialAmmoCase,special_ammo,"Special Ammunition Case","A case for the marksmen's ammunition: sniper magazines and sealed packets of rounds. Takes magazines only.",12,95);
+    CASE_ITEM(efku_OrdnanceCase,ordnance_crate,"Explosives + Ordnance Case","A padded case for rockets and missiles, demolition charges and mines. Takes nothing else.",18,120);
+
+    #include "CfgWeapons_instances.hpp"
 };
 
 #define POUCH_ICONS(KIT,FILE) \
@@ -40,17 +69,90 @@ class CfgWeapons {
         background = QPATHTOF(ui\DOUBLES(FILE,bg_ca).paa); \
     }
 
+// What the two cases share with EUP's pouches: not medical, in the pouches' menu and settings
+// category, carried like a bag (the hard realism modes unload them into the backpack).
+#define CASE_COMMON(FILE) \
+    icon = QPATHTOF(ui\DOUBLES(FILE,ca).paa); \
+    iconContents = QPATHTOF(ui\DOUBLES(FILE,ca).paa); \
+    background = QPATHTOF(ui\DOUBLES(FILE,bg_ca).paa); \
+    instances = EFKU_INSTANCES_PER_CASE; \
+    defaultContents = ""; \
+    itemFilter = 0; \
+    useInTreatments = 0; \
+    bag = 1; \
+    group = "Pouches"; \
+    settingsCategory = "Enhanced Utility Pouches"
+
 class EFAK_Kits {
     POUCH_ICONS(EUP_UtilityPouch,utility_pouch);
     POUCH_ICONS(EUP_AmmoPouch,ammo_pouch);
     POUCH_ICONS(EUP_AmmoBag,ammo_bag);
     POUCH_ICONS(EUP_EngineerBag,engineer_bag);
     POUCH_ICONS(EUP_CBRNBag,cbrn_bag);
+
+    // Magazines only, like the ammo bag - the one the marksmen's ammunition is kept apart in.
+    class EFKU_SpecialAmmoCase {
+        item = "efku_SpecialAmmoCase";
+        shortName = "Special Ammunition";
+        capacity = 240;
+        itemTypes[] = {"magazine"};
+        CASE_COMMON(special_ammo);
+    };
+
+    // Rockets, missiles, charges and mines: launcher magazines and what ACE calls "secondary"
+    // magazines (everything that is put down). Hand grenades are the same kind of magazine as rifle
+    // magazines to the game, so they stay out unless the whitelist setting names them.
+    class EFKU_OrdnanceCase {
+        item = "efku_OrdnanceCase";
+        shortName = "Explosives + Ordnance";
+        capacity = 300;
+        itemTypes[] = {"magazine/secondary", "magazine/missile"};
+        CASE_COMMON(ordnance_crate);
+    };
 };
 
 class EFAK_KitGroups {
     class Pouches {
         icon = QPATHTOF(ui\utility_pouch_ca.paa);
+    };
+};
+
+// What the cases in a crate or vehicle hold and what they are called, next to EUP's fields in the
+// framework's Eden attribute category (see EUP's Cfg3DEN.hpp; the framework does the rest).
+#define CRATE_CASE_ATTRIBUTES(CASE,NAME) \
+    class efak_core_crate_##CASE { \
+        displayName = QUOTE(NAME contents); \
+        tooltip = "$STR_efak_core_3DEN_CrateContents_Tooltip"; \
+        property = QUOTE(efak_core_crate_##CASE); \
+        control = "EditMulti3"; \
+        expression = "if (!is3DEN && {isServer} && {_value isNotEqualTo ''}) then {[_this,'%s',_value] call efak_core_fnc_fillCrateKits}"; \
+        defaultValue = "''"; \
+        typeName = "STRING"; \
+        validate = "none"; \
+        condition = "objectHasInventoryCargo"; \
+    }; \
+    class efak_core_crateName_##CASE { \
+        displayName = QUOTE(NAME name); \
+        tooltip = "$STR_efak_core_3DEN_CrateName_Tooltip"; \
+        property = QUOTE(efak_core_crateName_##CASE); \
+        control = "Edit"; \
+        expression = "if (!is3DEN && {isServer} && {_value isNotEqualTo ''}) then {[_this,'%s',_value] call efak_core_fnc_nameCrateKits}"; \
+        defaultValue = "''"; \
+        typeName = "STRING"; \
+        validate = "none"; \
+        condition = "objectHasInventoryCargo"; \
+    }
+
+class Cfg3DEN {
+    class Object {
+        class AttributeCategories {
+            class efak_core_attributes {
+                class Attributes {
+                    CRATE_CASE_ATTRIBUTES(efku_SpecialAmmoCase,Special ammunition case);
+                    CRATE_CASE_ATTRIBUTES(efku_OrdnanceCase,Explosives + ordnance case);
+                };
+            };
+        };
     };
 };
 
@@ -68,4 +170,6 @@ class CfgVehicles {
     LID_PROP(ammo_bag,case);
     LID_PROP(engineer_bag,case);
     LID_PROP(cbrn_bag,case);
+    LID_PROP(special_ammo,case);
+    LID_PROP(ordnance_crate,case);
 };

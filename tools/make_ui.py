@@ -37,8 +37,10 @@ KITS = {
     "ammo_bag": ("AMMO", "AMMUNITION CRATE  600 RDS"),
     "engineer_bag": ("ENG", "COMBAT ENGINEER TOOL SET"),
     "cbrn_bag": ("CBRN", "DECON & PROTECTION KIT"),
+    "special_ammo": ("SPEC", "SPECIAL AMMUNITION  14.5 MM"),
+    "ordnance_crate": ("ORD", "EXPLOSIVES & ORDNANCE"),
 }
-EUP = ("utility_pouch", "ammo_pouch", "ammo_bag", "engineer_bag", "cbrn_bag")
+EUP = ("utility_pouch", "ammo_pouch", "ammo_bag", "engineer_bag", "cbrn_bag", "special_ammo", "ordnance_crate")
 
 
 def font(size, weight="Bold"):

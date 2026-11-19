@@ -45,7 +45,7 @@ if (!hasInterface) exitWith {};
     };
 
     // Every kit on its own, in a row in front of the player.
-    private _kits = ["efak_IFAK", "efak_AFAK", "efak_MFAK", "efak_MFAKPlus", "efak_NarcBox", "eup_UtilityPouch", "eup_AmmoPouch", "eup_AmmoBag", "eup_EngineerBag", "eup_CBRNBag"];
+    private _kits = ["efak_IFAK", "efak_AFAK", "efak_MFAK", "efak_MFAKPlus", "efak_NarcBox", "eup_UtilityPouch", "eup_AmmoPouch", "eup_AmmoBag", "eup_EngineerBag", "eup_CBRNBag", "efku_SpecialAmmoCase", "efku_OrdnanceCase"];
     _kits = _kits select {isClass (configFile >> "CfgWeapons" >> _x)};
     {
         private _pos = _center vectorAdd [(_forEachIndex - (count _kits - 1) / 2) * 1.4, 4, 0];
