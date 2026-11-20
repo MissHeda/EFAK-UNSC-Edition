@@ -7,7 +7,8 @@ mod adds itself: special ammunition, explosives and ordnance.
 import math
 
 from unsc_lib import (box, bolt, cluster, eggcrate, clustered, cyl, decal, frame, hinge, inset, lbox, lcyl, lid, lid_axis,
-                      plate, prism, rect, rivets, rrect, screw, bail_latch, vents)
+                      plate, prism, rect, rivets, rrect, screw, bail_latch, vents, SHADOW)
+from mathutils import Vector
 
 F = (0, -1, 0)   # front normal
 B = (0, 1, 0)
@@ -535,18 +536,17 @@ def cbrn_bag():
 # Two cases of this mod's own (kits it registers itself, addons/eup)
 # ===================================================================================================
 def special_ammo():
-    """Special ammunition case: the ammunition case again, a red band round its body and its own
-    stencil - what the marksmen draw."""
+    """Special ammunition case: the ammunition case again under its own stencil - what the marksmen
+    draw."""
     W, D, H = 0.36, 0.18, 0.2
     c = unsc_case(W, D, H, "unsc_olive", lid_h=0.042, cap=0.03)
-    box((c["inner"] * 0.98, D + 0.012, 0.016), (0, 0, c["zb"] + 0.02), "band_red", bevel=0.002, segs=1)
     with lid():
         carry_handle(0, 0, c["top"], 0.13, look="rubber")
-    decal("marines_white", (-0.085, c["front"], c["mid"] + 0.01), F, UP, 0.05, depth=0.004)
-    decal("spec_ammo_label", (0.035, c["front"], c["mid"] + 0.01), F, UP, 0.15, depth=0.004)
+    decal("marines_white", (-0.085, c["front"], c["mid"] + 0.006), F, UP, 0.05, depth=0.004)
+    decal("spec_ammo_label", (0.035, c["front"], c["mid"] + 0.006), F, UP, 0.15, depth=0.004)
     decal("wordmark_white", (c["lid_x"] - 0.034, c["lid_front"], c["lid_z"]), F, UP, 0.05, depth=0.003)
     decal("sticker_orange", (-0.12, 0.05, c["top"]), UP, B, 0.05, depth=0.006)
-    decal("spec_ammo_label", (0, c["back"], c["mid"] + 0.008), B, UP, 0.17, depth=0.004)
+    decal("spec_ammo_label", (0, c["back"], c["mid"] + 0.004), B, UP, 0.17, depth=0.004)
     decal("code_grey", (W / 2, 0, c["zb"] + 0.028), R, UP, 0.05, depth=0.006)
     decal("side_up_white", (-W / 2, 0, c["zb"] + 0.028), L_, UP, 0.06, depth=0.006)
     return 4096
@@ -591,21 +591,30 @@ def _bumper(sx, sy, z0, z1, cap_z, look="bumper_tan"):
 
 
 @clustered
-def bar_handle(center, normal, length, look="black_metal"):
-    """A fixed grip on a face: two bolted mounts and a bar with a rubber sleeve, standing off the
-    face far enough for a gloved hand."""
+def chest_handle(center, normal, length):
+    """A folding chest handle on a face, hanging down flat against it: a steel back plate held by
+    four screws, two pivot lugs at its top, a bail hinged in them and a rubber grip on the bail's
+    bar. Lies too close to the face to cast a shadow of its own."""
+    if SHADOW[0]:
+        return
     Fh = frame(center, normal, UP)
+    pw, ph = length + 0.036, 0.046
+    lbox(Fh, (pw, ph, 0.002), (0, 0, 0), "black_metal", cut=0.005, bevel=0.0008)
     for sx in (-1, 1):
-        lbox(Fh, (0.022, 0.03, 0.03), (sx * length / 2, 0, 0), look, cut=0.004, bevel=0.002, segs=2)
-        lcyl(Fh, 0.0035, 0.003, (sx * length / 2, -0.008, 0.03), "steel", n=12)
-    lbox(Fh, (length + 0.022, 0.012, 0.012), (0, 0.004, 0.022), look, cut=0.003, bevel=0.002, segs=2)
-    lbox(Fh, (length * 0.7, 0.016, 0.016), (0, 0.004, 0.02), "rubber", cut=0.004, bevel=0.002, segs=2)
+        for sy in (-1, 1):
+            at = Fh @ Vector((sx * (pw / 2 - 0.007), sy * (ph / 2 - 0.007), 0.002))
+            screw(tuple(at), normal, 0.002, "steel")
+        lbox(Fh, (0.012, 0.014, 0.011), (sx * length / 2, 0.012, 0.002), "black_metal", cut=0.003, bevel=0.0012)
+        lbox(Fh, (0.005, 0.032, 0.005), (sx * length / 2, -0.002, 0.008), "steel", bevel=0.0012)
+    lcyl(Fh, 0.0032, length, (0, -0.016, 0.0105), "steel", n=10, axis="x")
+    lcyl(Fh, 0.0075, length - 0.014, (0, -0.016, 0.0105), "rubber", n=14, bevel=0.002, segs=2, axis="x")
 
 
 def ordnance_crate():
     """Explosives and ordnance case, after the UNSC's rocket case: a long, flat shell of red-brown
     polymer split at half height, tan rubber bumpers moulded round its eight corners, two draw
-    latches and a grip on the front, a grip on each end, the stencil across the lid."""
+    latches and a folding handle on the front, a folding handle on each end, the stencil across the
+    lid."""
     W, D, H, zl, wall, floor = (ORD[k] for k in ("W", "D", "H", "seam", "wall", "floor"))
     body = "ord_brown"
     bx, by, p = BUMP["bx"], BUMP["by"], BUMP["proud"]
@@ -645,10 +654,10 @@ def ordnance_crate():
         bail_latch((x, -D / 2, lb), F, UP, w=0.04, below=0.022, body_off=0.0, lid_off=0.0, look="black_metal")
     hinge((-W * 0.3, hy, zl + 0.001), (W * 0.3, hy, zl + 0.001), r=0.0045, knuckles=11, look="black_metal")
     # grips: one on the front between the latches, one on each end between the bumpers
-    zg = 0.012 + (zl - 0.012 - 0.014) * 0.5
-    bar_handle((0, -D / 2, zg), F, 0.15)
+    zg = 0.041
+    chest_handle((0, -D / 2, zg), F, 0.14)
     for sx in (-1, 1):
-        bar_handle((sx * W / 2, 0, zg), (sx, 0, 0), D - 2 * by - 0.05)
+        chest_handle((sx * W / 2, 0, zg), (sx, 0, 0), D - 2 * by - 0.046)
     # the stencil across the lid, reading from the front; small marks on the lid's faces
     zm = lb + 0.019 + (top - 0.012 - lb - 0.019) * 0.5
     decal("ord_label", (0, 0, top + 0.002), UP, B, 0.5, depth=0.005)

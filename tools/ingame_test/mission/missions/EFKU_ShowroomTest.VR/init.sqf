@@ -129,6 +129,14 @@ if (!hasInterface) exitWith {};
         _x params ["_i", "_name"];
         private _p = [4096 + (_i - 5.5) * 1.4, 4100, 0];   // the row of twelve kits
         private _h = efku_showroom_holders select _i;
+        // shut, low from the front corner: the faces, the handles and the shadow on the ground
+        _cam camSetPos (_p vectorAdd [0.95, -1.15, 0.5]);
+        _cam camSetTarget (_p vectorAdd [0, 0, 0.08]);
+        _cam camSetFov 0.5;
+        _cam camCommit 0;
+        sleep 2;
+        diag_log format ["EFKUTEST SHOT sr_%1_shut", _name];
+        sleep 1;
         [_h] call efku_lids_fnc_openHolder;
         sleep 1.5;
         // the way a player sees it: standing over it, and from four metres, at the game's own field of view
