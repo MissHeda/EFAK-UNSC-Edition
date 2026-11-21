@@ -104,10 +104,11 @@ def print_on(image, center, normal, up, width, look=None, depth=0.004):
 #   injector  UNSC Infirmary's auto-injector, 20 cm there - at 55 %
 #   ammo pack OPTRE's sealed M118 7.62x51 pack
 #   magazine  OPTRE's MA5 series magazine and BR magazine
-# How the sniper magazines and the 14.5 mm packets lie in the special ammunition case: flat, the
-# side with their markings up and reading from the front.
-SRS_ROT = (0, 0, 0)
-M99_ROT = (0, 0, 0)
+# The special ammunition box. OPTRE's SRS99D box magazine lies on its side in its file: stood up
+# here on its base plate, the feed lips and the top round up - the way magazines stand in a tray.
+# (Its SRS99C and M99 magazine files are only the part seen in the rifle, no use on their own.)
+# The 14.5 mm packets lie flat, their print up and reading from the front.
+SRS_ROT = (-90, 0, 0)
 PKT_ROT = (0, 90, 180)
 
 _REAL = {
@@ -118,11 +119,10 @@ _REAL = {
     "ma5_mag": ("optre/ma5_mag.p3d", (0, 0, 0), 0.5, 500),
     "br_mag": ("optre/br_mag.p3d", (90, 0, 0), 0.5, 500),
     # the two cases of this mod's own: OPTRE's M41 twin HEAT tube and M44 Lykoi HEAT rocket, its
-    # SRS99C and M99 magazines and its 14.5x114 packet
+    # SRS99D magazine and its 14.5x114 packet
     "m41_heat": ("optre/m41_heat.p3d", (0, 0, 180), 0.6, 4000),   # turned: its print reads from the front
     "lykoi": ("optre/lykoi_mag.p3d", (0, 0, 0), 0.6, 3000),
-    "srs_mag": ("optre/srs99c_mag.p3d", SRS_ROT, 0.45, 600),
-    "m99_mag": ("optre/m99_mag.p3d", M99_ROT, 0.34, 700),
+    "srs_mag": ("optre/srs99d_mag.p3d", SRS_ROT, 0.42, 400),
     "pkt_145": ("optre/pkt_145.p3d", PKT_ROT, 0.5, 400),
 }
 
@@ -849,27 +849,26 @@ def ammo_sack(c, w=0.046, d=0.066, h=0.013):
 
 
 def fill_special_ammo():
-    """Special ammunition case: three SRS99 magazines and a foil sack of loose rounds in the back
-    row, an M99 magazine, two 14.5x114 packets and a second sack in the front row - everything
-    lying flat, its markings up, each piece in its own cut."""
+    """Special ammunition box: eight SRS99 magazines standing in their cuts, the top round showing,
+    two 14.5x114 packets and two foil sacks of loose rounds lying flat."""
     W, D, H, lid_h, cap = 0.36, 0.18, 0.2, 0.042, 0.03
+    srs = _REAL["srs_mag"]
     pkt = _REAL["pkt_145"]
     with contents():
         yb, yf = 0.0405, -0.0405
-        srs = [(x, yb) for x in (-0.1012, -0.0274, 0.0464)]
-        m99 = [(-0.0953, yf)]
+        mags = [(x, yb + dy) for x in (-0.1012, -0.0274, 0.0464) for dy in (-0.018, 0.018)]
+        mags += [(-0.0953, yf + dy) for dy in (-0.018, 0.018)]
         pkts = [(-0.0222, yf), (0.0457, yf)]
         sacks = [(0.1107, yb), (0.1107, yf)]
-        pockets = [real_pocket("srs_mag", (x, y, 0), axis="x") for x, y in srs]
-        pockets += [real_pocket("m99_mag", (x, y, 0), axis="x") for x, y in m99]
+        sw, sd, sh = imported_size(srs[0], srs[1], srs[2], srs[3])
         pw, pd, ph = imported_size(pkt[0], pkt[1], pkt[2], pkt[3])
+        pockets = [(x, y, sw, sd) for x, y in mags]
         pockets += [(x, y, pw, pd) for x, y in pkts]
         pockets += [(x, y, 0.044, 0.066) for x, y in sacks]
         zf = case_tray(W, D, H, lid_h, cap, pockets, h=0.016)
-        for x, y in srs:
-            real("srs_mag", (x, y, zf - 0.004), axis="x", spec=0.25, gloss=0.4)
-        for x, y in m99:
-            real("m99_mag", (x, y, zf), axis="x", spec=0.25, gloss=0.4)
+        for x, y in mags:
+            imported(srs[0], (x, y, zf - (sh - 0.02)), rot=srs[1], scale=srs[2], max_faces=srs[3], spec=0.25,
+                     gloss=0.4)
         for k, (x, y) in enumerate(pkts):
             imported(pkt[0], (x, y, zf - (ph - 0.02)), rot=pkt[1], scale=pkt[2], max_faces=pkt[3], spec=0.15,
                      gloss=0.35, textures={"sniper_co": "pkt_145_apfsds_co" if k else "pkt_145_hedp_co"})

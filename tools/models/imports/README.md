@@ -16,8 +16,7 @@ the authors in the mod's description.
 | `optre/br_mag.p3d` | BR magazine | Operation: TREBUCHET | `\OPTRE_Weapons\br\BR_Magazine.p3d` | as above |
 | `optre/m41_heat.p3d` | M41 twin HEAT tube | Operation: TREBUCHET | `\OPTRE_Weapons\Rockets\m41_spkr_types\heat.p3d` | as above |
 | `optre/lykoi_mag.p3d` | M44 Lykoi HEAT rocket | Operation: TREBUCHET | `\OPTRE_Weapons_AT\M44_Lykoi\M44_Lykoi_Mag_Ground.p3d` | as above |
-| `optre/srs99c_mag.p3d` | SRS99C magazine | Operation: TREBUCHET | `\OPTRE_Weapons\Sniper\SRS99C_Mag.p3d` | as above |
-| `optre/m99_mag.p3d` | M99 Stanchion magazine | Operation: TREBUCHET | `\OPTRE_Weapons\Sniper\M99_Magazine.p3d` | as above |
+| `optre/srs99d_mag.p3d` | SRS99D box magazine (what OPTRE's `_Mag_D` magazines lie on the ground as) | Operation: TREBUCHET | `\OPTRE_Weapons\Sniper\SRS99D_Mag.p3d` | as above |
 | `optre/pkt_145.p3d` | 14.5x114 ammo packet (APFSDS and HEDP print) | Operation: TREBUCHET | `\OPTRE_WeaponsmmoPacketsV2\dataex114rndex114_4rnd_apfsds.p3d` | as above |
 | `unsci/injector.p3d` | UNSC auto-injector | UNSC Infirmary (Workshop 3568544071), Im Kreepy | `unsci_items\data\unsci_injector.p3d` | its LICENSE.txt: attribution, non-commercial, Arma only, share alike |
 | `unsci/medigel_tube.p3d` | Medigel tube | UNSC Infirmary | `unsci_items\data\unsci_medigel_tube.p3d` | as above |
