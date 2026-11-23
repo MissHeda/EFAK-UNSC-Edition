@@ -6,7 +6,7 @@ mod adds itself: special ammunition, explosives and ordnance.
 """
 import math
 
-from unsc_lib import (box, bolt, cluster, eggcrate, clustered, cyl, decal, frame, hinge, inset, lbox, lcyl, lid, lid_axis,
+from unsc_lib import (box, bolt, cluster, eggcrate, loft, clustered, cyl, decal, frame, hinge, inset, lbox, lcyl, lid, lid_axis,
                       plate, prism, rect, rivets, rrect, screw, bail_latch, vents, SHADOW)
 from mathutils import Vector
 
@@ -196,76 +196,96 @@ def ifak():
     return 4096
 
 
-# The AFAK: in the shape and colours of The Cole Protocol's health pack (40 x 50 x 20 cm, measured
-# in game), built here with our own parts and texture. Width and length at the waist, how far the
-# ends are cut in (across, along), the heights of the bottom bevel, the seam, the top bevel's start,
-# the top, and how far the bevels draw in. C is the cut along x, for the contents' tray.
-AF = dict(W=0.40, L=0.50, cx=0.08, cy=0.11, C=0.09, bot=0.045, seam=0.085, waist=0.122, top=0.188, H=0.2,
-          bev_b=0.03, bev_t=0.045)
+# The AFAK: the Halo health pack, built here with our own parts and texture to its measures (taken
+# in game): an octagon 40 x 50 cm at its waist with 20 cm wide ends, standing straight from 5 to 15 cm,
+# drawing in steeply to a 20 x 24 cm floor and to a 25 x 27 cm top. It opens at the middle of the
+# waist. C is the cut at the waist as one 45-degree figure, for the contents' tray.
+AF = dict(W=0.40, L=0.50, C=0.12, bot=0.05, seam=0.10, waist=0.15, H=0.2)
+
+
+def oct8(w, l, cx, cy, d=0.0):
+    """An octagon w x l, its ends cut in by cx across and cy along, moved in by d."""
+    pts = [(-w / 2 + cx, -l / 2), (w / 2 - cx, -l / 2), (w / 2, -l / 2 + cy), (w / 2, l / 2 - cy),
+           (w / 2 - cx, l / 2), (-w / 2 + cx, l / 2), (-w / 2, l / 2 - cy), (-w / 2, -l / 2 + cy)]
+    return inset(pts, d) if d else pts
 
 
 def af_outline(d=0.0):
     """The pack's outline at the waist, moved in by d."""
-    W, L, cx, cy = AF["W"], AF["L"], AF["cx"], AF["cy"]
-    pts = [(-W / 2 + cx, -L / 2), (W / 2 - cx, -L / 2), (W / 2, -L / 2 + cy), (W / 2, L / 2 - cy),
-           (W / 2 - cx, L / 2), (-W / 2 + cx, L / 2), (-W / 2, L / 2 - cy), (-W / 2, -L / 2 + cy)]
-    return inset(pts, d) if d else pts
+    return oct8(0.40, 0.50, 0.10, 0.15, d)
 
 
 def afak():
-    """AFAK: a white moulded pack, an elongated octagon bevelled top and bottom, opening at its
-    waist - the lower half a tray with the contents in cut foam, the upper half the lid, hinged at
-    the back and lined with egg-crate foam. On the top the red H on a framed plate, a grip recess in
-    each end and red reflectors in the corners; ribbed rubber grips on the long sides."""
+    """AFAK: the white pack, opening at its waist - the lower half a tray with the contents in cut
+    foam, the upper half the lid, hinged at the back and lined with egg-crate foam. The red H on a
+    framed plate on the top, a grip recess in the top bevel at each end, red reflectors on the four
+    corner bevels, ribbed rubber grips in frames on the long sides."""
     W, L = AF["W"], AF["L"]
-    zb, zs, zw, zt, top = AF["bot"], AF["seam"], AF["waist"], AF["top"], AF["H"]
+    zb, zs, zw, top = AF["bot"], AF["seam"], AF["waist"], AF["H"]
     out = af_outline()
-    # the lower half: the bottom bevel (drawing in towards the floor) and the waist up to the seam
-    prism(out, zb, "shell_white", (0, 0, zb), (180, 0, 0), bevel=0.004, segs=2, taper=AF["bev_b"])
-    prism(out, zs - zb, "shell_white", (0, 0, zb), bevel=0.003, segs=2, hollow=0.012)
+    floor = oct8(0.20, 0.24, 0.04, 0.05)
+    # the lower half: the bottom bevel and the waist up to the seam (a wall round the tray)
+    loft(floor, out, 0.0, zb, "halo_white", bevel=0.005, segs=3)
+    prism(out, zs - zb, "halo_white", (0, 0, zb), bevel=0.003, segs=2, hollow=0.012)
     prism(inset(out, 0.002), 0.004, "rubber", (0, 0, zs - 0.001), bevel=0.001, segs=1, hollow=0.008)
     hy = L / 2 + 0.004
-    lid_axis((-0.1, hy, zs + 0.002), (0.1, hy, zs + 0.002))
+    lid_axis((-0.08, hy, zs + 0.002), (0.08, hy, zs + 0.002))
     with lid():
-        # the waist above the seam and the top bevel, drawing in to the top
-        prism(out, zw - zs - 0.002, "shell_white", (0, 0, zs + 0.002), bevel=0.003, segs=2, hollow=0.012)
-        prism(out, zt - zw, "shell_white", (0, 0, zw), bevel=0.004, segs=2, taper=AF["bev_t"])
-        topo = af_outline(AF["bev_t"])
-        prism(topo, top - zt, "shell_white", (0, 0, zt), bevel=0.004, segs=2, taper=0.006)
+        prism(out, zw - zs - 0.002, "halo_white", (0, 0, zs + 0.002), bevel=0.003, segs=2, hollow=0.012)
+        # a narrow chamfer up to the shoulder, the raised block on it, its ends sloping down
+        zsh, zbl = 0.162, 0.172
+        shoulder = oct8(0.342, 0.411, 0.085, 0.12)
+        loft(out, shoulder, zw, zsh, "halo_white", bevel=0.003, segs=2)
+        loft(oct8(0.258, 0.411, 0.012, 0.012), oct8(0.258, 0.411, 0.012, 0.012), zsh - 0.001, zbl, "halo_white",
+             bevel=0.003, segs=2)
+        loft(oct8(0.258, 0.411, 0.012, 0.012), oct8(0.258, 0.268, 0.012, 0.012), zbl, top, "halo_white",
+             bevel=0.004, segs=2)
         # the lining under the lid
         prism(inset(out, 0.012), 0.004, "foam", (0, 0, zw - 0.004), bevel=0.001, segs=1)
-        eggcrate(frame((0, 0, zw - 0.004), DOWN, B), W - 0.05, L - 0.08, depth=0.012, pitch=0.044,
+        eggcrate(frame((0, 0, zw - 0.004), DOWN, B), W - 0.05, L - 0.06, depth=0.012, pitch=0.044,
                  inside=lambda x, y: abs(x) < W / 2 - 0.03 and abs(y) < L / 2 - 0.03
-                 and abs(x) / 0.085 + abs(y) / 0.115 < 3.2)
-        # the framed plate with the H in the middle of the top
-        box((0.135, 0.135, 0.004), (0, 0, top + 0.001), "shell_white", cut=0.006, bevel=0.0015, segs=2, taper=0.002)
-        box((0.14, 0.14, 0.002), (0, 0, top), "red", cut=0.007, bevel=0.0006, segs=1, hollow=0.003)
-        # a grip recess in each end of the top: a grey pocket with a tab over its inner edge
+                 and abs(x) / 0.1 + abs(y) / 0.15 < 2.6)
+        # the framed plate with the H on the block
+        box((0.13, 0.13, 0.004), (0, 0, top + 0.001), "halo_white", cut=0.006, bevel=0.0015, segs=2, taper=0.002)
+        box((0.136, 0.136, 0.002), (0, 0, top), "red", cut=0.007, bevel=0.0006, segs=1, hollow=0.003)
+        # a grip recess in each sloping end of the block: a grey pocket, a tab over its upper edge
+        slope = math.atan2(top - zbl, (0.411 - 0.268) / 2)
         for sy in (-1, 1):
-            prism(rect(0.12, 0.055, 0.012), 0.002, "shell_grey", (0, sy * 0.155, top - 0.0012), bevel=0.0008, segs=1)
-            box((0.05, 0.012, 0.004), (0, sy * 0.125, top + 0.0005), "shell_white", cut=0.003, bevel=0.0012, segs=1)
-        # red reflectors in the four corners of the top, along the cut ends
+            n = (0, sy * math.sin(slope), math.cos(slope))
+            c = (0, sy * (0.268 + 0.411) / 4, (zbl + top) / 2)
+            Fr = frame(c, n, (0, -sy, 0))
+            lbox(Fr, (0.16, 0.08, 0.004), (0, 0, -0.003), "dark_poly", cut=0.014, bevel=0.0012)
+            lbox(Fr, (0.05, 0.014, 0.006), (0, 0.03, -0.001), "halo_white", cut=0.004, bevel=0.0015)
+        # ribbed rubber grips on the shoulder beside the block
+        for sx in (-1, 1):
+            Fs = frame((sx * 0.15, 0, zsh), UP, B)
+            lbox(Fs, (0.05, 0.21, 0.003), (0, 0, -0.002), "dark_poly", bevel=0.0006)
+            for k in range(19):
+                lbox(Fs, (0.044, 0.006, 0.004), (0, -0.099 + k * 0.011, -0.001), "rubber", bevel=0.0009)
+        # red reflectors on the four corner chamfers
         for sx in (-1, 1):
             for sy in (-1, 1):
-                prism(rect(0.045, 0.02, 0.008, (1, 1, 0, 0)), 0.003, "red_reflector",
-                      (sx * 0.112, sy * 0.15, top - 0.001), (0, 0, math.degrees(math.atan2(sx * 0.11, -sy * 0.08))),
-                      bevel=0.0008, segs=1)
+                Fq = frame((sx * 0.147, sy * 0.178, (zw + zsh) / 2 + 0.001), (sx * 0.55, sy * 0.4, 1), UP)
+                lbox(Fq, (0.065, 0.026, 0.003), (0, 0, -0.0012), "red_reflector", cut=0.008, cuts=(1, 1, 0, 0),
+                     bevel=0.0008)
     decal("med_h", (0, 0, top + 0.003), UP, B, 0.1, depth=0.003)
-    # ribbed rubber grips set into the long sides, across the seam (each half has its part)
+    # ribbed rubber grips in frames on the long sides, across the seam (each half has its part)
     for sx in (-1, 1):
-        for z0, z1, in_lid in ((zb + 0.006, zs - 0.004, False), (zs + 0.004, zw - 0.004, True)):
+        for z0, z1, in_lid in ((zs + 0.006, zw - 0.006, True),):
             def grip(sx=sx, z0=z0, z1=z1):
                 Fg = frame((sx * (W / 2 + 0.0005), 0, (z0 + z1) / 2), (sx, 0, 0), UP)
-                lbox(Fg, (0.15, z1 - z0, 0.003), (0, 0, 0), "rubber", bevel=0.0008)
-                for k in range(15):
-                    lbox(Fg, (0.004, z1 - z0 - 0.004, 0.003), (-0.07 + k * 0.01, 0, 0.003), "rubber", bevel=0.0006)
+                lbox(Fg, (0.19, z1 - z0, 0.003), (0, 0, 0), "shell_grey", bevel=0.0008)
+                lbox(Fg, (0.17, z1 - z0 - 0.008, 0.002), (0, 0, 0.003), "rubber", bevel=0.0006)
+                for k in range(16):
+                    lbox(Fg, (0.0045, z1 - z0 - 0.012, 0.003), (-0.075 + k * 0.01, 0, 0.004), "rubber",
+                         bevel=0.0006)
             if in_lid:
                 with lid():
                     grip()
             else:
                 grip()
-    # a small hinge at the back, between the end's cut corners
-    hinge((-0.1, hy, zs + 0.002), (0.1, hy, zs + 0.002), r=0.004, knuckles=7, look="shell_grey")
+    # a small hinge at the back, on the end between its cut corners
+    hinge((-0.08, hy, zs + 0.002), (0.08, hy, zs + 0.002), r=0.004, knuckles=7, look="shell_grey")
     decal("serial_white", (0.0, -L / 2, (zb + zs) / 2), F, UP, 0.05, depth=0.006)
     return 4096
 

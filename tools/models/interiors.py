@@ -690,7 +690,7 @@ def fill_afak():
         for x in (-0.022, 0.022):
             pockets.append(injector_pocket((x, -0.11, 0), axis="y"))
         pocket_foam(-W / 2 + 0.014, -L / 2 + 0.014, W / 2 - 0.014, L / 2 - 0.014, zf, 0.02, pockets,
-                    clip=octagon_clip(W, L, 0.11, 0.014))
+                    clip=octagon_clip(W, L, AF["C"], 0.014))
         field_generator((0, 0.15, zf))
         for sx in (-1, 1):
             # turned end for end: the cap towards the back

@@ -73,6 +73,9 @@ LOOKS = {
     "lid_pad": look(srgb(102, 94, 64), srgb(130, 122, 92), wear=0.25, grime=0.55, spec=0.05, gloss=0.15,
                     pattern="weave", grain=0.35, streaks=0.3),
     # health pack: light grey shell, darker lower half
+    # the Halo medical pack's moulded white: a little grey, scuffed
+    "halo_white": look(srgb(206, 208, 206), srgb(150, 152, 152), wear=0.35, grime=0.6, spec=0.2, gloss=0.4,
+                       pattern="stipple", grain=0.15, bevel=0.003),
     "shell_white": look(srgb(192, 195, 193), srgb(120, 122, 124), wear=0.35, grime=0.45, spec=0.22, gloss=0.45,
                         mottle=0.03, pattern="stipple", grain=0.12),
     "shell_grey": look(srgb(150, 153, 154), srgb(200, 202, 204), wear=0.4, grime=0.5, spec=0.2, gloss=0.42,
@@ -410,6 +413,26 @@ def imported(file, at, rot=(0, 0, 0), scale=1.0, max_faces=900, spec=0.2, gloss=
                 f.smooth = True
             _finish(bm, "imported", name, Matrix.Identity(4))
 
+
+
+def loft(a, b, z0, z1, look="olive", cap0=True, cap1=True, bevel=0.003, segs=2):
+    """A solid between two outlines with the same number of points (counter-clockwise): `a` at height
+    z0, `b` at z1 - a bevel that draws in by different amounts along x and y. cap0/cap1 close the ends."""
+    if SHADOW[0]:
+        bevel = 0
+    bm = bmesh.new()
+    va = [bm.verts.new((x, y, z0)) for x, y in a]
+    vb = [bm.verts.new((x, y, z1)) for x, y in b]
+    n = len(a)
+    for k in range(n):
+        bm.faces.new((va[k], va[(k + 1) % n], vb[(k + 1) % n], vb[k]))
+    if cap0:
+        bm.faces.new(list(reversed(va)) if z1 > z0 else va)
+    if cap1:
+        bm.faces.new(vb if z1 > z0 else list(reversed(vb)))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    _bevel(bm, bevel, segs)
+    return _finish(bm, "loft", look, Matrix.Identity(4))
 
 
 def eggcrate(F, w, h, depth=0.008, pitch=0.036, look="foam", inside=None):
