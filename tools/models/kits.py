@@ -215,6 +215,13 @@ def af_outline(d=0.0):
     return oct8(0.40, 0.50, 0.10, 0.15, d)
 
 
+def lrim(F, size, wall, look, cut=0.0):
+    """A raised frame in a placement: outer size (x, y, height), walls `wall` thick - round a pocket
+    or a rib field it reads as a niche."""
+    sx, sy, sz = size
+    return prism(rect(sx, sy, cut), sz, look, bevel=0.0012, segs=1, hollow=wall, matrix=F)
+
+
 def afak():
     """AFAK: the white pack, opening at its waist - the lower half a tray with the contents in cut
     foam, the upper half the lid, hinged at the back and lined with egg-crate foam. The red H on a
@@ -254,12 +261,15 @@ def afak():
             n = (0, sy * math.sin(slope), math.cos(slope))
             c = (0, sy * (0.268 + 0.411) / 4, (zbl + top) / 2)
             Fr = frame(c, n, (0, -sy, 0))
-            lbox(Fr, (0.16, 0.08, 0.004), (0, 0, -0.003), "dark_poly", cut=0.014, bevel=0.0012)
-            lbox(Fr, (0.05, 0.014, 0.006), (0, 0.03, -0.001), "halo_white", cut=0.004, bevel=0.0015)
+            # deep and running nearly the block's full width: a dark floor in a raised white rim
+            lbox(Fr, (0.22, 0.074, 0.004), (0, 0, -0.003), "dark_poly", cut=0.016, bevel=0.0012)
+            lrim(Fr, (0.236, 0.09, 0.01), 0.008, "halo_white", cut=0.02)
+            lbox(Fr, (0.06, 0.016, 0.006), (0, 0.037, 0.008), "halo_white", cut=0.004, bevel=0.0015)
         # ribbed rubber grips on the shoulder beside the block
         for sx in (-1, 1):
             Fs = frame((sx * 0.15, 0, zsh), UP, B)
             lbox(Fs, (0.05, 0.21, 0.003), (0, 0, -0.002), "dark_poly", bevel=0.0006)
+            lrim(Fs, (0.064, 0.224, 0.007), 0.007, "halo_white", cut=0.004)
             for k in range(19):
                 lbox(Fs, (0.044, 0.006, 0.004), (0, -0.099 + k * 0.011, -0.001), "rubber", bevel=0.0009)
         # red reflectors on the four corner chamfers
@@ -274,10 +284,11 @@ def afak():
         for z0, z1, in_lid in ((zs + 0.006, zw - 0.006, True),):
             def grip(sx=sx, z0=z0, z1=z1):
                 Fg = frame((sx * (W / 2 + 0.0005), 0, (z0 + z1) / 2), (sx, 0, 0), UP)
-                lbox(Fg, (0.19, z1 - z0, 0.003), (0, 0, 0), "shell_grey", bevel=0.0008)
-                lbox(Fg, (0.17, z1 - z0 - 0.008, 0.002), (0, 0, 0.003), "rubber", bevel=0.0006)
+                # the ribs sit in a niche: a grey frame standing proud round a rubber floor
+                lrim(Fg, (0.19, z1 - z0, 0.008), 0.009, "shell_grey", cut=0.003)
+                lbox(Fg, (0.174, z1 - z0 - 0.016, 0.002), (0, 0, 0), "rubber", bevel=0.0006)
                 for k in range(16):
-                    lbox(Fg, (0.0045, z1 - z0 - 0.012, 0.003), (-0.075 + k * 0.01, 0, 0.004), "rubber",
+                    lbox(Fg, (0.0045, z1 - z0 - 0.02, 0.003), (-0.075 + k * 0.01, 0, 0.002), "rubber",
                          bevel=0.0006)
             if in_lid:
                 with lid():
