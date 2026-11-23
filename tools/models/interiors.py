@@ -113,6 +113,8 @@ PKT_ROT = (0, 90, 180)
 
 _REAL = {
     "biofoam": ("optre/biofoam.p3d", (-90, 0, 0), 0.36, 900),
+    # the same canister bigger, for the AFAK
+    "biofoam_full": ("optre/biofoam.p3d", (-90, 0, 0), 0.75, 900),
     "medigel": ("unsci/medigel_tube.p3d", (-90, 0, 0), 1.0, 700, -90),
     "injector": ("unsci/injector.p3d", (0, 0, 0), 0.55, 700, -90),
     "ammo_pack": ("optre/ma5ammo.p3d", (-90, 0, 0), 0.36, 500),
@@ -122,7 +124,7 @@ _REAL = {
     # SRS99D magazine and its 14.5x114 packet
     "m41_heat": ("optre/m41_heat.p3d", (0, 0, 180), 0.6, 4000),   # turned: its print reads from the front
     "lykoi": ("optre/lykoi_mag.p3d", (0, 0, 0), 0.6, 3000),
-    "srs_mag": ("optre/srs99d_mag.p3d", SRS_ROT, 0.44, 400),
+    "srs_mag": ("optre/srs99d_mag.p3d", SRS_ROT, 0.5, 400),
     "pkt_145": ("optre/pkt_145.p3d", PKT_ROT, 0.5, 400),
 }
 
@@ -669,32 +671,30 @@ def fill_ifak():
 
 
 def fill_afak():
-    """AFAK: the sterile field generator in the middle of an octagonal tray, a biofoam canister along
-    each side, medigel and injectors behind, dressings and a chest seal across the front."""
-    W, D, C = 0.36, 0.27, 0.06
+    """AFAK: a biofoam canister down each long side, between them the sterile field generator,
+    two medigel tubes and two auto-injectors - each in its cut, at the size they are in their mods."""
+    from kits import AF
+    W, L, C = AF["W"], AF["L"], AF["C"]
     with contents():
-        prism(inset(rect(W, D, C), 0.0085), 0.004, "foam", (0, 0, 0.02), bevel=0.0012, segs=1)
-        zf = 0.024
-        pockets = [(0, 0, 0.07, 0.07)]
+        prism(inset(rect(W, L, C), 0.013), 0.004, "foam", (0, 0, 0.012), bevel=0.0012, segs=1)
+        zf = 0.016
+        pockets = []
         for sx in (-1, 1):
-            pockets.append(biofoam_pocket((sx * 0.115, -0.01, 0), axis="y"))
-        pockets.append(medigel_pocket((-0.05, 0.095, 0), axis="x"))
-        for x in (0.045, 0.07):
-            pockets.append(injector_pocket((x, 0.085, 0), axis="x") if False else injector_pocket((x, 0.065, 0), axis="y"))
-        for x in (-0.04, 0.04):
-            pockets.append((x, -0.056, 0.05, 0.03))
-        pockets.append((0.0, -0.1, 0.06, 0.044))
-        pocket_foam(-W / 2 + 0.012, -D / 2 + 0.012, W / 2 - 0.012, D / 2 - 0.012, zf, 0.012, pockets,
-                    clip=octagon_clip(W, D, C, 0.024))
-        field_generator((0, 0, zf))
+            pockets.append(real_pocket("biofoam_full", (sx * 0.1, 0.0, 0), axis="y"))
+        pockets.append((0.0, 0.15, 0.07, 0.07))
+        for x in (-0.022, 0.022):
+            pockets.append(medigel_pocket((x, 0.055, 0), axis="y"))
+        for x in (-0.022, 0.022):
+            pockets.append(injector_pocket((x, -0.11, 0), axis="y"))
+        pocket_foam(-W / 2 + 0.014, -L / 2 + 0.014, W / 2 - 0.014, L / 2 - 0.014, zf, 0.02, pockets,
+                    clip=octagon_clip(W, L, C, 0.014))
+        field_generator((0, 0.15, zf))
         for sx in (-1, 1):
-            biofoam((sx * 0.115, -0.01, zf), axis="y")
-        medigel_tube((-0.05, 0.095, zf), axis="x")
-        for k, x in enumerate((0.045, 0.07)):
-            injector((x, 0.065, zf), axis="y", cap="red" if k == 0 else "orange")
-        for x in (-0.04, 0.04):
-            dressing((x, -0.056, zf), 0.05, 0.03, 0.01)
-        chest_seal((0.0, -0.1, zf))
+            real("biofoam_full", (sx * 0.1, 0.0, zf), axis="y", spec=0.3, gloss=0.5)
+        for x in (-0.022, 0.022):
+            medigel_tube((x, 0.055, zf), axis="y")
+        for k, x in enumerate((-0.022, 0.022)):
+            injector((x, -0.11, zf), axis="y", cap="red" if k == 0 else "orange")
 
 
 def fill_narcbox():
@@ -752,13 +752,14 @@ def fill_utility_pouch():
 
 
 def fill_ammo_pouch():
-    """Ammo pouch: three MA5 magazines standing in each cell, feed end up."""
-    D, H = 0.056, 0.14
+    """Ammo pouch: two MA5 magazines standing in each cell, feed end up, at their real size."""
+    from kits import AP
     file, rot, scale, faces = _REAL["ma5_mag"][:4]
+    w, d, h = imported_size(file, (90, 0, 0), 1.0, faces)
     with contents():
         for sx in (-1, 1):
-            for y in (-0.013, 0.0, 0.013):
-                imported(file, (sx * 0.025, y, H - 0.047 - 0.028), rot=(90, 0, 0), scale=0.34, max_faces=faces,
+            for y in (-0.0165, 0.0165):
+                imported(file, (sx * AP["cx"], y, AP["H"] - 0.026 - h), rot=(90, 0, 0), scale=1.0, max_faces=faces,
                          spec=0.25, gloss=0.4)
 
 

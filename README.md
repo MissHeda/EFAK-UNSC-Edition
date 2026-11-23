@@ -8,7 +8,7 @@ a cyan HUD readout on dark glass. Works with EFAK, EUP or both - whichever is lo
 | Kit | Becomes |
 |---|---|
 | IFAK | IFAK - angular polymer case with a front lid, red pull tab and MOLLE back |
-| AFAK | AFAK - the flat octagonal field medkit with the medical mark and red reflectors |
+| AFAK | AFAK - the health pack of The Cole Protocol in its size (40 x 50 x 20 cm): white octagonal shell, medical H, red reflectors, ribbed grips |
 | MFAK | khaki UNSC medical case in the style of Halo Infinite's crates: black frame, EGB emblem |
 | MFAK+ | the same family, taller, olive |
 | Narc Box | narc case - moulded launcher-ammo style hard case with yellow stencil |
@@ -25,6 +25,26 @@ framework, listed with the pouches in the menu, the arsenal and the settings):
 |---|---|---|
 | Special Ammunition Box (`efku_SpecialAmmoCase`) | magazines | the ammunition case under its own stencil: six SRS99 magazines lying in cut foam, 14.5x114 packets and foil sacks inside |
 | Explosives + Ordnance Box (`efku_OrdnanceCase`) | rockets, missiles, charges, mines, hand grenades | a long red-brown rocket case (78 cm) with tan corner bumpers and three folding handles: an M41 twin HEAT tube and an M44 Lykoi HEAT rocket inside |
+
+## Real sizes
+
+What is packed inside comes from OPTRE and UNSC Infirmary at the size it has there, and the cases are
+built round it: Ammo Box and Special Ammunition Box 72 x 36 x 40 cm, Explosives + Ordnance Box
+130 x 45 x 28 cm, Engineer Box 59 x 29 x 29 cm, Ammo Pouch 25 x 8 x 19 cm (two MA5 magazines a
+cell), Utility Pouch 22 x 9 x 18 cm.
+
+## Kits as boxes and items
+
+Every kit can also be placed in Eden or Zeus (category **UNSC Kits**):
+
+| Placed as | Class | What it is |
+|---|---|---|
+| Kit box | `efku_Box_<kit>` (`efku_Box_afak`, `efku_Box_ammo_bag`, ...) | a world object with the kit's model, packed on the server a second after it appears with the kit's default contents (EFAK's setting for that kit) and, for the ammunition, special ammunition, ordnance and engineer boxes, the Halo ammunition they hold. Its inventory opens from the vanilla action or ACE (**Inventory**), and its lid swings open for everyone while someone has it open. It can be dragged, carried, loaded as ACE cargo and attached to a vehicle with PH Vehicles Arsenal; attached, it stays open to everyone and still animates. |
+| Kit item | `Item_<kit class>` (`Item_efak_AFAK`, ...) | the kit itself lying on the ground, to pick up |
+
+A box is packed once and only when empty, so one filled in Eden keeps what the mission maker put in,
+and one created again by a vehicle preset is packed fresh. `[_box, true] call efku_boxes_fnc_fill`
+repacks one on the server. The lid follows the lids setting: **Never** keeps it shut.
 
 Kits on the ground lie shut. Open a kit's window and that kit's lid unlatches and swings open while you
 look inside, and shuts again when you close the window (only you see it; switch it off in the addon

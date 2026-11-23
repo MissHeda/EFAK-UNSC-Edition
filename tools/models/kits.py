@@ -196,75 +196,77 @@ def ifak():
     return 4096
 
 
+# The AFAK, as The Cole Protocol's health pack (measured in game: 40 x 50 x 20 cm): width, length,
+# the cut corners, height and the seam between the halves.
+AF = dict(W=0.40, L=0.50, C=0.10, H=0.20, seam=0.10)
+
+
 def afak():
-    """AFAK: the flat field medkit - octagonal hard case, light lid with the medical mark, red
-    reflectors, rubber grips front and back. A tray with a gasket below, a lined shell above."""
-    W, D = 0.36, 0.27
-    C = 0.06
-    base_h, lid_z, lid_h = 0.034, 0.039, 0.040
-    top = lid_z + lid_h
-    outline = rect(W, D, C)
-    prism(outline, 0.012, "shell_dark", bevel=0.003, segs=2)
-    prism(outline, base_h - 0.01, "shell_dark", (0, 0, 0.01), bevel=0.003, segs=2, hollow=0.008)
-    prism(rect(W - 0.004, D - 0.004, C - 0.001), 0.006, "rubber", (0, 0, base_h - 0.002), bevel=0.001, segs=1,
-          hollow=0.006)
-    # the lid turns about the hinge's pin
-    lid_axis((-0.09, D / 2 + 0.004, lid_z), (0.09, D / 2 + 0.004, lid_z))
+    """AFAK: The Cole Protocol's health pack, our way - a white shell 40 x 50 x 20 cm, an elongated
+    octagon split at half its depth, lying on its back. The upper half is the lid: the medical H on
+    a raised plate, red reflectors in the four cut corners, lined with egg-crate foam. Ribbed grips
+    down both long sides, a carry slot in each end, the hinge at the back, the latch in the front
+    slot."""
+    W, L, C = AF["W"], AF["L"], AF["C"]
+    zs, top = AF["seam"], AF["H"]
+    outline = rect(W, L, C)
+    # the lower half: a floor and the wall round the tray, a gasket on its rim
+    prism(inset(outline, 0.006), 0.012, "shell_grey", bevel=0.004, segs=2)
+    prism(outline, zs - 0.008, "shell_white", (0, 0, 0.008), bevel=0.005, segs=3, hollow=0.012)
+    prism(inset(outline, 0.002), 0.004, "rubber", (0, 0, zs - 0.001), bevel=0.001, segs=1, hollow=0.008)
+    lid_axis((-0.12, L / 2 + 0.006, zs + 0.002), (0.12, L / 2 + 0.006, zs + 0.002))
     with lid():
-        prism(outline, lid_h - 0.014, "shell_grey", (0, 0, lid_z), bevel=0.003, segs=2, hollow=0.008)
-        prism(outline, 0.016, "shell_grey", (0, 0, top - 0.016), bevel=0.003, segs=2, taper=0.012)
-        prism(inset(outline, 0.009), 0.005, "foam", (0, 0, top - 0.021), bevel=0.0015, segs=1)
-        eggcrate(frame((0, 0, top - 0.021), DOWN, B), W - 0.024, D - 0.024, depth=0.011, pitch=0.042,
-                 inside=lambda x, y: abs(x) + abs(y) < W / 2 + D / 2 - C - 0.02)
-        # centre plate with the mark, screwed down
-        box((0.135, 0.135, 0.008), (0, 0, top + 0.003), "shell_white", cut=0.01, bevel=0.002, segs=2, taper=0.003)
+        prism(outline, top - zs - 0.022, "shell_white", (0, 0, zs + 0.002), bevel=0.005, segs=3, hollow=0.012)
+        prism(outline, 0.02, "shell_white", (0, 0, top - 0.02), bevel=0.005, segs=3, taper=0.014)
+        prism(inset(outline, 0.012), 0.005, "foam", (0, 0, top - 0.026), bevel=0.0015, segs=1)
+        eggcrate(frame((0, 0, top - 0.026), DOWN, B), W - 0.03, L - 0.03, depth=0.014, pitch=0.046,
+                 inside=lambda x, y: abs(x) / (W / 2 - 0.02) + abs(y) / (L / 2 - 0.02) < 1.6 and abs(x) < W / 2 - 0.02
+                 and abs(y) < L / 2 - 0.02)
+        # the raised plate with the H, framed, screwed down
+        box((0.16, 0.16, 0.006), (0, 0, top + 0.002), "shell_white", cut=0.012, bevel=0.002, segs=2, taper=0.004)
         for sx in (-1, 1):
             for sy in (-1, 1):
-                screw((sx * 0.056, sy * 0.056, top + 0.007), UP, 0.0024)
-        # wings left and right of it, each with a vent
-        wing = [(0.078, -0.072), (0.138, -0.046), (0.138, 0.046), (0.078, 0.072)]
-        prism(wing, 0.004, "shell_white", (0, 0, top - 0.001), bevel=0.0012, segs=1)
-        prism([(-x, y) for x, y in reversed(wing)], 0.004, "shell_white", (0, 0, top - 0.001), bevel=0.0012,
-              segs=1)
-        for sx in (-1, 1):
-            vents((sx * 0.108, 0, top + 0.003), UP, (1, 0, 0), 5, 0.058, 0.0075, look="dark_poly")
-        # reflectors on top, on the diagonals around the plate
-        for sx in (-1, 1):
-            for sy in (-1, 1):
-                ang = math.degrees(math.atan2(sy * 0.085, sx * 0.1)) + 90
-                prism(rect(0.032, 0.016, 0.006, (1, 1, 0, 0)), 0.003, "red_reflector",
-                      (sx * 0.1, sy * 0.086, top - 0.001), (0, 0, ang), bevel=0.0008, segs=1)
-        # status lens of the sterile field generator, front right, clear of the reflector
-        with cluster():
-            cyl(0.006, 0.003, (0.072, -0.108, top + 0.0005), "black_metal", n=20)
-            cyl(0.0038, 0.003, (0.072, -0.108, top + 0.0015), "green_lens", n=20)
-    decal("med_h", (0, 0, top + 0.007), UP, B, 0.1, depth=0.003)
-    # reflectors on the cut corners of the base - they stay with the base
-    for sx in (-1, 1):
+                screw((sx * 0.068, sy * 0.068, top + 0.005), UP, 0.0028)
+        # recessed panels above and below the plate, as on the TCP pack
         for sy in (-1, 1):
-            nx, ny = sx / math.sqrt(2), sy / math.sqrt(2)
-            cx, cy = sx * (W / 2 - C / 2), sy * (D / 2 - C / 2)
-            a = math.degrees(math.atan2(nx, -ny))
-            prism(rect(0.04, 0.016, 0.004), 0.003, "red_reflector", (cx, cy, base_h / 2), (90, 0, a),
-                  bevel=0.0008, segs=1)
-    # rubber grips on the base, front and back, ribbed, bolted at the ends
-    for sy in (-1, 1):
-        y = sy * (D / 2 + 0.004)
-        box((0.2, 0.026, 0.028), (0, y, 0.02), "rubber", bevel=0.006, segs=3)
-        for k in range(4):
-            box((0.186, 0.004, 0.003), (0, y + sy * 0.0135, 0.01 + k * 0.0066), "rubber", bevel=0.0008, segs=1)
+            prism(rect(0.13, 0.07, 0.018, (1, 1, 0, 0) if sy < 0 else (0, 0, 1, 1)), 0.003, "shell_grey",
+                  (0, sy * 0.15, top - 0.0015), bevel=0.001, segs=1)
+        # red reflectors in the four cut corners of the lid's top
         for sx in (-1, 1):
-            bolt((sx * 0.092, y + sy * 0.0155, 0.02), (0, sy, 0), 0.003)
-    # the latch: bracket on the front grip, the bail reaching back over the seam onto a keeper on the
-    # lid; opening, it swings out and hangs down in front of the grip
-    bail_latch((0, -D / 2, lid_z), F, UP, w=0.034, below=0.012, body_off=0.0195, lid_off=0.0,
-               keeper=(0.004, 0.011, 0.0, 0.016), look="steel")
-    # the hinge along the back
-    hinge((-0.09, D / 2 + 0.004, lid_z), (0.09, D / 2 + 0.004, lid_z), r=0.0045, knuckles=7, look="shell_dark")
-    # labels
-    decal("afak_label", (0, -0.095, top), UP, B, 0.12, depth=0.003)
-    decal("serial_white", (0, 0.098, top), UP, B, 0.08, depth=0.003)
-    feet((-0.12, 0.12), (-0.08, 0.08))
+            for sy in (-1, 1):
+                cxr = sx * (W / 2 - C * 0.62)
+                cyr = sy * (L / 2 - C * 0.62)
+                prism(rect(0.05, 0.022, 0.008, (1, 1, 0, 0)), 0.003, "red_reflector", (cxr, cyr, top - 0.001),
+                      (0, 0, math.degrees(math.atan2(sx, -sy))), bevel=0.0008, segs=1)
+    decal("med_h", (0, 0, top + 0.005), UP, B, 0.12, depth=0.003)
+    # ribbed grips down both long sides, on both halves - dark rubber set into the shell
+    for sx in (-1, 1):
+        x = sx * (W / 2 + 0.001)
+        for z0, z1, in_lid in ((0.03, zs - 0.012, False), (zs + 0.014, top - 0.03, True)):
+            def grip(x=x, z0=z0, z1=z1, sx=sx):
+                Fg = frame((x, 0, (z0 + z1) / 2), (sx, 0, 0), UP)
+                lbox(Fg, (0.2, z1 - z0, 0.004), (0, 0, 0), "rubber", cut=0.006, bevel=0.0015)
+                n = int((z1 - z0) / 0.009)
+                for k in range(n):
+                    zz = -(z1 - z0) / 2 + 0.006 + k * (z1 - z0 - 0.012) / max(1, n - 1)
+                    lbox(Fg, (0.19, 0.0035, 0.003), (0, zz, 0.004), "rubber", bevel=0.0008)
+            if in_lid:
+                with lid():
+                    grip()
+            else:
+                grip()
+    # the carry slot in each end: a dark recess with a bar across it
+    for sy in (-1, 1):
+        y = sy * (L / 2 + 0.001)
+        Fs = frame((0, y, zs * 0.55), (0, sy, 0), UP)
+        lbox(Fs, (0.12, 0.04, 0.003), (0, 0, 0), "rubber", cut=0.01, bevel=0.0012)
+        lbox(Fs, (0.1, 0.012, 0.012), (0, 0.006, 0.003), "shell_grey", cut=0.004, bevel=0.003, segs=2)
+    # the latch in the front, over the seam; the hinge along the back
+    bail_latch((0, -L / 2, zs + 0.002), F, UP, w=0.04, below=0.02, body_off=0.0, lid_off=0.0, look="steel")
+    hinge((-0.12, L / 2 + 0.006, zs + 0.002), (0.12, L / 2 + 0.006, zs + 0.002), r=0.005, knuckles=9,
+          look="shell_grey")
+    decal("serial_white", (0.0, L / 2, top - 0.05), B, UP, 0.07, depth=0.006)
+    feet((-0.12, 0.12), (-0.17, 0.17), size=0.03)
     return 4096
 
 
@@ -421,41 +423,46 @@ def utility_pouch():
     return 2048
 
 
+# The ammo pouch: width, depth, height, the cells' centres and width - two MA5 magazines a cell.
+AP = dict(W=0.25, D=0.082, H=0.19, cx=0.0625, cw=0.123)
+
+
 def ammo_pouch():
-    """Double magazine pouch: two moulded cells side by side, each open at the top and closed by its
-    own lined lid with a tongue, snap and pull tab - the magazines stand inside."""
-    W, D, H = 0.1, 0.056, 0.14
+    """Double magazine pouch for the MA5: two moulded cells side by side, two magazines in each,
+    every cell closed by its own lined lid with a tongue, snap and pull tab. Built for magazines at
+    their full size (OPTRE's MA5 magazine is 16.4 cm long and 10.8 cm deep)."""
+    W, D, H = AP["W"], AP["D"], AP["H"]
+    cx, cw = AP["cx"], AP["cw"]
     for sx in (-1, 1):
-        x = sx * 0.025
-        box((0.048, D, H - 0.047), (x, 0, (H - 0.047) / 2), "olive", cut=0.008, cuts=(0.6, 0.6, 0, 0), axis="y",
-            bevel=0.004, segs=3)
-        box((0.048, D, 0.037), (x, 0, H - 0.012 - 0.0175), "olive", bevel=0.003, segs=2, hollow=0.004)
+        x = sx * cx
+        box((cw, D, H - 0.06), (x, 0, (H - 0.06) / 2), "olive", cut=0.012, cuts=(0.6, 0.6, 0, 0), axis="y",
+            bevel=0.005, segs=3)
+        box((cw, D, 0.048), (x, 0, H - 0.016 - 0.024), "olive", bevel=0.004, segs=2, hollow=0.005)
         # rib down the outer side of each cell
-        box((0.004, D * 0.7, 0.035), (sx * (W / 2 + 0.0005), 0, 0.0375), "olive_dark", bevel=0.001, segs=1)
+        box((0.005, D * 0.7, 0.05), (sx * (W / 2 + 0.0005), 0, 0.05), "olive_dark", bevel=0.0012, segs=1)
         # lid (a shallow lined shell) and its tongue down the front
         with lid(), cluster():
-            box((0.05, D + 0.006, 0.004), (x, 0, H - 0.002), "olive_dark", cut=0.004, bevel=0.0015, segs=2)
-            box((0.05, D + 0.006, 0.009), (x, 0, H - 0.0085), "olive_dark", cut=0.004, bevel=0.0012, segs=1,
-                hollow=0.0035)
-            box((0.04, D - 0.004, 0.002), (x, 0, H - 0.005), "foam", bevel=0.0005, segs=1)
-            eggcrate(frame((x, 0, H - 0.006), DOWN, B), 0.034, D - 0.012, depth=0.004, pitch=0.02)
-            box((0.032, 0.005, 0.034), (x, -D / 2 - 0.003, H - 0.024), "olive_dark", cut=0.008,
-                cuts=(1, 1, 0, 0), axis="y", bevel=0.0015, segs=2)
-            Fs = frame((x, -D / 2 - 0.0055, H - 0.03), F, UP)
-            lcyl(Fs, 0.0045, 0.002, look="steel", n=16, bevel=0.0006)
-            lcyl(Fs, 0.0025, 0.003, look="steel", n=12, bevel=0.0008)
+            box((cw + 0.002, D + 0.008, 0.005), (x, 0, H - 0.0025), "olive_dark", cut=0.006, bevel=0.002, segs=2)
+            box((cw + 0.002, D + 0.008, 0.012), (x, 0, H - 0.011), "olive_dark", cut=0.006, bevel=0.0015, segs=1,
+                hollow=0.0045)
+            box((cw - 0.012, D - 0.006, 0.002), (x, 0, H - 0.006), "foam", bevel=0.0005, segs=1)
+            eggcrate(frame((x, 0, H - 0.007), DOWN, B), cw - 0.018, D - 0.016, depth=0.005, pitch=0.024)
+            box((0.06, 0.006, 0.05), (x, -D / 2 - 0.004, H - 0.032), "olive_dark", cut=0.012,
+                cuts=(1, 1, 0, 0), axis="y", bevel=0.002, segs=2)
+            Fs = frame((x, -D / 2 - 0.007, H - 0.04), F, UP)
+            lcyl(Fs, 0.006, 0.0025, look="steel", n=16, bevel=0.0007)
+            lcyl(Fs, 0.0034, 0.0035, look="steel", n=12, bevel=0.0009)
             # pull tab hanging from the tongue
-            box((0.014, 0.003, 0.018), (x, -D / 2 - 0.0045, H - 0.047), "webbing", cut=0.004, cuts=(1, 1, 0, 0),
-                axis="y", bevel=0.0006, segs=1)
-    lid_axis((-W / 2, D / 2 + 0.003, H - 0.012), (W / 2, D / 2 + 0.003, H - 0.012))
+            box((0.02, 0.003, 0.026), (x, -D / 2 - 0.0055, H - 0.064), "webbing", cut=0.006, cuts=(1, 1, 0, 0),
+                axis="y", bevel=0.0007, segs=1)
+    lid_axis((-W / 2, D / 2 + 0.004, H - 0.016), (W / 2, D / 2 + 0.004, H - 0.016))
     for sx in (-1, 1):
-        x = sx * 0.025
-        decal("ammo_cell", (x, -D / 2, 0.055), F, UP, 0.03, depth=0.003)
-    decal("marines_yellow", (W / 2 - 0.001, 0, 0.075), R, UP, 0.02, depth=0.003)
-    decal("qa_red", (-W / 2 + 0.001, 0, 0.075), L_, UP, 0.016, depth=0.003)
+        decal("ammo_cell", (sx * cx, -D / 2, 0.065), F, UP, 0.05, depth=0.003)
+    decal("marines_yellow", (W / 2 - 0.001, 0, 0.1), R, UP, 0.028, depth=0.003)
+    decal("qa_red", (-W / 2 + 0.001, 0, 0.1), L_, UP, 0.022, depth=0.003)
     # drain grommets in the floor
     for sx in (-1, 1):
-        lcyl(frame((sx * 0.025, 0, 0.0005), DOWN, B), 0.004, 0.0015, look="steel", n=14, bevel=0.0004)
+        lcyl(frame((sx * cx, 0, 0.0005), DOWN, B), 0.005, 0.0015, look="steel", n=14, bevel=0.0004)
     molle_back(W, D, H, D / 2)
     return 2048
 
@@ -721,6 +728,19 @@ BUILDERS = {
 # on its back, the label up, the way a belt case is put down - turned round so the holder shows it
 # with the label reading towards the front.
 EXPORT_ROT = {"ifak": (-90, 0, 180)}
+
+# Kits built smaller than they are, set to their real size on export (build_kit.py): what is packed
+# inside comes from other mods and is then the size it is there - the ammunition box's MA5 and BR
+# magazines (built at half size), the rocket case's M41 tube and Lykoi rocket (built at 60 %), the
+# special ammunition box's SRS99 magazines and 14.5 mm packets (half size), the engineer's tools and
+# the utility pouch's flashlight and chemlights at the size of real ones.
+KIT_SCALE = {"ammo_bag": 2.0, "special_ammo": 2.0, "ordnance_crate": 1 / 0.6, "engineer_bag": 1.4,
+             "utility_pouch": 1.5}
+
+# What each kit weighs as a world object (kg), packed.
+KIT_MASS = {"ifak": 1.5, "afak": 6.0, "mfak": 12.0, "mfakplus": 15.0, "narcbox": 8.0, "utility_pouch": 1.0,
+            "ammo_pouch": 2.5, "ammo_bag": 25.0, "engineer_bag": 18.0, "cbrn_bag": 14.0, "special_ammo": 20.0,
+            "ordnance_crate": 30.0}
 
 ADDON = {k: "kits" for k in ("ifak", "afak", "mfak", "mfakplus", "narcbox")}
 ADDON.update({k: "eup" for k in ("utility_pouch", "ammo_pouch", "ammo_bag", "engineer_bag", "cbrn_bag", "special_ammo",

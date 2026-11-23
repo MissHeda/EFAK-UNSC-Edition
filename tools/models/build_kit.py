@@ -46,7 +46,13 @@ shadow_ob = U.assemble(kit + "_shadow")
 # much on export - in its holder it then rests on the ground, and so does its prop.
 HOLDER_LIFT = 0.043352
 drop = Matrix.Translation((0, 0, -HOLDER_LIFT))
-U.EXPORT[0] = drop
+# Kits built small and set to their real size on export (kits.KIT_SCALE): every LOD, memory point and
+# the shadow grow by that much about the floor's centre, so what is packed inside comes out the size it
+# is in its own mod. The bake and the icons stay as built.
+scale = Matrix.Scale(kits.KIT_SCALE.get(kit, 1.0), 4)
+base = scale
+U.EXPORT[0] = drop @ scale
+U.GEO_MASS[0] = kits.KIT_MASS.get(kit, 1.0)
 # A kit that lies on its back in the game is turned only on export, then set down again: centred on
 # the origin, its lowest point on it - where a holder puts the model.
 if kit in kits.EXPORT_ROT:
@@ -54,9 +60,17 @@ if kit in kits.EXPORT_ROT:
     pts = [rot @ (shadow_ob.matrix_world @ v.co) for v in shadow_ob.data.vertices]
     lo = Vector((min(p.x for p in pts), min(p.y for p in pts), min(p.z for p in pts)))
     hi = Vector((max(p.x for p in pts), max(p.y for p in pts), max(p.z for p in pts)))
-    U.EXPORT[0] = drop @ Matrix.Translation((-(lo.x + hi.x) / 2, -(lo.y + hi.y) / 2, -lo.z)) @ rot
+    base = scale @ Matrix.Translation((-(lo.x + hi.x) / 2, -(lo.y + hi.y) / 2, -lo.z)) @ rot
+    U.EXPORT[0] = drop @ base
     print("export turn", kits.EXPORT_ROT[kit], "shift", tuple(round(c, 4) for c in U.EXPORT[0].translation))
 shadow_tris = U.mesh_tris(U.lod_mesh(shadow_ob, 1.0), use_comp=True)
+# The same kit as a world object (<kit>_box.p3d, addons/boxes): objects stand with the model's y up and
+# face +z, where a ground holder lays items down with z up. Turned so, standing on its origin.
+HOLDER_EXPORT = U.EXPORT[0]
+BOX_EXPORT = Matrix(((-1, 0, 0, 0), (0, 0, -1, 0), (0, -1, 0, 0), (0, 0, 0, 1))) @ base
+U.EXPORT[0] = BOX_EXPORT
+box_shadow_tris = U.inset_shadow(U.mesh_tris(U.lod_mesh(shadow_ob, 1.0), use_comp=True))
+U.EXPORT[0] = HOLDER_EXPORT
 print("shadow parts:", len({t[0][4] for t in shadow_tris}), "triangles:", len(shadow_tris))
 open_edges = U.shadow_open_edges(shadow_tris)
 shadow_tris = U.inset_shadow(shadow_tris)
@@ -102,6 +116,9 @@ if "--p3d-only" in argv:
     U.write_p3d(os.path.join(data, kit + ".p3d"), ob, tex, mat, shadow=shadow_tris)
     U.write_p3d(os.path.join(data, kit + "_open.p3d"), ob, tex, mat, shadow=shadow_tris, lods_spec=U.LODS_OPEN)
     U.write_shadow_p3d(os.path.join(data, kit + "_shadow.p3d"), shadow_tris)
+    U.EXPORT[0] = BOX_EXPORT
+    U.write_p3d(os.path.join(data, kit + "_box.p3d"), ob, tex, mat, shadow=box_shadow_tris, lods_spec=U.LODS_OPEN)
+    U.EXPORT[0] = HOLDER_EXPORT
     sys.exit(0)
 
 if fast:
@@ -135,6 +152,10 @@ U.write_p3d(os.path.join(data, kit + ".p3d"), ob, game_dir + "\\%s_co.paa" % kit
 U.write_p3d(os.path.join(data, kit + "_open.p3d"), ob, game_dir + BS + kit + "_co.paa",
             game_dir + BS + kit + ".rvmat", shadow=shadow_tris, lods_spec=U.LODS_OPEN)
 U.write_shadow_p3d(os.path.join(data, kit + "_shadow.p3d"), shadow_tris)
+U.EXPORT[0] = BOX_EXPORT
+U.write_p3d(os.path.join(data, kit + "_box.p3d"), ob, game_dir + BS + kit + "_co.paa", game_dir + BS + kit + ".rvmat",
+            shadow=box_shadow_tris, lods_spec=U.LODS_OPEN)
+U.EXPORT[0] = HOLDER_EXPORT
 
 # pictures show the kit the way it lies in the game
 if kit in kits.EXPORT_ROT:

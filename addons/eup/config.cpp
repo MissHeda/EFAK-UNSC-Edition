@@ -6,10 +6,10 @@
 class CfgPatches {
     class ADDON {
         name = COMPONENT_NAME;
-        units[] = {};
+        units[] = {"efku_Box_utility_pouch", "efku_Box_ammo_pouch", "efku_Box_ammo_bag", "efku_Box_engineer_bag", "efku_Box_cbrn_bag", "efku_Box_special_ammo", "efku_Box_ordnance_crate", "Item_eup_UtilityPouch", "Item_eup_AmmoPouch", "Item_eup_AmmoBag", "Item_eup_EngineerBag", "Item_eup_CBRNBag", "Item_efku_SpecialAmmoCase", "Item_efku_OrdnanceCase"};
         weapons[] = {"efku_SpecialAmmoCase", "efku_OrdnanceCase"};
         requiredVersion = REQUIRED_VERSION;
-        requiredAddons[] = {"efku_main", "eup_pouches"};
+        requiredAddons[] = {"efku_main", "efku_boxes", "eup_pouches"};
         skipWhenMissingDependencies = 1;
         author = "Miss Heda";
         url = "https://github.com/MissHeda/EFAK-UNSC-Edition";
@@ -195,6 +195,8 @@ class Cfg3DEN {
 
 class CfgVehicles {
     class efku_LidProp;
+    class efku_boxes_base;
+    class Item_Base_F;
     LID_PROP(utility_pouch,pouch);
     LID_PROP(ammo_pouch,pouch);
     LID_PROP(ammo_bag,case);
@@ -202,4 +204,30 @@ class CfgVehicles {
     LID_PROP(cbrn_bag,case);
     LID_PROP(special_ammo,case);
     LID_PROP(ordnance_crate,case);
+
+    // the pouches and boxes as world objects (addons/boxes): the default contents of their kit, and
+    // for the three this mod adds, what forward's unit carries in them (classes of mods that are not
+    // loaded are skipped)
+    KIT_BOX(utility_pouch,eup_UtilityPouch,"Utility Pouch (box)",pouch,60,1)};
+    KIT_BOX(ammo_pouch,eup_AmmoPouch,"Ammo Pouch (box)",pouch,100,1)};
+    KIT_BOX(ammo_bag,eup_AmmoBag,"Ammo Box",case,600,2)
+        efku_extra[] = {"OPTRE_32Rnd_762x51_Mag", 10, "OPTRE_36Rnd_95x40_Mag", 6, "OPTRE_M9_Frag", 4};
+    };
+    KIT_BOX(engineer_bag,eup_EngineerBag,"Engineer Box",case,500,2)
+        efku_extra[] = {"DemoCharge_Remote_Mag", 2};
+    };
+    KIT_BOX(cbrn_bag,eup_CBRNBag,"CBRN Box",case,500,2)};
+    KIT_BOX(special_ammo,efku_SpecialAmmoCase,"Special Ammunition Box",case,600,2)
+        efku_extra[] = {"OPTRE_4Rnd_145x114_APFSDS_Mag", 4, "OPTRE_4Rnd_145x114_HEDP_Mag", 2, "OPTRE_4Rnd_145x114_HVAP_Mag", 2};
+    };
+    KIT_BOX(ordnance_crate,efku_OrdnanceCase,"Explosives + Ordnance Box",case,800,3)
+        efku_extra[] = {"OPTRE_M41_Twin_HEAT_G", 2, "OPTRE_M44_Lykoi_HEAT_mag", 2, "OPTRE_M9_Frag", 4};
+    };
+    KIT_ITEM(eup_UtilityPouch,"Utility Pouch");
+    KIT_ITEM(eup_AmmoPouch,"Ammo Pouch");
+    KIT_ITEM(eup_AmmoBag,"Ammo Box");
+    KIT_ITEM(eup_EngineerBag,"Engineer Box");
+    KIT_ITEM(eup_CBRNBag,"CBRN Box");
+    KIT_ITEM(efku_SpecialAmmoCase,"Special Ammunition Box");
+    KIT_ITEM(efku_OrdnanceCase,"Explosives + Ordnance Box");
 };

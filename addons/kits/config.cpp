@@ -6,10 +6,10 @@
 class CfgPatches {
     class ADDON {
         name = COMPONENT_NAME;
-        units[] = {};
+        units[] = {"efku_Box_ifak", "efku_Box_afak", "efku_Box_mfak", "efku_Box_mfakplus", "efku_Box_narcbox", "Item_efak_IFAK", "Item_efak_AFAK", "Item_efak_MFAK", "Item_efak_MFAKPlus", "Item_efak_NarcBox"};
         weapons[] = {};
         requiredVersion = REQUIRED_VERSION;
-        requiredAddons[] = {"efku_main", "efak_kits"};
+        requiredAddons[] = {"efku_main", "efku_boxes", "efak_kits"};
         author = "Miss Heda";
         url = "https://github.com/MissHeda/EFAK-UNSC-Edition";
         VERSION_CONFIG;
@@ -64,9 +64,24 @@ class EFAK_KitGroups {
 
 class CfgVehicles {
     class efku_LidProp;
+    class efku_boxes_base;
+    class Item_Base_F;
     LID_PROP(ifak,med);
     LID_PROP(afak,med);
     LID_PROP(mfak,case);
     LID_PROP(mfakplus,case);
     LID_PROP(narcbox,case);
+
+    // the kits as boxes (addons/boxes), packed with each kit's default contents
+    KIT_BOX(ifak,efak_IFAK,"IFAK (box)",med,60,1)};
+    KIT_BOX(afak,efak_AFAK,"AFAK (box)",med,150,1)};
+    KIT_BOX(mfak,efak_MFAK,"MFAK (box)",case,400,1)};
+    KIT_BOX(mfakplus,efak_MFAKPlus,"MFAK+ (box)",case,600,2)};
+    KIT_BOX(narcbox,efak_NarcBox,"Narc Box (box)",case,60,1)};
+    // and as items on the ground
+    KIT_ITEM(efak_IFAK,"IFAK");
+    KIT_ITEM(efak_AFAK,"AFAK");
+    KIT_ITEM(efak_MFAK,"MFAK");
+    KIT_ITEM(efak_MFAKPlus,"MFAK+");
+    KIT_ITEM(efak_NarcBox,"Narc Box");
 };

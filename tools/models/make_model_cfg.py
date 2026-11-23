@@ -23,7 +23,7 @@ KITS = {
     "kits": [
         ("ifak", -1.66, 1, "front lid, hinged at its foot (opens away from the latch); the IFAK lies on its\n"
                            "    // back, so it swings up about 95 degrees. The latch hangs down its end."),
-        ("afak", 1.4, 1, "lid hinged at the back edge: up about 80 degrees"),
+        ("afak", 1.75, 1, "upper half hinged at the back: up about 100 degrees"),
         ("mfak", 1.75, 2, "lid cap hinged at the back: up about 100 degrees"),
         ("mfakplus", 1.75, 2, "lid cap hinged at the back: up about 100 degrees"),
         ("narcbox", 1.75, 2, "upper shell hinged at the back: up about 100 degrees"),
@@ -80,6 +80,9 @@ def model_cfg(kits):
     out.append("    // the open twins the lids addon swings open (contents in every LOD): same skeleton and animations\n")
     for kit, *_ in kits:
         out.append("    class %s_open: %s {};\n" % (kit, kit))
+    out.append("    // the kits as world objects (addons/boxes): the open twin standing up, same animations\n")
+    for kit, *_ in kits:
+        out.append("    class %s_box: %s {};\n" % (kit, kit))
     out.append("    // shadow casters for kits lying in ground holders (efku_lids), no animation\n")
     for kit, *_ in kits:
         out.append("    class %s_shadow: Default {};\n" % kit)

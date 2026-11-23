@@ -152,7 +152,7 @@ if (!hasInterface) exitWith {};
         } forEach [["eye", [0.15, -0.7, 1.1], 0.75], ["far", [0.3, -4, 1.6], 0.75], ["open", [0.25, -0.75, 0.75], 0.45]];
         ["", true] call efku_lids_fnc_closeLids;
         sleep 0.5;
-    } forEach [[0, "ifak"], [8, "engineer"], [10, "specammo"], [11, "ordnance"]];
+    } forEach [[1, "afak"], [6, "pouch"], [7, "ammo"], [11, "ordnance"]];
     diag_log format ["EFKUTEST CASTERS %1", count efku_lids_casters];
     // the two cases of this mod's own: registered as kits, their instance pool there
     diag_log format ["EFKUTEST KITS %1", ["EFKU_SpecialAmmoCase", "EFKU_OrdnanceCase"] apply {

@@ -1563,6 +1563,10 @@ def hull_tris(me, inflate=0.0):
 # build_kit.py and kits.EXPORT_ROT.
 EXPORT = [None]
 
+# Mass of the geometry LOD in kg: what a kit weighs as a world object (a box placed in Eden or Zeus,
+# lifted, carried, attached). Set per kit by build_kit.py (kits.KIT_MASS).
+GEO_MASS = [1.0]
+
 
 def _to_game(v):
     if EXPORT[0] is not None:
@@ -1760,7 +1764,7 @@ def write_p3d(path, ob, tex, mat, shadow=None, lods_spec=None):
                               selections=group_names() if shadow else None)
     print("shadow faces", nf)
     lods.append(data)
-    data, npt, nf = lod_bytes(1e13, hull_tris(last, 0.001), "", "", mass=1.0, props=(("autocenter", "0"),))
+    data, npt, nf = lod_bytes(1e13, hull_tris(last, 0.001), "", "", mass=GEO_MASS[0], props=(("autocenter", "0"),))
     print("geometry faces", nf)
     lods.append(data)
     axes = [("lid_axis", LID_AXIS)] if LID_AXIS else []

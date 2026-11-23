@@ -9,7 +9,9 @@ param(
   [string]$Arma = 'C:\SteamLibrary\steamapps\common\Arma 3\arma3_x64.exe',
   [string]$Workshop = 'C:\SteamLibrary\steamapps\workshop\content\107410',
   [string]$Python = 'python',
-  [string]$Mission = 'EFKU_Lids.Stratis'
+  [string]$Mission = 'EFKU_Lids.Stratis',
+  # further Workshop items to load, e.g. 3389065865 (The Cole Protocol) for EFKU_TCPSize.VR
+  [string[]]$Extra = @()
 )
 $ErrorActionPreference = 'Stop'
 $Here = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -36,7 +38,8 @@ public static class W {
 Add-Type -AssemblyName System.Drawing
 
 $mods = @("$Workshop\450814997", "$Workshop\463939057", "$Workshop\3809430149", "$Workshop\3812667721",
-  (Join-Path $Repo '.hemttout\build'), (Join-Path $S 'mod')) -join ';'
+  (Join-Path $Repo '.hemttout\build'), (Join-Path $S 'mod')) + ($Extra | ForEach-Object { "$Workshop\$_" })
+$mods = $mods -join ';'
 $argv = @('-window', '-noPause', '-skipIntro', '-noSplash', '-showScriptErrors', '-x=1600', '-y=900',
   '-name=efkutest', "`"-profiles=$prof`"", "`"-mod=$mods`"",
   "`"-init=playMission['','\z\efku_test\missions\$Mission']`"")
