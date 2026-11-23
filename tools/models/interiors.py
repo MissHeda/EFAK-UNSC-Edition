@@ -671,13 +671,16 @@ def fill_ifak():
 
 
 def fill_afak():
-    """AFAK: a biofoam canister down each long side, between them the sterile field generator,
-    two medigel tubes and two auto-injectors - each in its cut, at the size they are in their mods."""
-    from kits import AF
-    W, L, C = AF["W"], AF["L"], AF["C"]
+    """AFAK: a biofoam canister down each long side (cap to the back), between them the sterile
+    field generator, two medigel tubes and two auto-injectors - each in its cut, on the tray at the
+    top of the bottom bevel."""
+    from kits import AF, af_outline
+    W, L = AF["W"], AF["L"]
+    tray = af_outline(0.014)
     with contents():
-        prism(inset(rect(W, L, C), 0.013), 0.004, "foam", (0, 0, 0.012), bevel=0.0012, segs=1)
-        zf = 0.016
+        zf = AF["bot"] + 0.004
+        prism(tray, 0.004, "foam", (0, 0, zf - 0.004), bevel=0.0012, segs=1)
+        file, rot, scale, faces = _turn("biofoam_full", "y")
         pockets = []
         for sx in (-1, 1):
             pockets.append(real_pocket("biofoam_full", (sx * 0.1, 0.0, 0), axis="y"))
@@ -687,10 +690,12 @@ def fill_afak():
         for x in (-0.022, 0.022):
             pockets.append(injector_pocket((x, -0.11, 0), axis="y"))
         pocket_foam(-W / 2 + 0.014, -L / 2 + 0.014, W / 2 - 0.014, L / 2 - 0.014, zf, 0.02, pockets,
-                    clip=octagon_clip(W, L, C, 0.014))
+                    clip=octagon_clip(W, L, 0.11, 0.014))
         field_generator((0, 0.15, zf))
         for sx in (-1, 1):
-            real("biofoam_full", (sx * 0.1, 0.0, zf), axis="y", spec=0.3, gloss=0.5)
+            # turned end for end: the cap towards the back
+            imported(file, (sx * 0.1, 0.0, zf), rot=(rot[0], rot[1], rot[2] + 180), scale=scale, max_faces=faces,
+                     spec=0.3, gloss=0.5)
         for x in (-0.022, 0.022):
             medigel_tube((x, 0.055, zf), axis="y")
         for k, x in enumerate((-0.022, 0.022)):

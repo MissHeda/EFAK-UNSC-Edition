@@ -23,7 +23,7 @@ KITS = {
     "kits": [
         ("ifak", -1.66, 1, "front lid, hinged at its foot (opens away from the latch); the IFAK lies on its\n"
                            "    // back, so it swings up about 95 degrees. The latch hangs down its end."),
-        ("afak", 1.75, 1, "upper half hinged at the back: up about 100 degrees"),
+        ("afak", 1.75, 0, "upper half hinged at the back: up about 100 degrees"),
         ("mfak", 1.75, 2, "lid cap hinged at the back: up about 100 degrees"),
         ("mfakplus", 1.75, 2, "lid cap hinged at the back: up about 100 degrees"),
         ("narcbox", 1.75, 2, "upper shell hinged at the back: up about 100 degrees"),
