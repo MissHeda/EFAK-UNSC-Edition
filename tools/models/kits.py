@@ -198,15 +198,15 @@ def ifak():
 
 # The AFAK, as The Cole Protocol's health pack (measured in game: 40 x 50 x 20 cm): width, length,
 # the cut corners, height and the seam between the halves.
-AF = dict(W=0.40, L=0.50, C=0.10, H=0.20, seam=0.10)
+AF = dict(W=0.40, L=0.50, C=0.13, H=0.16, seam=0.085)
 
 
 def afak():
-    """AFAK: The Cole Protocol's health pack, our way - a white shell 40 x 50 x 20 cm, an elongated
-    octagon split at half its depth, lying on its back. The upper half is the lid: the medical H on
-    a raised plate, red reflectors in the four cut corners, lined with egg-crate foam. Ribbed grips
-    down both long sides, a carry slot in each end, the hinge at the back, the latch in the front
-    slot."""
+    """AFAK: The Cole Protocol's health pack, our way - a white shell 40 x 50 cm, an elongated
+    octagon with steep cut corners, split at half its depth, lying on its back. The upper half is
+    the lid: the medical H on a framed plate over its back half, a grip recess cut into its front
+    half, ribbed rubber grips down its long sides beside the H, red reflectors in the four cut
+    corners, lined with egg-crate foam. Hinge at the back, latch in the front."""
     W, L, C = AF["W"], AF["L"], AF["C"]
     zs, top = AF["seam"], AF["H"]
     outline = rect(W, L, C)
@@ -214,59 +214,45 @@ def afak():
     prism(inset(outline, 0.006), 0.012, "shell_grey", bevel=0.004, segs=2)
     prism(outline, zs - 0.008, "shell_white", (0, 0, 0.008), bevel=0.005, segs=3, hollow=0.012)
     prism(inset(outline, 0.002), 0.004, "rubber", (0, 0, zs - 0.001), bevel=0.001, segs=1, hollow=0.008)
+    # a groove round the lower half, the second shell line of the pack
+    prism(inset(outline, -0.002), 0.004, "shell_grey", (0, 0, zs * 0.45), bevel=0.001, segs=1, hollow=0.004)
     lid_axis((-0.12, L / 2 + 0.006, zs + 0.002), (0.12, L / 2 + 0.006, zs + 0.002))
+    hy = 0.07           # where the H sits: on the back half
     with lid():
-        prism(outline, top - zs - 0.022, "shell_white", (0, 0, zs + 0.002), bevel=0.005, segs=3, hollow=0.012)
-        prism(outline, 0.02, "shell_white", (0, 0, top - 0.02), bevel=0.005, segs=3, taper=0.014)
-        prism(inset(outline, 0.012), 0.005, "foam", (0, 0, top - 0.026), bevel=0.0015, segs=1)
-        eggcrate(frame((0, 0, top - 0.026), DOWN, B), W - 0.03, L - 0.03, depth=0.014, pitch=0.046,
-                 inside=lambda x, y: abs(x) / (W / 2 - 0.02) + abs(y) / (L / 2 - 0.02) < 1.6 and abs(x) < W / 2 - 0.02
-                 and abs(y) < L / 2 - 0.02)
-        # the raised plate with the H, framed, screwed down
-        box((0.16, 0.16, 0.006), (0, 0, top + 0.002), "shell_white", cut=0.012, bevel=0.002, segs=2, taper=0.004)
+        prism(outline, top - zs - 0.02, "shell_white", (0, 0, zs + 0.002), bevel=0.005, segs=3, hollow=0.012)
+        prism(outline, 0.018, "shell_white", (0, 0, top - 0.018), bevel=0.005, segs=3, taper=0.022)
+        prism(inset(outline, 0.012), 0.005, "foam", (0, 0, top - 0.024), bevel=0.0015, segs=1)
+        eggcrate(frame((0, 0, top - 0.024), DOWN, B), W - 0.03, L - 0.03, depth=0.012, pitch=0.046,
+                 inside=lambda x, y: abs(x) < W / 2 - 0.02 and abs(y) < L / 2 - 0.02
+                 and abs(x) + abs(y) < W / 2 + L / 2 - C - 0.03)
+        # the framed plate with the H, on the back half
+        box((0.15, 0.15, 0.005), (0, hy, top + 0.0015), "shell_white", cut=0.008, bevel=0.0018, segs=2, taper=0.003)
+        box((0.156, 0.156, 0.003), (0, hy, top + 0.0005), "red", cut=0.009, bevel=0.0008, segs=1, hollow=0.004)
+        # the grip recess cut into the front half: a dark pocket with a bar across its front edge
+        prism(rect(0.15, 0.075, 0.02, (1, 1, 0, 0)), 0.003, "shell_grey", (0, -0.155, top - 0.0015), bevel=0.0012,
+              segs=1)
+        prism(rect(0.11, 0.04, 0.012), 0.002, "dark_poly", (0, -0.16, top + 0.0005), bevel=0.0008, segs=1)
+        box((0.1, 0.014, 0.008), (0, -0.183, top + 0.003), "shell_white", bevel=0.003, segs=2)
+        # ribbed rubber grips on the long sides beside the H
+        for sx in (-1, 1):
+            Fg = frame((sx * (W / 2 - 0.042), hy, top - 0.0035), (sx * 0.3, 0, 1), B)
+            lbox(Fg, (0.034, 0.17, 0.003), (0, 0, 0), "rubber", cut=0.006, bevel=0.0012)
+            for k in range(11):
+                lbox(Fg, (0.028, 0.005, 0.0025), (0, -0.075 + k * 0.015, 0.003), "rubber", bevel=0.0007)
+        # red reflectors in the four cut corners of the lid's top, along the cut
         for sx in (-1, 1):
             for sy in (-1, 1):
-                screw((sx * 0.068, sy * 0.068, top + 0.005), UP, 0.0028)
-        # recessed panels above and below the plate, as on the TCP pack
-        for sy in (-1, 1):
-            prism(rect(0.13, 0.07, 0.018, (1, 1, 0, 0) if sy < 0 else (0, 0, 1, 1)), 0.003, "shell_grey",
-                  (0, sy * 0.15, top - 0.0015), bevel=0.001, segs=1)
-        # red reflectors in the four cut corners of the lid's top
-        for sx in (-1, 1):
-            for sy in (-1, 1):
-                cxr = sx * (W / 2 - C * 0.62)
-                cyr = sy * (L / 2 - C * 0.62)
-                prism(rect(0.05, 0.022, 0.008, (1, 1, 0, 0)), 0.003, "red_reflector", (cxr, cyr, top - 0.001),
+                cxr = sx * (W / 2 - C * 0.55)
+                cyr = sy * (L / 2 - C * 0.55)
+                prism(rect(0.05, 0.02, 0.008, (1, 1, 0, 0)), 0.003, "red_reflector", (cxr, cyr, top - 0.001),
                       (0, 0, math.degrees(math.atan2(sx, -sy))), bevel=0.0008, segs=1)
-    decal("med_h", (0, 0, top + 0.005), UP, B, 0.12, depth=0.003)
-    # ribbed grips down both long sides, on both halves - dark rubber set into the shell
-    for sx in (-1, 1):
-        x = sx * (W / 2 + 0.001)
-        for z0, z1, in_lid in ((0.03, zs - 0.012, False), (zs + 0.014, top - 0.03, True)):
-            def grip(x=x, z0=z0, z1=z1, sx=sx):
-                Fg = frame((x, 0, (z0 + z1) / 2), (sx, 0, 0), UP)
-                lbox(Fg, (0.2, z1 - z0, 0.004), (0, 0, 0), "rubber", cut=0.006, bevel=0.0015)
-                n = int((z1 - z0) / 0.009)
-                for k in range(n):
-                    zz = -(z1 - z0) / 2 + 0.006 + k * (z1 - z0 - 0.012) / max(1, n - 1)
-                    lbox(Fg, (0.19, 0.0035, 0.003), (0, zz, 0.004), "rubber", bevel=0.0008)
-            if in_lid:
-                with lid():
-                    grip()
-            else:
-                grip()
-    # the carry slot in each end: a dark recess with a bar across it
-    for sy in (-1, 1):
-        y = sy * (L / 2 + 0.001)
-        Fs = frame((0, y, zs * 0.55), (0, sy, 0), UP)
-        lbox(Fs, (0.12, 0.04, 0.003), (0, 0, 0), "rubber", cut=0.01, bevel=0.0012)
-        lbox(Fs, (0.1, 0.012, 0.012), (0, 0.006, 0.003), "shell_grey", cut=0.004, bevel=0.003, segs=2)
+    decal("med_h", (0, hy, top + 0.004), UP, B, 0.11, depth=0.003)
     # the latch in the front, over the seam; the hinge along the back
     bail_latch((0, -L / 2, zs + 0.002), F, UP, w=0.04, below=0.02, body_off=0.0, lid_off=0.0, look="steel")
     hinge((-0.12, L / 2 + 0.006, zs + 0.002), (0.12, L / 2 + 0.006, zs + 0.002), r=0.005, knuckles=9,
           look="shell_grey")
-    decal("serial_white", (0.0, L / 2, top - 0.05), B, UP, 0.07, depth=0.006)
-    feet((-0.12, 0.12), (-0.17, 0.17), size=0.03)
+    decal("serial_white", (0.0, L / 2, zs * 0.72), B, UP, 0.06, depth=0.006)
+    feet((-0.12, 0.12), (-0.15, 0.15), size=0.03)
     return 4096
 
 
