@@ -106,4 +106,10 @@ class Extended_Init_EventHandlers {
             init = QUOTE(_this call FUNC(init));
         };
     };
+    // the kits placed as items (efku_item = 1; the function skips every other item)
+    class Item_Base_F {
+        class ADDON {
+            init = QUOTE(_this call FUNC(initItem));
+        };
+    };
 };

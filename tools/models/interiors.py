@@ -117,6 +117,8 @@ _REAL = {
     "biofoam_full": ("optre/biofoam.p3d", (-90, 0, 0), 0.75, 900),
     "medigel": ("unsci/medigel_tube.p3d", (-90, 0, 0), 1.0, 700, -90),
     "injector": ("unsci/injector.p3d", (0, 0, 0), 0.55, 700, -90),
+    # the same injector in the CBRN case, which is scaled up 1.5x as a whole on export
+    "injector_cbrn": ("unsci/injector.p3d", (0, 0, 0), 0.55 / 1.5, 700, -90),
     "ammo_pack": ("optre/ma5ammo.p3d", (-90, 0, 0), 0.36, 500),
     "ma5_mag": ("optre/ma5_mag.p3d", (0, 0, 0), 0.5, 500),
     "br_mag": ("optre/br_mag.p3d", (90, 0, 0), 0.5, 500),
@@ -545,40 +547,44 @@ def cable_coil(c, r=0.03):
 
 
 @clustered
-def gas_mask(c):
-    """Gas mask lying face up: rubber body, visor, a filter on its cheek."""
+def gas_mask(c, k=1.0):
+    """Gas mask lying face up: rubber body, visor, a filter on its cheek. k scales it."""
     x, y, z = c
-    prism(rrect(0.1, 0.075, 0.03, 4), 0.026, "rubber", (x, y, z), bevel=0.005, segs=2)
-    prism(rrect(0.07, 0.04, 0.016, 3), 0.004, "glass", (x, y + 0.008, z + 0.025), bevel=0.0015, segs=1)
-    cyl(0.018, 0.022, (x + 0.062, y - 0.01, z + 0.018), "olive_dark", axis="x", n=18, bevel=0.0012, segs=1)
-    cyl(0.011, 0.006, (x, y - 0.03, z + 0.028), "rubber", n=16, bevel=0.0015)
+    prism(rrect(0.1 * k, 0.075 * k, 0.03 * k, 4), 0.026 * k, "rubber", (x, y, z), bevel=0.005, segs=2)
+    prism(rrect(0.07 * k, 0.04 * k, 0.016 * k, 3), 0.004, "glass", (x, y + 0.008 * k, z + 0.025 * k), bevel=0.0015,
+          segs=1)
+    cyl(0.018 * k, 0.022 * k, (x + 0.062 * k, y - 0.01 * k, z + 0.018 * k), "olive_dark", axis="x", n=18, bevel=0.0012,
+        segs=1)
+    cyl(0.011 * k, 0.006 * k, (x, y - 0.03 * k, z + 0.028 * k), "rubber", n=16, bevel=0.0015)
     for sx in (-1, 1):
-        box((0.03, 0.012, 0.003), (x + sx * 0.045, y + 0.025, z + 0.0015), "webbing", bevel=0.0006, segs=1)
+        box((0.03 * k, 0.012 * k, 0.003), (x + sx * 0.045 * k, y + 0.025 * k, z + 0.0015), "webbing", bevel=0.0006,
+            segs=1)
 
 
 @clustered
-def filter_can(c):
+def filter_can(c, k=1.0):
     x, y, z = c
-    cyl(0.019, 0.024, (x, y, z + 0.012), "olive_dark", n=18, bevel=0.0012, segs=1)
-    cyl(0.008, 0.0045, (x, y, z + 0.0265), "black_metal", n=12, bevel=0.0008)
-    cyl(0.0195, 0.003, (x, y, z + 0.004), "black_metal", n=18, bevel=0.0004)
-    print_on("lbl_filter", (x, y - 0.019, z + 0.013), (0, -1, 0), (0, 0, 1), 0.03, look="olive_dark", depth=0.009)
+    cyl(0.019 * k, 0.024 * k, (x, y, z + 0.012 * k), "olive_dark", n=24, bevel=0.0012, segs=1)
+    cyl(0.008 * k, 0.0045 * k, (x, y, z + 0.0265 * k), "black_metal", n=12, bevel=0.0008)
+    cyl(0.0195 * k, 0.003, (x, y, z + 0.004 * k), "black_metal", n=24, bevel=0.0004)
+    print_on("lbl_filter", (x, y - 0.019 * k, z + 0.013 * k), (0, -1, 0), (0, 0, 1), 0.03 * k, look="olive_dark",
+             depth=0.009)
 
 
 @clustered
-def decon_kit(c):
+def decon_kit(c, k=1.0):
     """A decontamination kit: a flat yellow-banded olive pack with a sponge mitt."""
     x, y, z = c
-    box((0.09, 0.07, 0.02), (x, y, z + 0.01), "pack_olive", bevel=0.0012, segs=1)
-    box((0.09, 0.014, 0.021), (x, y + 0.012, z + 0.0105), "hazard_yellow", bevel=0.0006, segs=1)
-    print_on("lbl_decon", (x, y - 0.014, z + 0.02), (0, 0, 1), (0, 1, 0), 0.07, look="pack_olive")
+    box((0.09 * k, 0.07 * k, 0.02 * k), (x, y, z + 0.01 * k), "pack_olive", bevel=0.0012, segs=1)
+    box((0.09 * k, 0.014 * k, 0.021 * k), (x, y + 0.012 * k, z + 0.0105 * k), "hazard_yellow", bevel=0.0006, segs=1)
+    print_on("lbl_decon", (x, y - 0.014 * k, z + 0.02 * k), (0, 0, 1), (0, 1, 0), 0.07 * k, look="pack_olive")
 
 
 @clustered
-def detector_paper(c):
+def detector_paper(c, k=1.0):
     x, y, z = c
-    box((0.05, 0.08, 0.006), (x, y, z + 0.003), "pack_white", bevel=0.0012, segs=1)
-    print_on("lbl_detector", (x, y, z + 0.006), (0, 0, 1), (0, 1, 0), 0.044, look="pack_white")
+    box((0.05 * k, 0.08 * k, 0.006), (x, y, z + 0.003), "pack_white", bevel=0.0012, segs=1)
+    print_on("lbl_detector", (x, y, z + 0.006), (0, 0, 1), (0, 1, 0), 0.044 * k, look="pack_white")
 
 
 @clustered
@@ -787,7 +793,7 @@ def fill_ammo_bag():
             pockets.append(ammo_pack_pocket((x, 0.0, 0), axis="y"))
         zf = case_tray(W, D, H, lid_h, cap, pockets, h=0.018)
         for x in mags:
-            imported(file, (x, -0.03, zf - 0.026), rot=(0, 90, 0), scale=scale, max_faces=faces, spec=0.25, gloss=0.4)
+            imported(file, (x, -0.03, zf - 0.026), rot=(0, 90, 180), scale=scale, max_faces=faces, spec=0.25, gloss=0.4)
         for x, y in br:
             real("br_mag", (x, y, zf), axis="x", spec=0.25, gloss=0.4)
         for x in packs:
@@ -823,25 +829,31 @@ def fill_engineer_bag():
 
 
 def fill_cbrn_bag():
-    """CBRN case: the mask in its own cut, filters, auto-injectors, decon kit, detector paper - all
-    inside the tray (0.319 x 0.213)."""
+    """CBRN case at its real size (the whole case is scaled 1.5x on export, see kits.KIT_SCALE, so
+    everything here is drawn at real size / 1.5): the mask (about 20 x 15 cm) in its own cut, three
+    filter canisters (about 10 cm across), auto-injectors, the decon kit and the detector paper booklet,
+    all inside the tray (0.319 x 0.213)."""
     W, D, H, lid_h, cap = 0.4, 0.23, 0.24, 0.05, 0.034
+    km, kf = 1.3, 1.6             # mask and filters to their real size after the 1.5x
+    filters = (0.0, 0.0635, 0.127)
+    inj = (0.03, 0.058, 0.086)
     with contents():
-        pockets = [(-0.068, 0.045, 0.176, 0.08)]                       # mask with its filter
-        for x in (0.035, 0.08, 0.125):
-            pockets.append((x, -0.065, 0.038, 0.038))                  # filters
-        for y in (0.02, 0.05, 0.08):
-            pockets.append(injector_pocket((0.09, y, 0), axis="x"))    # auto-injectors
-        pockets.append((-0.105, -0.06, 0.09, 0.07))                    # decon kit
-        pockets.append((-0.022, -0.058, 0.05, 0.08))                   # detector paper
+        pockets = [(-0.065, 0.045, 0.18, 0.1)]                         # mask with its filter
+        for x in filters:
+            pockets.append((x, -0.065, 0.064, 0.064))                  # filters
+        for y in inj:
+            pockets.append(real_pocket("injector_cbrn", (0.105, y, 0), axis="x"))   # auto-injectors
+        pockets.append((-0.115, -0.062, 0.075, 0.06))                  # decon kit
+        pockets.append((-0.054, -0.062, 0.04, 0.066))                  # detector paper
         zf = case_tray(W, D, H, lid_h, cap, pockets, h=0.016)
-        gas_mask((-0.085, 0.045, zf))
-        for x in (0.035, 0.08, 0.125):
-            filter_can((x, -0.065, zf))
-        for y in (0.02, 0.05, 0.08):
-            injector((0.09, y, zf), axis="x", cap="orange")
-        decon_kit((-0.105, -0.06, zf))
-        detector_paper((-0.022, -0.058, zf))
+        gas_mask((-0.085, 0.045, zf), km)
+        for x in filters:
+            filter_can((x, -0.065, zf), kf)
+        tex = {"unsci_injector_stimulant_co": _DRUG["orange"]}
+        for y in inj:
+            real("injector_cbrn", (0.105, y, zf), "x", spec=0.25, gloss=0.45, textures=tex)
+        decon_kit((-0.115, -0.062, zf), 0.82)
+        detector_paper((-0.054, -0.062, zf), 0.8)
 
 
 @clustered

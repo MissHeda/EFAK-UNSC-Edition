@@ -20,6 +20,9 @@ params ["_box"];
 
 if (!isServer || {is3DEN}) exitWith {};
 
+// PH Vehicles Arsenal lists it even when Zeus did not place it
+_box setVariable ["PHVA_tuningAllowed", true, true];
+
 [{
     params ["_box"];
     if (isNull _box) exitWith {};

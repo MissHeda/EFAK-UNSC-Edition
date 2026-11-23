@@ -765,7 +765,7 @@ EXPORT_ROT = {"ifak": (-90, 0, 180)}
 # magazines (built at half size), the rocket case's M41 tube and Lykoi rocket (built at 60 %), the
 # special ammunition box's SRS99 magazines and 14.5 mm packets (half size), the engineer's tools and
 # the utility pouch's flashlight and chemlights at the size of real ones.
-KIT_SCALE = {"ammo_bag": 2.0, "special_ammo": 2.0, "ordnance_crate": 1 / 0.6, "engineer_bag": 1.4,
+KIT_SCALE = {"ammo_bag": 2.0, "special_ammo": 2.0, "ordnance_crate": 1 / 0.6, "engineer_bag": 1.4, "cbrn_bag": 1.5,
              "utility_pouch": 1.5}
 
 # What each kit weighs as a world object (kg), packed.

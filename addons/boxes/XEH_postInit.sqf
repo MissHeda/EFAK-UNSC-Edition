@@ -2,6 +2,7 @@
 
 // Someone opened or closed a box's inventory: the server keeps count and swings the lid.
 [QGVAR(use), {_this call FUNC(use)}] call CBA_fnc_addEventHandler;
+[QGVAR(toItem), {_this call FUNC(toItem)}] call CBA_fnc_addEventHandler;
 
 if (isServer) then {
     // A player who leaves with a box open closes it.
@@ -14,6 +15,9 @@ if (isServer) then {
 };
 
 if (!hasInterface) exitWith {};
+
+// A kit dropped beside a vehicle goes into a holder PH Vehicles Arsenal can attach.
+["CAManBase", "Put", {_this call FUNC(onPut)}] call CBA_fnc_addClassEventHandler;
 
 ["CAManBase", "InventoryOpened", {
     params ["_unit", "_container", ["_second", objNull]];

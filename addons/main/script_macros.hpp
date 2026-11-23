@@ -32,6 +32,8 @@
         editorCategory = "EdCat_efku"; \
         editorSubcategory = "EdSubcat_efku_items"; \
         vehicleClass = "Items"; \
+        efku_item = 1; \
+        model = "\A3\Weapons_f\dummyweapon.p3d"; \
         class TransportItems { \
             class KIT { \
                 name = #KIT; \
