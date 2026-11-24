@@ -100,6 +100,10 @@ class CfgVehicles {
         vehicleClass = "Items";
         displayName = "UNSC kit";
         destrType = "DestructNo";
+        // no Zeus attributes: placing one would open the inventory editor, whose OK puts the
+        // kit prototype back over the packed kit
+        curatorInfoType = "";
+        curatorInfoTypeEmpty = "";
         maximumLoad = 2000;
         efku_item = 1;
         class TransportItems {};

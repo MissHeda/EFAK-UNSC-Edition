@@ -19,14 +19,11 @@
 params ["_box"];
 
 if (!isServer || {is3DEN}) exitWith {};
-// a copy made on one machine only (PH's placement preview) is left as it is
-if (netId _box isEqualTo "0:0") exitWith {};
-
-// PH Vehicles Arsenal lists it even when Zeus did not place it
-_box setVariable ["PHVA_tuningAllowed", true, true];
 
 [{
     params ["_box"];
-    if (isNull _box) exitWith {};
+    if (isNull _box || {IS_PREVIEW(_box)}) exitWith {};
+    // PH Vehicles Arsenal lists it even when Zeus did not place it
+    _box setVariable ["PHVA_tuningAllowed", true, true];
     [_box] call FUNC(fill);
 }, [_box], FILL_DELAY] call CBA_fnc_waitAndExecute;

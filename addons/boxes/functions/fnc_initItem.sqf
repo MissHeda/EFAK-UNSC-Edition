@@ -21,12 +21,11 @@
 params ["_holder"];
 
 if (!isServer || {is3DEN}) exitWith {};
-// a copy made on one machine only (PH's placement preview) is left as it is
-if (netId _holder isEqualTo "0:0") exitWith {};
 
 [{
     params ["_holder"];
-    if (isNull _holder) exitWith {};
+    // PH's placement preview is left as it is
+    if (isNull _holder || {IS_PREVIEW(_holder)}) exitWith {};
 
     // prototypes for instances, filled with the defaults (only prototypes: a restored or reused
     // item that already holds an instance keeps it)
