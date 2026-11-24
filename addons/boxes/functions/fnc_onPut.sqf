@@ -35,10 +35,21 @@ if !(isClass (configFile >> "CfgVehicles" >> ("Item_" + _kit))) exitWith {};
 private _radius = missionNamespace getVariable ["PHVA_tuningRadius", 6];
 if ((nearestObjects [_container, ["LandVehicle", "Air", "Ship"], _radius]) isEqualTo []) exitWith {};
 
+// Once per kit put down, however often the drop is reported (two of the same kit are two)
+private _pending = _container getVariable [QGVAR(putPending), []];
+if (({_x isEqualTo _item} count _pending) >= ({_x isEqualTo _item} count itemCargo _container)) exitWith {};
+_pending pushBack _item;
+_container setVariable [QGVAR(putPending), _pending];
+
 // Once the inventory is closed: changed under the open inventory, the pile it still shows could
 // hand the kit out a second time. Only if the kit is still there then.
 [{isNull findDisplay 602}, {
     params ["_container", "_item"];
+    if (!isNull _container) then {
+        private _pending = _container getVariable [QGVAR(putPending), []];
+        private _i = _pending find _item;
+        if (_i != -1) then {_pending deleteAt _i};
+    };
     if (isNull _container || {!(_item in itemCargo _container)}) exitWith {};
     // still beside a vehicle
     private _radius = missionNamespace getVariable ["PHVA_tuningRadius", 6];

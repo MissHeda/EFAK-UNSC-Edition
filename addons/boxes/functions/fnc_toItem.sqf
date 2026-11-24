@@ -22,6 +22,10 @@ params ["_container", "_item", "_class"];
 
 if (!isServer || {isNull _container} || {!(_item in itemCargo _container)}) exitWith {};
 
+// A holder this deleted a moment ago: it only turns null the frame after, and a second call in that
+// frame would still find the kit in it and make a second kit item with the same kit in it
+if (_container in (missionNamespace getVariable [QGVAR(deleted), []])) exitWith {};
+
 private _pos = getPosATL _container;
 private _dir = getDir _container;
 
@@ -29,6 +33,9 @@ private _dir = getDir _container;
 private _alone = (itemCargo _container) isEqualTo [_item] && {(magazineCargo _container) isEqualTo []}
     && {(weaponCargo _container) isEqualTo []} && {(backpackCargo _container) isEqualTo []};
 if (_alone) then {
+    if (isNil QGVAR(deleted)) then {GVAR(deleted) = []};
+    GVAR(deleted) pushBack _container;
+    [{GVAR(deleted) = GVAR(deleted) - [objNull, _this]}, _container] call CBA_fnc_execNextFrame;
     deleteVehicle _container;
 } else {
     _container addItemCargoGlobal [_item, -1];

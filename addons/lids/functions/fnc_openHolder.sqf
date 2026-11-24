@@ -67,8 +67,8 @@ if (_kits isEqualTo []) exitWith {false};
 // opened kit's entry taken by a stand-in of its own (one class each - two of a class would merge).
 private _copy = objNull;
 if (count _pieces > count _kits) then {
-    // made where the holder is, filled, and only then frozen: a holder made elsewhere and moved, or
-    // frozen before it holds anything, may draw nothing - the other things on the pile would vanish
+    // made where the holder is and filled, then left to run a few frames before it is frozen (only a
+    // holder that falls needs that): a holder frozen before it has drawn its things may never draw them
     _copy = createVehicleLocal [typeOf _holder, getPosATL _holder, [], 0, "CAN_COLLIDE"];
     _copy setVariable [QGVAR(copy), true];
     // a holder class that brings cargo of its own (an Eden-placed Item_ or Weapon_) would show it
@@ -76,9 +76,6 @@ if (count _pieces > count _kits) then {
     clearWeaponCargo _copy;
     clearMagazineCargo _copy;
     clearBackpackCargo _copy;
-    // only for the eye: nobody takes from or puts into it (the holder keeps the real things)
-    _copy lockInventory true;
-
     private _opened = [];
     {_opened pushBackUnique ((_pieces select (_x select 0)) select 3)} forEach _kits;
     private _done = -1;
@@ -104,7 +101,18 @@ if (count _pieces > count _kits) then {
 
     _copy setVectorDirAndUp [vectorDirVisual _holder, vectorUpVisual _holder];
     _copy setPosWorld (getPosWorldVisual _holder);
-    _copy enableSimulation false;
+    // only for the eye: nobody takes from or puts into it (the holder keeps the real things); locked
+    // once filled
+    _copy lockInventory true;
+    if (_copy isKindOf "WeaponHolderSimulated") then {
+        [{
+            params ["_copy", "_holder"];
+            if (isNull _copy || {isNull _holder}) exitWith {};
+            _copy enableSimulation false;
+            _copy setVectorDirAndUp [vectorDirVisual _holder, vectorUpVisual _holder];
+            _copy setPosWorld (getPosWorldVisual _holder);
+        }, [_copy, _holder], 3] call CBA_fnc_execAfterNFrames;
+    };
 };
 
 private _props = [];
