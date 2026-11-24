@@ -21,9 +21,10 @@
         maximumLoad = LOAD; \
         ace_cargo_size = SIZE;
 
-// A kit as a placeable item (Eden and Zeus, "Kits"), and what a kit dropped beside a vehicle becomes:
-// the kit lying there as a world object with the kit itself in its inventory - not a ground holder,
-// so PH Vehicles Arsenal can attach it and restore it from a preset. It goes away once emptied.
+// A kit as a placeable item (Eden and Zeus, "Kits"; it then lies in a ground holder, as a dropped kit
+// does), and what a kit dropped beside a vehicle becomes: a world object with the kit in its inventory,
+// not a ground holder, so PH Vehicles Arsenal can attach it and restore it from a preset. It goes away
+// once emptied. See efku_boxes_fnc_initItem.
 #define KIT_ITEM(FILE,KIT,NAME) \
     class DOUBLES(Item,KIT): efku_boxes_drop { \
         scope = 2; \

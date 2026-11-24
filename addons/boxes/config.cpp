@@ -87,10 +87,10 @@ class CfgVehicles {
         };
     };
 
-    // A kit lying as a world object with the kit itself inside (Item_<kit>, KIT_ITEM): placed in Eden
-    // or Zeus, or what a kit dropped beside a vehicle becomes. Not a weapon holder, so PH Vehicles
-    // Arsenal can attach it and bring it back from a preset; its lid stays shut, and once the kit is
-    // taken out it goes away (fnc_dropTaken).
+    // A kit as a world object with the kit itself inside (Item_<kit>, KIT_ITEM). Placed in Eden or by
+    // Zeus it turns into the kit lying in a ground holder, as a dropped kit does (fnc_initItem). A kit
+    // dropped beside a vehicle, or one PH Vehicles Arsenal holds, stays one: not a weapon holder, so PH
+    // can attach it and bring it back from a preset; once the kit is taken out it goes (fnc_dropTaken).
     class GVAR(drop): ReammoBox_F {
         scope = 1;
         scopeCurator = 0;

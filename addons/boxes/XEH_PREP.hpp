@@ -1,5 +1,6 @@
 PREP(dropTaken);
 PREP(fill);
+PREP(hookDoubleClick);
 PREP(init);
 PREP(initItem);
 PREP(onInventory);

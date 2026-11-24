@@ -8,6 +8,7 @@
 #define FILL_DELAY 1
 
 // PH Vehicles Arsenal's placement preview: a local copy (no net ID in MP) it freezes and makes
-// pass-through right after creating it (in SP, where everything has a net ID, only that tells).
+// pass-through right after creating it (in SP, where everything has a net ID, only that tells) -
+// and never attaches (what PH attaches is frozen and pass-through too).
 // Checked a moment after init, once PH has set it up. Left alone: not filled, moved or listed.
-#define IS_PREVIEW(OBJ) (netId OBJ isEqualTo "0:0" || {!simulationEnabled OBJ && {(getPhysicsCollisionFlag OBJ) isEqualTo [false]}})
+#define IS_PREVIEW(OBJ) (netId OBJ isEqualTo "0:0" || {isNull attachedTo OBJ && {!simulationEnabled OBJ} && {(getPhysicsCollisionFlag OBJ) isEqualTo [false]}})

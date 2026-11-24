@@ -31,9 +31,13 @@ private _empty = {
     params ["_drop", "_empty"];
     if (isNull _drop || {!([_drop] call _empty)}) exitWith {};
     if (isNull attachedTo _drop) exitWith {deleteVehicle _drop};
-    // attached and empty: once PH lets go of it, it goes - unless something was put back in
+    // attached and empty: once PH lets go of it, it goes - unless something was put back in (once)
+    if (_drop getVariable [QGVAR(awaitRelease), false]) exitWith {};
+    _drop setVariable [QGVAR(awaitRelease), true];
     [{isNull (_this select 0) || {isNull attachedTo (_this select 0)}}, {
         params ["_drop", "_empty"];
-        if (!isNull _drop && {[_drop] call _empty}) then {deleteVehicle _drop};
+        if (isNull _drop) exitWith {};
+        _drop setVariable [QGVAR(awaitRelease), nil];
+        if ([_drop] call _empty) then {deleteVehicle _drop};
     }, [_drop, _empty]] call CBA_fnc_waitUntilAndExecute;
 }, [_drop, _empty], 0.5] call CBA_fnc_waitAndExecute;

@@ -24,6 +24,8 @@ if (!isServer || {isNull _container} || {!(_item in itemCargo _container)}) exit
 
 private _pos = getPosATL _container;
 private _new = createVehicle [_class, [0, 0, 0], [], 0, "CAN_COLLIDE"];
+// stays a kit item, for PH to attach (fnc_initItem)
+_new setVariable [QGVAR(keep), true];
 // the dropped kit instead of the prototype the class brings (not a holder: empty is fine)
 clearItemCargoGlobal _new;
 _new addItemCargoGlobal [_item, 1];

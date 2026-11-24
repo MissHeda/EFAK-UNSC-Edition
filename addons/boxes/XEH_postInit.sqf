@@ -32,10 +32,22 @@ if (!hasInterface) exitWith {};
     params ["_unit", "_container", ["_second", objNull]];
     if (_unit != ACE_player) exitWith {};
     [_container, _second, true] call FUNC(onInventory);
+    GVAR(opened) = _container;
+    // A kit in a box or kit item opens by double click, as one on the ground does (EFAK only listens
+    // on the ground list; a box shows what it holds in the container list next to it).
+    if (_container isKindOf QGVAR(base) || {_container isKindOf QGVAR(drop)}) then {
+        [{!isNull findDisplay 602}, {call FUNC(hookDoubleClick)}, [], 5] call CBA_fnc_waitUntilAndExecute;
+    };
 }] call CBA_fnc_addClassEventHandler;
 
 ["CAManBase", "InventoryClosed", {
     params ["_unit"];
     if (_unit != ACE_player) exitWith {};
     [objNull, objNull, false] call FUNC(onInventory);
+    // a kit item emptied some other way than a Take (dragged into a vehicle, a script) goes as well
+    private _opened = missionNamespace getVariable [QGVAR(opened), objNull];
+    GVAR(opened) = objNull;
+    if (!isNull _opened && {getNumber (configOf _opened >> "efku_item") == 1}) then {
+        [QGVAR(dropTaken), [_opened]] call CBA_fnc_serverEvent;
+    };
 }] call CBA_fnc_addClassEventHandler;
