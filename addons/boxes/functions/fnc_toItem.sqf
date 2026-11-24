@@ -1,13 +1,13 @@
 #include "..\script_component.hpp"
 /*
  * Author: Miss Heda
- * On the server: moves one dropped kit out of a ground holder into a kit holder of its own, where
- * it lay (see fnc_onPut).
+ * On the server: moves one dropped kit out of a ground holder into a kit item of its own
+ * (Item_<kit>, a world object PH Vehicles Arsenal can attach), where it lay (see fnc_onPut).
  *
  * Arguments:
  * 0: Ground holder <OBJECT>
  * 1: Kit (instance or prototype) <STRING>
- * 2: Item holder class <STRING>
+ * 2: Kit item class <STRING>
  *
  * Return Value:
  * None
@@ -24,11 +24,11 @@ if (!isServer || {isNull _container} || {!(_item in itemCargo _container)}) exit
 
 private _pos = getPosATL _container;
 private _new = createVehicle [_class, [0, 0, 0], [], 0, "CAN_COLLIDE"];
+// the dropped kit instead of the prototype the class brings (not a holder: empty is fine)
+clearItemCargoGlobal _new;
+_new addItemCargoGlobal [_item, 1];
 _new setDir (getDir _container);
 _new setPosATL _pos;
-// the dropped kit in, the prototype the class brings out - in that order: an empty holder is deleted
-_new addItemCargoGlobal [_item, 1];
-_new addItemCargoGlobal [_class select [5], -1];
 
 private _alone = (itemCargo _container) isEqualTo [_item] && {(magazineCargo _container) isEqualTo []}
     && {(weaponCargo _container) isEqualTo []} && {(backpackCargo _container) isEqualTo []};

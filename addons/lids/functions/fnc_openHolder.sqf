@@ -66,6 +66,11 @@ if (_kits isEqualTo []) exitWith {false};
 private _copy = objNull;
 if (count _pieces > count _kits) then {
     _copy = (typeOf _holder) createVehicleLocal [0, 0, 0];
+    // a class that brings cargo of its own (a kit item) would show it on the copy
+    clearItemCargo _copy;
+    clearWeaponCargo _copy;
+    clearMagazineCargo _copy;
+    clearBackpackCargo _copy;
     _copy setVariable [QGVAR(copy), true];
     _copy enableSimulation false;
     _copy setVectorDirAndUp [vectorDirVisual _holder, vectorUpVisual _holder];

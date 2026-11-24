@@ -1,19 +1,19 @@
 #include "..\script_component.hpp"
 /*
  * Author: Miss Heda
- * A kit placed as an item (Eden, Zeus, a script) or one dropped beside a vehicle: on the server, a
- * moment later, its kit becomes a real kit instance packed with the defaults - as if a player had
- * dropped it, so nobody has to pick it up first - and it is set down upright on the ground. PH
- * Vehicles Arsenal may attach it.
+ * A kit came into the world as an item (Item_<kit>: Eden, Zeus, a script, a kit dropped beside a
+ * vehicle, a PH Vehicles Arsenal preset): on the server, a moment later, its kit prototype becomes a
+ * real kit instance packed with the defaults - as if a player had dropped it, so nobody has to pick it
+ * up first - and, unless something holds it, it is set down on whatever is below it. PH may attach it.
  *
  * Arguments:
- * 0: Item holder <OBJECT>
+ * 0: Kit item <OBJECT>
  *
  * Return Value:
  * None
  *
  * Example:
- * [_holder] call efku_boxes_fnc_initItem;
+ * [_item] call efku_boxes_fnc_initItem;
  *
  * Public: No
  */
@@ -21,28 +21,28 @@
 params ["_holder"];
 
 if (!isServer || {is3DEN}) exitWith {};
-if (getNumber (configOf _holder >> "efku_item") != 1) exitWith {};
+// a copy made on one machine only (PH's placement preview) is left as it is
+if (netId _holder isEqualTo "0:0") exitWith {};
 
 [{
     params ["_holder"];
     if (isNull _holder) exitWith {};
 
-    // prototypes for instances, filled with the defaults
+    // prototypes for instances, filled with the defaults (only prototypes: a restored or reused
+    // item that already holds an instance keeps it)
     if (!isNil "efak_core_fnc_allocateInstance") then {
         {
             if (getNumber (configFile >> "CfgWeapons" >> _x >> "EFAK_prototype") != 1) then {continue};
             private _instance = [_x] call efak_core_fnc_allocateInstance;
             if (_instance isEqualTo "") then {continue};
             [_instance, -1] call efak_core_fnc_fillNewInstance;
-            // the new one first: a holder with nothing left in it is deleted
             _holder addItemCargoGlobal [_instance, 1];
             _holder addItemCargoGlobal [_x, -1];
         } forEach (itemCargo _holder);
     };
 
-    // upright, on the ground unless it was put on something
+    // onto whatever is below it (the ground, a table, a deck), within 2 m - not when attached
     if (isNull attachedTo _holder) then {
-        // onto whatever is below it (the ground, a table, a deck), within 2 m
         private _from = (getPosASL _holder) vectorAdd [0, 0, 0.05];
         private _hit = lineIntersectsSurfaces [_from, _from vectorAdd [0, 0, -2], _holder, objNull, true, 1, "GEOM", "FIRE"];
         if (_hit isNotEqualTo []) then {

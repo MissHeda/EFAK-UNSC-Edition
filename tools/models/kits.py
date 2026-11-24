@@ -765,12 +765,12 @@ EXPORT_ROT = {"ifak": (-90, 0, 180)}
 # magazines (built at half size), the rocket case's M41 tube and Lykoi rocket (built at 60 %), the
 # special ammunition box's SRS99 magazines and 14.5 mm packets (half size), the engineer's tools and
 # the utility pouch's flashlight and chemlights at the size of real ones.
-KIT_SCALE = {"ammo_bag": 2.0, "special_ammo": 2.0, "ordnance_crate": 1 / 0.6, "engineer_bag": 1.4, "cbrn_bag": 1.5,
+KIT_SCALE = {"ammo_bag": 2.0, "special_ammo": 2.0, "ordnance_crate": 1 / 0.6, "engineer_bag": 1.8, "cbrn_bag": 1.5,
              "utility_pouch": 1.5}
 
 # What each kit weighs as a world object (kg), packed.
 KIT_MASS = {"ifak": 1.5, "afak": 6.0, "mfak": 12.0, "mfakplus": 15.0, "narcbox": 8.0, "utility_pouch": 1.0,
-            "ammo_pouch": 2.5, "ammo_bag": 25.0, "engineer_bag": 18.0, "cbrn_bag": 14.0, "special_ammo": 20.0,
+            "ammo_pouch": 2.5, "ammo_bag": 25.0, "engineer_bag": 22.0, "cbrn_bag": 14.0, "special_ammo": 20.0,
             "ordnance_crate": 30.0}
 
 ADDON = {k: "kits" for k in ("ifak", "afak", "mfak", "mfakplus", "narcbox")}

@@ -65,7 +65,7 @@ class EFAK_KitGroups {
 class CfgVehicles {
     class efku_LidProp;
     class efku_boxes_base;
-    class Item_Base_F;
+    class efku_boxes_drop;
     LID_PROP(ifak,med);
     LID_PROP(afak,med);
     LID_PROP(mfak,case);
@@ -79,9 +79,9 @@ class CfgVehicles {
     KIT_BOX(mfakplus,efak_MFAKPlus,"MFAK+ (box)",case,600,2)};
     KIT_BOX(narcbox,efak_NarcBox,"Narc Box (box)",case,60,1)};
     // and as items on the ground
-    KIT_ITEM(efak_IFAK,"IFAK");
-    KIT_ITEM(efak_AFAK,"AFAK");
-    KIT_ITEM(efak_MFAK,"MFAK");
-    KIT_ITEM(efak_MFAKPlus,"MFAK+");
-    KIT_ITEM(efak_NarcBox,"Narc Box");
+    KIT_ITEM(ifak,efak_IFAK,"IFAK");
+    KIT_ITEM(afak,efak_AFAK,"AFAK");
+    KIT_ITEM(mfak,efak_MFAK,"MFAK");
+    KIT_ITEM(mfakplus,efak_MFAKPlus,"MFAK+");
+    KIT_ITEM(narcbox,efak_NarcBox,"Narc Box");
 };

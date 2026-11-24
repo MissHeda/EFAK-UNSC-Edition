@@ -86,6 +86,55 @@ class CfgVehicles {
             };
         };
     };
+
+    // A kit lying as a world object with the kit itself inside (Item_<kit>, KIT_ITEM): placed in Eden
+    // or Zeus, or what a kit dropped beside a vehicle becomes. Not a weapon holder, so PH Vehicles
+    // Arsenal can attach it and bring it back from a preset; its lid stays shut, and once the kit is
+    // taken out it goes away (fnc_dropTaken).
+    class GVAR(drop): ReammoBox_F {
+        scope = 1;
+        scopeCurator = 0;
+        author = "Miss Heda";
+        editorCategory = "EdCat_efku";
+        editorSubcategory = "EdSubcat_efku_items";
+        vehicleClass = "Items";
+        displayName = "UNSC kit";
+        destrType = "DestructNo";
+        maximumLoad = 2000;
+        efku_item = 1;
+        class TransportItems {};
+        class TransportMagazines {};
+        class TransportWeapons {};
+        class TransportBackpacks {};
+        class AnimationSources {
+            class lid {
+                source = "user";
+                animPeriod = 1;
+                initPhase = 0;
+            };
+        };
+        ace_cargo_canLoad = 1;
+        ace_cargo_size = 1;
+        ace_dragging_canDrag = 1;
+        ace_dragging_dragPosition[] = {0, 1.2, 0};
+        ace_dragging_canCarry = 1;
+        ace_dragging_carryPosition[] = {0, 1, 1};
+        class ACE_Actions {
+            class ACE_MainActions {
+                displayName = "$STR_ace_interaction_MainAction";
+                selection = "";
+                distance = 4;
+                condition = "true";
+                class GVAR(open) {
+                    displayName = "$STR_A3_Gear1";
+                    condition = "alive _target";
+                    statement = "_player action ['Gear', _target]";
+                    icon = "\a3\ui_f\data\igui\cfg\actions\gear_ca.paa";
+                    exceptions[] = {"isNotInside", "isNotSitting"};
+                };
+            };
+        };
+    };
 };
 
 class Extended_PreInit_EventHandlers {
@@ -106,8 +155,8 @@ class Extended_Init_EventHandlers {
             init = QUOTE(_this call FUNC(init));
         };
     };
-    // the kits placed as items (efku_item = 1; the function skips every other item)
-    class Item_Base_F {
+    // the kits placed as items or dropped beside a vehicle
+    class GVAR(drop) {
         class ADDON {
             init = QUOTE(_this call FUNC(initItem));
         };

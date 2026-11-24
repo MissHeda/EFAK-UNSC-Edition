@@ -26,4 +26,5 @@ if (GVAR(mode) < 2) exitWith {};
     if (!isNull _x) then {
         [_x, "", "inventory"] call FUNC(requestOpen);
     };
-} forEach [_container, _second];
+} forEach ([_container] + ([[_second], []] select (isNull _second || {!isNull attachedTo _second})));
+// (the ground tab beside another container: not a pile fixed to a vehicle the player did not open)

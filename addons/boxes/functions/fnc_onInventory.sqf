@@ -26,7 +26,8 @@ if (!isNull GVAR(current)) then {
 };
 if (!_opened || {(missionNamespace getVariable ["efku_lids_mode", 1]) == 0}) exitWith {};
 
-private _box = [_container, _second] select {!isNull _x && {_x isKindOf QGVAR(base)}};
+// only what was opened: a box that merely stands near (the ground tab) stays shut
+private _box = [_container] select {!isNull _x && {_x isKindOf QGVAR(base)}};
 if (_box isEqualTo []) exitWith {};
 GVAR(current) = _box select 0;
 [QGVAR(use), [GVAR(current), clientOwner, true]] call CBA_fnc_serverEvent;
