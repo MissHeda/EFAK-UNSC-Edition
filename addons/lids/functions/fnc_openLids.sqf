@@ -23,7 +23,7 @@ params ["", "_container", ["_second", objNull]];
 if (GVAR(mode) < 2) exitWith {};
 
 {
-    if (!isNull _x) then {
+    if (!isNull _x && {!(_x getVariable [QGVAR(copy), false])}) then {
         [_x, "", "inventory"] call FUNC(requestOpen);
     };
 } forEach ([_container] + ([[_second], []] select (isNull _second || {!isNull attachedTo _second})));

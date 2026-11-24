@@ -23,15 +23,9 @@ params ["_container", "_item", "_class"];
 if (!isServer || {isNull _container} || {!(_item in itemCargo _container)}) exitWith {};
 
 private _pos = getPosATL _container;
-private _new = createVehicle [_class, [0, 0, 0], [], 0, "CAN_COLLIDE"];
-// stays a kit item, for PH to attach (fnc_initItem)
-_new setVariable [QGVAR(keep), true];
-// the dropped kit instead of the prototype the class brings (not a holder: empty is fine)
-clearItemCargoGlobal _new;
-_new addItemCargoGlobal [_item, 1];
-_new setDir (getDir _container);
-_new setPosATL _pos;
+private _dir = getDir _container;
 
+// out of the holder first, then into the kit item: never in both
 private _alone = (itemCargo _container) isEqualTo [_item] && {(magazineCargo _container) isEqualTo []}
     && {(weaponCargo _container) isEqualTo []} && {(backpackCargo _container) isEqualTo []};
 if (_alone) then {
@@ -39,6 +33,15 @@ if (_alone) then {
 } else {
     _container addItemCargoGlobal [_item, -1];
 };
+
+private _new = createVehicle [_class, [0, 0, 0], [], 0, "CAN_COLLIDE"];
+// stays a kit item, for PH to attach (fnc_initItem)
+_new setVariable [QGVAR(keep), true];
+// the dropped kit instead of the prototype the class brings (not a holder: empty is fine)
+clearItemCargoGlobal _new;
+_new addItemCargoGlobal [_item, 1];
+_new setDir _dir;
+_new setPosATL _pos;
 
 // Zeus keeps the say over it
 {_x addCuratorEditableObjects [[_new], false]} forEach allCurators;

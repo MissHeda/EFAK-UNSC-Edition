@@ -25,6 +25,8 @@
 params ["_holder", ["_only", ""], ["_source", "kit"], ["_instant", false]];
 
 if (isNull _holder) exitWith {false};
+// a copy of ours is never opened itself
+if (_holder getVariable [QGVAR(copy), false]) exitWith {false};
 if !(_holder isKindOf "WeaponHolder" || {_holder isKindOf "WeaponHolderSimulated"}) exitWith {false};
 // Open already: count this one in, so it stays open until everyone who opened it has closed it.
 private _known = GVAR(open) findIf {(_x select 0) isEqualTo _holder};
@@ -65,16 +67,17 @@ if (_kits isEqualTo []) exitWith {false};
 // opened kit's entry taken by a stand-in of its own (one class each - two of a class would merge).
 private _copy = objNull;
 if (count _pieces > count _kits) then {
-    _copy = (typeOf _holder) createVehicleLocal [0, 0, 0];
-    // a class that brings cargo of its own (a kit item) would show it on the copy
+    // made where the holder is, filled, and only then frozen: a holder made elsewhere and moved, or
+    // frozen before it holds anything, may draw nothing - the other things on the pile would vanish
+    _copy = createVehicleLocal [typeOf _holder, getPosATL _holder, [], 0, "CAN_COLLIDE"];
+    _copy setVariable [QGVAR(copy), true];
+    // a holder class that brings cargo of its own (an Eden-placed Item_ or Weapon_) would show it
     clearItemCargo _copy;
     clearWeaponCargo _copy;
     clearMagazineCargo _copy;
     clearBackpackCargo _copy;
-    _copy setVariable [QGVAR(copy), true];
-    _copy enableSimulation false;
-    _copy setVectorDirAndUp [vectorDirVisual _holder, vectorUpVisual _holder];
-    _copy setPosWorld (getPosWorldVisual _holder);
+    // only for the eye: nobody takes from or puts into it (the holder keeps the real things)
+    _copy lockInventory true;
 
     private _opened = [];
     {_opened pushBackUnique ((_pieces select (_x select 0)) select 3)} forEach _kits;
@@ -98,6 +101,10 @@ if (count _pieces > count _kits) then {
             default {_copy addItemCargo [_class, _data]};
         };
     } forEach _pieces;
+
+    _copy setVectorDirAndUp [vectorDirVisual _holder, vectorUpVisual _holder];
+    _copy setPosWorld (getPosWorldVisual _holder);
+    _copy enableSimulation false;
 };
 
 private _props = [];
