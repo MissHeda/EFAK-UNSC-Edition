@@ -24,14 +24,15 @@
 // A kit as a placeable item (Eden and Zeus, "Kits"; it then lies in a ground holder, as a dropped kit
 // does), and what a kit dropped beside a vehicle becomes: a world object with the kit in its inventory,
 // not a ground holder, so PH Vehicles Arsenal can attach it and restore it from a preset. It goes away
-// once emptied. See efku_boxes_fnc_initItem.
-#define KIT_ITEM(FILE,KIT,NAME) \
+// once emptied. See efku_boxes_fnc_initItem. Its lid swings as a box's does, with the same sound.
+#define KIT_ITEM(FILE,KIT,NAME,SOUND) \
     class DOUBLES(Item,KIT): efku_boxes_drop { \
         scope = 2; \
         scopeCurator = 2; \
         displayName = NAME; \
         model = QPATHTOF(data\DOUBLES(FILE,box).p3d); \
         editorPreview = QPATHTOF(ui\DOUBLES(FILE,ca).paa); \
+        efku_sound = #SOUND; \
         class TransportItems { \
             class KIT { \
                 name = #KIT; \

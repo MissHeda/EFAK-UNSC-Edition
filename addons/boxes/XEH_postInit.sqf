@@ -10,12 +10,30 @@ if (isServer) then {
     addMissionEventHandler ["PlayerDisconnected", {
         params ["", "", "", "", "_owner"];
         {
-            if (_owner in (_x getVariable [QGVAR(users), []])) then {[_x, _owner, false] call FUNC(use)};
+            private _box = _x;
+            {
+                if ((_x select 0) == _owner) then {[_box, _owner, false, _x select 1] call FUNC(use)};
+            } forEach +(_box getVariable [QGVAR(users), []]);
         } forEach +GVAR(users);
     }];
 };
 
 if (!hasInterface) exitWith {};
+
+// The kit window (EFAK) open on a kit in a box or kit item: its lid opens, as the inventory's does.
+// Checked every frame, so going from the inventory to the kit window hardly moves the lid.
+GVAR(kitBox) = objNull;
+[{
+    private _want = objNull;
+    if ((missionNamespace getVariable ["efku_lids_mode", 1]) > 0 && {!isNull (uiNamespace getVariable ["efak_gui_display", displayNull])}) then {
+        private _owner = missionNamespace getVariable ["efak_gui_owner", objNull];
+        if (!isNull _owner && {_owner isKindOf QGVAR(base) || {_owner isKindOf QGVAR(drop)}}) then {_want = _owner};
+    };
+    if (_want isEqualTo GVAR(kitBox)) exitWith {};
+    if (!isNull GVAR(kitBox)) then {[QGVAR(use), [GVAR(kitBox), clientOwner, false, "kit"]] call CBA_fnc_serverEvent};
+    if (!isNull _want) then {[QGVAR(use), [_want, clientOwner, true, "kit"]] call CBA_fnc_serverEvent};
+    GVAR(kitBox) = _want;
+}] call CBA_fnc_addPerFrameHandler;
 
 // A kit dropped beside a vehicle goes into a holder PH Vehicles Arsenal can attach.
 ["CAManBase", "Put", {_this call FUNC(onPut)}] call CBA_fnc_addClassEventHandler;

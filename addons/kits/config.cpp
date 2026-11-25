@@ -79,9 +79,9 @@ class CfgVehicles {
     KIT_BOX(mfakplus,efak_MFAKPlus,"MFAK+ (box)",case,600,2)};
     KIT_BOX(narcbox,efak_NarcBox,"Narc Box (box)",case,60,1)};
     // and as items on the ground
-    KIT_ITEM(ifak,efak_IFAK,"IFAK");
-    KIT_ITEM(afak,efak_AFAK,"AFAK");
-    KIT_ITEM(mfak,efak_MFAK,"MFAK");
-    KIT_ITEM(mfakplus,efak_MFAKPlus,"MFAK+");
-    KIT_ITEM(narcbox,efak_NarcBox,"Narc Box");
+    KIT_ITEM(ifak,efak_IFAK,"IFAK",med);
+    KIT_ITEM(afak,efak_AFAK,"AFAK",med);
+    KIT_ITEM(mfak,efak_MFAK,"MFAK",case);
+    KIT_ITEM(mfakplus,efak_MFAKPlus,"MFAK+",case);
+    KIT_ITEM(narcbox,efak_NarcBox,"Narc Box",case);
 };

@@ -223,11 +223,11 @@ class CfgVehicles {
     KIT_BOX(ordnance_crate,efku_OrdnanceCase,"Explosives + Ordnance Box",case,800,3)
         efku_extra[] = {"OPTRE_M41_Twin_HEAT_G", 2, "OPTRE_M44_Lykoi_HEAT_mag", 2, "OPTRE_M9_Frag", 4};
     };
-    KIT_ITEM(utility_pouch,eup_UtilityPouch,"Utility Pouch");
-    KIT_ITEM(ammo_pouch,eup_AmmoPouch,"Ammo Pouch");
-    KIT_ITEM(ammo_bag,eup_AmmoBag,"Ammo Box");
-    KIT_ITEM(engineer_bag,eup_EngineerBag,"Engineer Box");
-    KIT_ITEM(cbrn_bag,eup_CBRNBag,"CBRN Box");
-    KIT_ITEM(special_ammo,efku_SpecialAmmoCase,"Special Ammunition Box");
-    KIT_ITEM(ordnance_crate,efku_OrdnanceCase,"Explosives + Ordnance Box");
+    KIT_ITEM(utility_pouch,eup_UtilityPouch,"Utility Pouch",pouch);
+    KIT_ITEM(ammo_pouch,eup_AmmoPouch,"Ammo Pouch",pouch);
+    KIT_ITEM(ammo_bag,eup_AmmoBag,"Ammo Box",case);
+    KIT_ITEM(engineer_bag,eup_EngineerBag,"Engineer Box",case);
+    KIT_ITEM(cbrn_bag,eup_CBRNBag,"CBRN Box",case);
+    KIT_ITEM(special_ammo,efku_SpecialAmmoCase,"Special Ammunition Box",case);
+    KIT_ITEM(ordnance_crate,efku_OrdnanceCase,"Explosives + Ordnance Box",case);
 };
