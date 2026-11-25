@@ -56,8 +56,8 @@ def anim(name, axis, lo, hi, angle):
 
 
 def model_cfg(kits):
-    head = "// Made by tools/models/make_model_cfg.py - change it there.\n//\n// " + \
-        __doc__.strip().split("\n\n", 1)[1].replace("\n", "\n// ").replace("// \n", "//\n") + "\n"
+    # no comment head: model.cfg ships in the pbo, and how it is made stays in this script
+    head = ""
     out = [head, "class CfgSkeletons {\n    class Default {\n        isDiscrete = 1;\n        skeletonInherit = \"\";\n"
                  "        skeletonBones[] = {};\n    };\n"]
     for n in sorted({k[2] for k in kits}):

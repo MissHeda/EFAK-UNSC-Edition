@@ -7,7 +7,6 @@ mainprefix = "z"
 include = [
     "mod.cpp",
     "logo.paa",
-    "README.md",
 ]
 
 [version]
