@@ -39,6 +39,12 @@ Get-ChildItem $mod -Recurse -File | Measure-Object Length -Sum | ForEach-Object 
 if ($DryRun) { 'Dry run - nothing uploaded.'; exit 0 }
 
 "Uploading to Workshop item $Id ..."
-& $Publisher update "/id:$Id" "/changeNote:$ChangeNote" "/path:$mod" /nologo
-if ($LASTEXITCODE -ne 0) { throw "PublisherCmd failed ($LASTEXITCODE)" }
+# Run from the Publisher's own folder: Steam reads steam_appid.txt from the working directory, and
+# from anywhere else the upload is refused (Steam error 15, access denied).
+Push-Location (Split-Path $Publisher)
+try {
+  & $Publisher update "/id:$Id" "/changeNote:$ChangeNote" "/path:$mod" /nologo
+  $code = $LASTEXITCODE
+} finally { Pop-Location }
+if ($code -ne 0) { throw "PublisherCmd failed ($code)" }
 "Done: https://steamcommunity.com/sharedfiles/filedetails/?id=$Id"
